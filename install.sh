@@ -3,7 +3,7 @@
 #
 # 使用方式:
 #   1. 远程一行安装(推荐):
-#      curl -fsSL <REPO_RAW_URL>/install.sh | bash
+#      curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.sh | bash
 #
 #   2. 本地安装(已 git clone 后):
 #      cd ~/.claude/ai_code_copilot && bash install.sh
@@ -14,7 +14,7 @@
 set -euo pipefail
 
 # ============ 配置 ============
-REPO_URL="${CODE_COPILOT_REPO:-https://git.eminxing.com/ai/ai-code-copilot.git}"
+REPO_URL="${CODE_COPILOT_REPO:-https://github.com/ting2tao/ai-code-copilot.git}"
 INSTALL_DIR="$HOME/.claude/ai_code_copilot"
 SKILLS_DIR="$HOME/.claude/skills"
 SKILL_LINK="$SKILLS_DIR/ai-code-copilot"

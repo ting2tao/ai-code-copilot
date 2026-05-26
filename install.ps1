@@ -2,7 +2,7 @@
 #
 # 使用方式:
 #   1. 远程一行安装(推荐):
-#      irm https://git.eminxing.com/ai/ai-code-copilot/raw/master/install.ps1 | iex
+#      irm https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.ps1 | iex
 #
 #   2. 本地安装(已 git clone 后):
 #      .\install.ps1
@@ -18,7 +18,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # ============ 配置 ============
-$RepoUrl    = if ($env:CODE_COPILOT_REPO) { $env:CODE_COPILOT_REPO } else { "https://git.eminxing.com/ai/ai-code-copilot.git" }
+$RepoUrl    = if ($env:CODE_COPILOT_REPO) { $env:CODE_COPILOT_REPO } else { "https://github.com/ting2tao/ai-code-copilot.git" }
 $InstallDir = Join-Path $env:USERPROFILE ".claude\ai_code_copilot"
 $SkillsDir  = Join-Path $env:USERPROFILE ".claude\skills"
 $SkillLink  = Join-Path $SkillsDir "ai-code-copilot"

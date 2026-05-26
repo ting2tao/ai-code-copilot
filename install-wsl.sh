@@ -5,7 +5,7 @@
 #
 # 使用方式:
 #   1. 远程一行安装:
-#      curl -fsSL https://git.eminxing.com/ai/ai-code-copilot/raw/master/install-wsl.sh | bash
+#      curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install-wsl.sh | bash
 #
 #   2. 本地安装(已 git clone 后):
 #      bash install-wsl.sh
@@ -15,7 +15,7 @@
 
 set -euo pipefail
 
-REPO_URL="${CODE_COPILOT_REPO:-https://git.eminxing.com/ai/ai-code-copilot.git}"
+REPO_URL="${CODE_COPILOT_REPO:-https://github.com/ting2tao/ai-code-copilot.git}"
 
 # ============ 颜色 ============
 if [ -t 1 ]; then

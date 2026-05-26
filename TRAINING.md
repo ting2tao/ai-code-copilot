@@ -349,7 +349,7 @@ AI：检测到 pom.xml，识别为 java-spring 项目，加载规则包...
 
 ```bash
 # 安装（一次性）
-curl -fsSL <REPO_RAW_URL>/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.sh | bash
 # 或本地安装
 cd ~/.claude/ai_code_copilot && bash install.sh
 
