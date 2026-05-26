@@ -17,6 +17,12 @@ set -euo pipefail
 
 REPO_URL="${CODE_COPILOT_REPO:-https://github.com/ting2tao/ai-code-copilot.git}"
 
+# 判断是否从源码目录运行
+SCRIPT_DIR=""
+if [ -f "$PWD/skill/SKILL.md" ] && [ -f "$PWD/agents/copilot-prompt.md" ]; then
+  SCRIPT_DIR="$PWD"
+fi
+
 # ============ 颜色 ============
 if [ -t 1 ]; then
   RED=$'\033[31m'; GREEN=$'\033[32m'; YELLOW=$'\033[33m'; BLUE=$'\033[34m'; BOLD=$'\033[1m'; RESET=$'\033[0m'
@@ -104,23 +110,47 @@ if [ -d "$INSTALL_DIR/.git" ]; then
   info "检测到已安装，执行更新..."
   cd "$INSTALL_DIR"
   BEFORE=$(git rev-parse --short HEAD)
-  if git pull --ff-only; then
+  if git pull --ff-only 2>/dev/null; then
     AFTER=$(git rev-parse --short HEAD)
     [ "$BEFORE" = "$AFTER" ] && ok "已是最新版本 ($AFTER)" || ok "已更新: $BEFORE → $AFTER"
   else
-    err "更新失败，请手动检查: cd $INSTALL_DIR && git status"
-    exit 1
+    if [ -n "$SCRIPT_DIR" ]; then
+      warn "远程更新失败，从本地源码目录同步..."
+      rsync -a --delete --exclude='.git' --exclude='.DS_Store' "$SCRIPT_DIR/" "$INSTALL_DIR/"
+      ok "已从本地源码同步"
+    else
+      err "更新失败，请手动检查: cd $INSTALL_DIR && git status"
+      exit 1
+    fi
   fi
 elif [ -d "$INSTALL_DIR" ]; then
-  info "检测到本地目录(非 git 仓库)，跳过 clone，仅注册 skill"
-else
-  info "首次安装，从 $REPO_URL clone..."
-  mkdir -p "$SKILLS_DIR"
-  if ! git clone "$REPO_URL" "$INSTALL_DIR"; then
-    err "git clone 失败，请确认仓库地址或网络连接"
-    exit 1
+  if [ -n "$SCRIPT_DIR" ]; then
+    info "检测到本地目录(非 git 仓库)，从源码目录同步..."
+    rsync -a --delete --exclude='.git' --exclude='.DS_Store' "$SCRIPT_DIR/" "$INSTALL_DIR/"
+    ok "已从本地源码同步"
+  else
+    info "检测到本地目录(非 git 仓库)，重新 clone..."
+    rm -rf "$INSTALL_DIR"
+    mkdir -p "$SKILLS_DIR"
+    git clone "$REPO_URL" "$INSTALL_DIR"
+    ok "已 clone 到 $INSTALL_DIR"
   fi
-  ok "已 clone 到 $INSTALL_DIR"
+else
+  if [ -n "$SCRIPT_DIR" ]; then
+    info "从本地源码目录安装..."
+    mkdir -p "$SKILLS_DIR"
+    cp -R "$SCRIPT_DIR" "$INSTALL_DIR"
+    rm -rf "$INSTALL_DIR/.git" "$INSTALL_DIR/.DS_Store"
+    ok "已复制到 $INSTALL_DIR"
+  else
+    info "首次安装，从 $REPO_URL clone..."
+    mkdir -p "$SKILLS_DIR"
+    if ! git clone "$REPO_URL" "$INSTALL_DIR"; then
+      err "git clone 失败，请确认仓库地址或网络连接"
+      exit 1
+    fi
+    ok "已 clone 到 $INSTALL_DIR"
+  fi
 fi
 
 # ============ 创建 Windows Junction ============

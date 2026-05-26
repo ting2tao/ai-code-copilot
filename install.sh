@@ -6,7 +6,7 @@
 #      curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.sh | bash
 #
 #   2. 本地安装(已 git clone 后):
-#      cd ~/.claude/ai_code_copilot && bash install.sh
+#      bash install.sh
 #
 #   3. 卸载:
 #      bash install.sh --uninstall
@@ -18,6 +18,12 @@ REPO_URL="${CODE_COPILOT_REPO:-https://github.com/ting2tao/ai-code-copilot.git}"
 INSTALL_DIR="$HOME/.claude/ai_code_copilot"
 SKILLS_DIR="$HOME/.claude/skills"
 SKILL_LINK="$SKILLS_DIR/ai-code-copilot"
+
+# 判断是否从源码目录运行（被 curl pipe 时 SCRIPT_DIR 为空）
+SCRIPT_DIR=""
+if [ -f "$PWD/skill/SKILL.md" ] && [ -f "$PWD/agents/copilot-prompt.md" ]; then
+  SCRIPT_DIR="$PWD"
+fi
 
 # ============ 颜色 ============
 if [ -t 1 ]; then
@@ -56,16 +62,14 @@ fi
 # ============ 环境检测 ============
 echo "${BOLD}╔══════════════════════════════════════════╗${RESET}"
 echo "${BOLD}║   ai-code-copilot — 安装/更新              ║${RESET}"
-echo "${BOLD}╚══════════════════════════════════════════╝${RESET}"
+echo "${BOLD}╚══════════════════════════════════════════╝"
 echo ""
 
-# 检测 git
 if ! command -v git >/dev/null 2>&1; then
   err "未找到 git，请先安装 git"
   exit 1
 fi
 
-# 检测 Claude Code(非阻塞，仅提示)
 if ! command -v claude >/dev/null 2>&1; then
   warn "未检测到 claude 命令"
   warn "本脚本只负责框架安装，Claude Code 需另行安装(https://docs.claude.com/claude-code)"
@@ -74,10 +78,11 @@ fi
 
 # ============ 安装或更新 ============
 if [ -d "$INSTALL_DIR/.git" ]; then
+  # 已有 git 仓库 → pull 更新
   info "检测到已安装，执行更新..."
   cd "$INSTALL_DIR"
   BEFORE="$(git rev-parse --short HEAD)"
-  if git pull --ff-only; then
+  if git pull --ff-only 2>/dev/null; then
     AFTER="$(git rev-parse --short HEAD)"
     if [ "$BEFORE" = "$AFTER" ]; then
       ok "已是最新版本 ($AFTER)"
@@ -85,21 +90,46 @@ if [ -d "$INSTALL_DIR/.git" ]; then
       ok "已更新: $BEFORE → $AFTER"
     fi
   else
-    err "更新失败，请手动检查: cd $INSTALL_DIR && git status"
-    exit 1
+    # pull 失败（无 remote 或无 tracking）→ 尝试用源码目录覆盖
+    if [ -n "$SCRIPT_DIR" ]; then
+      warn "远程更新失败，从本地源码目录同步..."
+      rsync -a --delete --exclude='.git' --exclude='.DS_Store' "$SCRIPT_DIR/" "$INSTALL_DIR/"
+      ok "已从本地源码同步"
+    else
+      err "更新失败，请手动检查: cd $INSTALL_DIR && git status"
+      exit 1
+    fi
   fi
 elif [ -d "$INSTALL_DIR" ]; then
-  # 目录存在但不是 git 仓库 — 可能是用户手动放的文件
-  info "检测到本地目录(非 git 仓库)，跳过 clone，仅创建 symlink"
-else
-  info "首次安装，从 $REPO_URL clone..."
-  mkdir -p "$(dirname "$INSTALL_DIR")"
-  if ! git clone "$REPO_URL" "$INSTALL_DIR"; then
-    err "git clone 失败"
-    err "请确认仓库地址正确，或先手动 clone 到 $INSTALL_DIR 后再跑本脚本"
-    exit 1
+  # 目录存在但不是 git 仓库 → 用源码覆盖或重新 clone
+  if [ -n "$SCRIPT_DIR" ]; then
+    info "检测到本地目录(非 git 仓库)，从源码目录同步..."
+    rsync -a --delete --exclude='.git' --exclude='.DS_Store' "$SCRIPT_DIR/" "$INSTALL_DIR/"
+    ok "已从本地源码同步"
+  else
+    info "检测到本地目录(非 git 仓库)，重新 clone..."
+    rm -rf "$INSTALL_DIR"
+    git clone "$REPO_URL" "$INSTALL_DIR"
+    ok "已 clone 到 $INSTALL_DIR"
   fi
-  ok "已 clone 到 $INSTALL_DIR"
+else
+  # 全新安装
+  if [ -n "$SCRIPT_DIR" ]; then
+    info "从本地源码目录安装..."
+    mkdir -p "$(dirname "$INSTALL_DIR")"
+    cp -R "$SCRIPT_DIR" "$INSTALL_DIR"
+    rm -rf "$INSTALL_DIR/.git" "$INSTALL_DIR/.DS_Store"
+    ok "已复制到 $INSTALL_DIR"
+  else
+    info "首次安装，从 $REPO_URL clone..."
+    mkdir -p "$(dirname "$INSTALL_DIR")"
+    if ! git clone "$REPO_URL" "$INSTALL_DIR"; then
+      err "git clone 失败"
+      err "请确认仓库地址正确，或先手动 clone 到 $INSTALL_DIR 后再跑本脚本"
+      exit 1
+    fi
+    ok "已 clone 到 $INSTALL_DIR"
+  fi
 fi
 
 # ============ 创建 symlink ============

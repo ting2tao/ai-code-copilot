@@ -66,6 +66,9 @@ if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {
 }
 
 # ============ 安装或更新 ============
+$SourceDir = $PWD
+$IsSourceDir = (Test-Path (Join-Path $SourceDir "skill\SKILL.md")) -and (Test-Path (Join-Path $SourceDir "agents\copilot-prompt.md"))
+
 if (Test-Path (Join-Path $InstallDir ".git")) {
     Info "检测到已安装，执行更新..."
     Push-Location $InstallDir
@@ -73,27 +76,51 @@ if (Test-Path (Join-Path $InstallDir ".git")) {
         $before = git rev-parse --short HEAD
         git pull --ff-only
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "x  更新失败，请手动检查: cd '$InstallDir' && git status" -ForegroundColor Red
-            exit 1
+            if ($IsSourceDir) {
+                Warn "远程更新失败，从本地源码目录同步..."
+                $src = $SourceDir + "\*"
+                Copy-Item -Path $src -Destination $InstallDir -Recurse -Force -Exclude ".git",".DS_Store"
+                Ok "已从本地源码同步"
+            } else {
+                Write-Host "x  更新失败，请手动检查: cd '$InstallDir' && git status" -ForegroundColor Red
+                exit 1
+            }
+        } else {
+            $after = git rev-parse --short HEAD
+            if ($before -eq $after) { Ok "已是最新版本 ($after)" } else { Ok "已更新: $before → $after" }
         }
-        $after = git rev-parse --short HEAD
-        if ($before -eq $after) { Ok "已是最新版本 ($after)" } else { Ok "已更新: $before → $after" }
     } finally {
         Pop-Location
     }
 } elseif (Test-Path $InstallDir) {
-    Info "检测到本地目录(非 git 仓库)，跳过 clone，仅创建 junction"
+    if ($IsSourceDir) {
+        Info "检测到本地目录(非 git 仓库)，从源码目录同步..."
+        $src = $SourceDir + "\*"
+        Copy-Item -Path $src -Destination $InstallDir -Recurse -Force -Exclude ".git",".DS_Store"
+        Ok "已从本地源码同步"
+    } else {
+        Info "检测到本地目录(非 git 仓库)，重新 clone..."
+        Remove-Item $InstallDir -Force -Recurse
+        git clone $RepoUrl $InstallDir
+        Ok "已 clone 到 $InstallDir"
+    }
 } else {
-    Info "首次安装，从 $RepoUrl clone..."
     $parent = Split-Path $InstallDir -Parent
     if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
-    git clone $RepoUrl $InstallDir
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "x  git clone 失败" -ForegroundColor Red
-        Write-Host "x  请确认仓库地址正确，或先手动 clone 到 $InstallDir 后再跑本脚本" -ForegroundColor Red
-        exit 1
+    if ($IsSourceDir) {
+        Info "从本地源码目录安装..."
+        Copy-Item -Path $SourceDir -Destination $InstallDir -Recurse -Force -Exclude ".git",".DS_Store"
+        Ok "已复制到 $InstallDir"
+    } else {
+        Info "首次安装，从 $RepoUrl clone..."
+        git clone $RepoUrl $InstallDir
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "x  git clone 失败" -ForegroundColor Red
+            Write-Host "x  请确认仓库地址正确，或先手动 clone 到 $InstallDir 后再跑本脚本" -ForegroundColor Red
+            exit 1
+        }
+        Ok "已 clone 到 $InstallDir"
     }
-    Ok "已 clone 到 $InstallDir"
 }
 
 # ============ 创建 Junction ============
