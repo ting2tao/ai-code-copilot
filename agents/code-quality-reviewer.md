@@ -11,7 +11,7 @@
 - `ai_code_copilot/rules/coding-style.md`
 - `ai_code_copilot/rules/security.md`
 - `ai_code_copilot/rules/domain-rules.md`（如存在）
-- 全局默认：`~/.claude/ai_code_copilot/rules/coding-style.md`
+- 全局默认：`<COPILOT_HOME>/rules/coding-style.md`（`<COPILOT_HOME>` 按主提示词的 Codex/Claude 兼容规则定位）
 
 ## 审查分级
 

@@ -29,8 +29,9 @@ flowchart TD
     Complexity -->|"Complex<br/>>5天 跨3+模块"| ComplexPath
 
     QuickPath --> QuickScope["说明变更范围<br/>涉及文件 + 预期改动"]
-    QuickScope --> QuickConfirm{用户确认?}
-    QuickConfirm -->|"是"| QuickExec["直接执行编码"]
+    QuickScope --> QuickCard["生成 quick-card.md<br/>目标 / 文件 / 非目标 / 验收 / 风险"]
+    QuickCard --> QuickConfirm{用户确认?}
+    QuickConfirm -->|"是"| QuickExec["Preflight 后执行编码"]
     QuickConfirm -->|"否"| UserInput
 
     StandardPath --> Brainstorm[/brainstorm<br/>设计探索/]
@@ -44,7 +45,8 @@ flowchart TD
     BriefConfirm -->|"是"| Propose
 
     ComplexPath --> CBrainstorm[/brainstorm<br/>设计探索/]
-    CBrainstorm --> CSplit["拆分子项目"]
+    CBrainstorm --> CRoadmap["生成 roadmap.md<br/>子变更 / 依赖 / 集成顺序"]
+    CRoadmap --> CSplit["拆分子项目"]
     CSplit --> SubEach["每个子项目走 Standard 流程"]
     SubEach --> SubBrainstorm["brainstorm → propose → apply"]
     SubBrainstorm --> Integration["子项目集成"]
@@ -52,14 +54,15 @@ flowchart TD
     Propose[/propose<br/>变更提案/] --> PStep1["Research<br/>找到入口类 / 核心链路"]
     PStep1 --> PStep3["逐个澄清问题<br/>每次只问一个"]
     PStep3 --> PStep4["分三段生成文档<br/>代码现状→变更范围→技术决策"]
-    PStep4 --> PStep5["生成 spec.md + tasks.md + log.md"]
+    PStep4 --> PStep5["生成 spec.md + tasks.md<br/>test-spec.md + log.md"]
     PStep5 --> SpecConfirm{用户确认<br/>spec & tasks?}
     SpecConfirm -->|"否"| PStep3
     SpecConfirm -->|"是"| Apply
 
-    Apply[/apply<br/>执行编码/] --> CheckSpec{spec.md &<br/>tasks.md 存在?}
+    Apply[/apply<br/>执行编码/] --> CheckSpec{spec/tasks/test-spec<br/>或 quick-card 存在?}
     CheckSpec -->|"否"| Propose
-    CheckSpec -->|"是"| ExecTask["逐 task 执行"]
+    CheckSpec -->|"是"| Preflight["Preflight<br/>git status / 分支 / 命令 / 路径 / 风险"]
+    Preflight --> ExecTask["逐 task 执行"]
     ExecTask --> Verify["Verification 铁律<br/>展示编译/测试输出"]
     Verify --> WriteLog["实时写入 log.md<br/>决策 + 知识发现"]
     WriteLog --> GitCommit["自动 git commit<br/>变更名 简述"]
@@ -71,7 +74,7 @@ flowchart TD
     ExecDone --> ReviewFlow[/review<br/>两阶段审查/]
     ReviewFlow --> ReviewCheck{有 apply 提交?}
     ReviewCheck -->|"否"| Apply
-    ReviewCheck -->|"是"| SpecReview["阶段一: Spec Compliance<br/>spec-reviewer Sub-Agent"]
+    ReviewCheck -->|"是"| SpecReview["阶段一: Spec Compliance<br/>或 Quick 轻量合规"]
     SpecReview --> SpecPass{PASS?}
     SpecPass -->|"FAIL"| FixFlow
     SpecPass -->|"是"| CodeReview["阶段二: Code Quality<br/>code-quality-reviewer Sub-Agent"]
@@ -122,7 +125,7 @@ flowchart TD
     classDef debugNode fill:#E74C3C,stroke:#C0392B,color:#fff
 
     class Init,Scan,CreateDir,FillContext initNode
-    class Brainstorm,BStep1,BStep2,BStep3,BStep4,BStep5,Propose,PStep1,PStep3,PStep4,PStep5,Apply,ExecTask,Verify,WriteLog,GitCommit,FillLog,QuickExec processNode
+    class Brainstorm,BStep1,BStep2,BStep3,BStep4,BStep5,Propose,PStep1,PStep3,PStep4,PStep5,Apply,Preflight,ExecTask,Verify,WriteLog,GitCommit,FillLog,QuickCard,QuickExec,CRoadmap processNode
     class Detect,Complexity,BriefConfirm,SpecConfirm,CheckSpec,MoreTasks,SpecPass,CodePass,Coverage,ConfirmKnowledge decisionNode
     class Ready,ExecDone,ReviewDone,TestDone,Done doneNode
     class D1,D2,D3,D4 debugNode

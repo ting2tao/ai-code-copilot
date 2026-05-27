@@ -4,14 +4,20 @@
 #   1. 远程一行安装(推荐):
 #      irm https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.ps1 | iex
 #
-#   2. 本地安装(已 git clone 后):
-#      .\install.ps1
+#   2. 指定平台:
+#      .\install.ps1 -Codex
+#      .\install.ps1 -Claude
 #
-#   3. 卸载:
-#      .\install.ps1 -Uninstall
+#   3. 本地安装(已 git clone 后):
+#      .\install.ps1 -Codex
+#
+#   4. 卸载:
+#      .\install.ps1 -Codex -Uninstall
 
 param(
-    [switch]$Uninstall
+    [switch]$Uninstall,
+    [switch]$Codex,
+    [switch]$Claude
 )
 
 Set-StrictMode -Version Latest
@@ -19,8 +25,22 @@ $ErrorActionPreference = 'Stop'
 
 # ============ 配置 ============
 $RepoUrl    = if ($env:CODE_COPILOT_REPO) { $env:CODE_COPILOT_REPO } else { "https://github.com/ting2tao/ai-code-copilot.git" }
-$InstallDir = Join-Path $env:USERPROFILE ".claude\ai_code_copilot"
-$SkillsDir  = Join-Path $env:USERPROFILE ".claude\skills"
+$Platform   = if ($Codex) { "codex" } elseif ($Claude) { "claude" } elseif ($env:CODE_COPILOT_PLATFORM) { $env:CODE_COPILOT_PLATFORM } else { "auto" }
+if ($Platform -eq "auto") {
+    if ($env:CODEX_HOME -or (Get-Command codex -ErrorAction SilentlyContinue)) { $Platform = "codex" } else { $Platform = "claude" }
+}
+if ($Platform -eq "codex") {
+    $AppName = "Codex"
+    $AppHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE ".codex" }
+} elseif ($Platform -eq "claude") {
+    $AppName = "Claude Code"
+    $AppHome = if ($env:CLAUDE_HOME) { $env:CLAUDE_HOME } else { Join-Path $env:USERPROFILE ".claude" }
+} else {
+    Write-Host "x  平台必须是 auto、codex 或 claude" -ForegroundColor Red
+    exit 1
+}
+$InstallDir = if ($env:AI_CODE_COPILOT_HOME) { $env:AI_CODE_COPILOT_HOME } else { Join-Path $AppHome "ai_code_copilot" }
+$SkillsDir  = Join-Path $AppHome "skills"
 $SkillLink  = Join-Path $SkillsDir "ai-code-copilot"
 
 # ============ 工具函数 ============
@@ -31,7 +51,7 @@ function Err  { param($msg) Write-Host "x  $msg" -ForegroundColor Red; exit 1 }
 
 # ============ 卸载 ============
 if ($Uninstall) {
-    Write-Host "卸载 ai-code-copilot" -ForegroundColor White
+    Write-Host "卸载 ai-code-copilot ($AppName)" -ForegroundColor White
     Write-Host ""
     if (Test-Path $SkillLink) {
         Remove-Item $SkillLink -Force -Recurse
@@ -59,11 +79,18 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
-if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {
+if ($Platform -eq "codex" -and -not (Get-Command codex -ErrorAction SilentlyContinue)) {
+    Warn "未检测到 codex 命令"
+    Warn "本脚本只负责框架安装，Codex 需另行安装"
+    Write-Host ""
+} elseif ($Platform -eq "claude" -and -not (Get-Command claude -ErrorAction SilentlyContinue)) {
     Warn "未检测到 claude 命令"
     Warn "本脚本只负责框架安装，Claude Code 需另行安装(https://docs.claude.com/claude-code)"
     Write-Host ""
 }
+
+Info "目标平台: $AppName"
+Info "安装目录: $InstallDir"
 
 # ============ 安装或更新 ============
 $SourceDir = $PWD
@@ -148,9 +175,11 @@ Write-Host ""
 Info "注册 session-start hook..."
 
 $HookScript   = Join-Path $InstallDir "hooks\session-start"
-$SettingsFile = Join-Path $env:USERPROFILE ".claude\settings.json"
+$SettingsFile = Join-Path $AppHome "settings.json"
 
 if (-not (Test-Path $SettingsFile)) {
+    $settingsParent = Split-Path $SettingsFile -Parent
+    if (-not (Test-Path $settingsParent)) { New-Item -ItemType Directory -Path $settingsParent -Force | Out-Null }
     '{}' | Set-Content $SettingsFile -Encoding UTF8
 }
 
@@ -159,8 +188,8 @@ if ($settingsRaw -match "ai-code-copilot") {
     Ok "hook 已注册，跳过"
 } else {
     # 找到 bash.exe（Git for Windows 提供）
-    $bashExe = (Get-Command bash -ErrorAction SilentlyContinue)?.Source
-    if (-not $bashExe) { $bashExe = "bash" }
+    $bashCommand = Get-Command bash -ErrorAction SilentlyContinue
+    $bashExe = if ($bashCommand) { $bashCommand.Source } else { "bash" }
     $hookCmd = "$bashExe `"$HookScript`""
 
     $settings = $settingsRaw | ConvertFrom-Json
@@ -205,11 +234,11 @@ Write-Host "║  ✅ ai-code-copilot 安装完成                ║" -Foregroun
 Write-Host "╚══════════════════════════════════════════╝" -ForegroundColor Green
 Write-Host ""
 Write-Host "下一步:"
-Write-Host "  1. 重启 Claude Code 会话(让 skill 生效)"
+Write-Host "  1. 重启 $AppName 会话(让 skill 生效)"
 Write-Host "  2. cd 到业务项目根目录"
 Write-Host "  3. 输入: 初始化项目"
 Write-Host "  4. 之后输入: 帮我做 xxx 需求 即可触发流程"
 Write-Host ""
-Write-Host "更新:     powershell -ExecutionPolicy Bypass -File `"$InstallDir\install.ps1`""
-Write-Host "卸载:     powershell -ExecutionPolicy Bypass -File `"$InstallDir\install.ps1`" -Uninstall"
+Write-Host "更新:     powershell -ExecutionPolicy Bypass -File `"$InstallDir\install.ps1`" -$Platform"
+Write-Host "卸载:     powershell -ExecutionPolicy Bypass -File `"$InstallDir\install.ps1`" -$Platform -Uninstall"
 Write-Host ""

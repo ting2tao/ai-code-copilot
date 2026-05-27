@@ -7,9 +7,13 @@ PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SAFETY_CONTENT='<ai-code-copilot-safety-rules>
 你的环境中已安装 ai-code-copilot 编码协作框架。以下安全规则始终生效：
 
+框架根目录：'"$PLUGIN_ROOT"'
+兼容平台：Codex / Claude Code
+完整提示词位置：'"$PLUGIN_ROOT"'/agents/copilot-prompt.md
+
 <HARD-GATE>
 Standard/Complex 档：/propose 未完成且用户未确认前，禁止任何编码动作。
-Quick 档：必须先说明变更范围（涉及文件 + 预期改动），用户确认后才执行。
+Quick 档：必须先生成 quick-card.md（目标/文件/非目标/验收/风险），用户确认后才执行。
 任何档位：涉及资金/状态流转/权限变更，必须高亮提醒，等待人工确认后才能继续。
 不确定档位时，默认走 Standard。
 </HARD-GATE>

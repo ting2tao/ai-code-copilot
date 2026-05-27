@@ -12,6 +12,9 @@
 | 档位 | Quick / Standard / Complex |
 | 开始时间 | {YYYY-MM-DD} |
 | 完成时间 | {YYYY-MM-DD} |
+| 确认时间 | {YYYY-MM-DD HH:mm 或"未确认"} |
+| 确认人 | {用户/姓名} |
+| 确认范围 Hash | {确认时 spec/tasks/test-spec 或 quick-card 的内容摘要} |
 | 涉及文件数 | {N} |
 | commit 列表 | {列出所有 commit hash + message} |
 

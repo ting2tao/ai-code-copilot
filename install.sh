@@ -5,19 +5,35 @@
 #   1. 远程一行安装(推荐):
 #      curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.sh | bash
 #
-#   2. 本地安装(已 git clone 后):
-#      bash install.sh
+#   2. 指定平台:
+#      bash install.sh --codex
+#      bash install.sh --claude
 #
-#   3. 卸载:
-#      bash install.sh --uninstall
+#   3. 本地安装(已 git clone 后):
+#      bash install.sh --codex
+#
+#   4. 卸载:
+#      bash install.sh --codex --uninstall
 
 set -euo pipefail
 
 # ============ 配置 ============
 REPO_URL="${CODE_COPILOT_REPO:-https://github.com/ting2tao/ai-code-copilot.git}"
-INSTALL_DIR="$HOME/.claude/ai_code_copilot"
-SKILLS_DIR="$HOME/.claude/skills"
-SKILL_LINK="$SKILLS_DIR/ai-code-copilot"
+PLATFORM="${CODE_COPILOT_PLATFORM:-auto}"
+UNINSTALL=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --codex) PLATFORM="codex" ;;
+    --claude) PLATFORM="claude" ;;
+    --uninstall|-u) UNINSTALL=1 ;;
+    *)
+      echo "未知参数: $arg" >&2
+      echo "用法: bash install.sh [--codex|--claude] [--uninstall]" >&2
+      exit 1
+      ;;
+  esac
+done
 
 # 判断是否从源码目录运行（被 curl pipe 时 SCRIPT_DIR 为空）
 SCRIPT_DIR=""
@@ -37,9 +53,41 @@ ok()    { echo "${GREEN}✓${RESET}  $*"; }
 warn()  { echo "${YELLOW}⚠${RESET}  $*"; }
 err()   { echo "${RED}✗${RESET}  $*" >&2; }
 
+resolve_platform() {
+  if [ "$PLATFORM" = "auto" ]; then
+    if [ -n "${CODEX_HOME:-}" ] || command -v codex >/dev/null 2>&1; then
+      PLATFORM="codex"
+    else
+      PLATFORM="claude"
+    fi
+  fi
+
+  case "$PLATFORM" in
+    codex)
+      APP_NAME="Codex"
+      APP_HOME="${CODEX_HOME:-$HOME/.codex}"
+      ;;
+    claude)
+      APP_NAME="Claude Code"
+      APP_HOME="${CLAUDE_HOME:-$HOME/.claude}"
+      ;;
+    *)
+      err "平台必须是 auto、codex 或 claude"
+      exit 1
+      ;;
+  esac
+
+  INSTALL_DIR="${AI_CODE_COPILOT_HOME:-$APP_HOME/ai_code_copilot}"
+  SKILLS_DIR="$APP_HOME/skills"
+  SKILL_LINK="$SKILLS_DIR/ai-code-copilot"
+  SETTINGS_FILE="$APP_HOME/settings.json"
+}
+
+resolve_platform
+
 # ============ 卸载 ============
 uninstall() {
-  echo "${BOLD}卸载 ai-code-copilot${RESET}"
+  echo "${BOLD}卸载 ai-code-copilot ($APP_NAME)${RESET}"
   echo ""
   if [ -L "$SKILL_LINK" ]; then
     rm "$SKILL_LINK"
@@ -55,7 +103,7 @@ uninstall() {
   exit 0
 }
 
-if [ "${1:-}" = "--uninstall" ] || [ "${1:-}" = "-u" ]; then
+if [ "$UNINSTALL" -eq 1 ]; then
   uninstall
 fi
 
@@ -70,11 +118,18 @@ if ! command -v git >/dev/null 2>&1; then
   exit 1
 fi
 
-if ! command -v claude >/dev/null 2>&1; then
+if [ "$PLATFORM" = "codex" ] && ! command -v codex >/dev/null 2>&1; then
+  warn "未检测到 codex 命令"
+  warn "本脚本只负责框架安装，Codex 需另行安装"
+  echo ""
+elif [ "$PLATFORM" = "claude" ] && ! command -v claude >/dev/null 2>&1; then
   warn "未检测到 claude 命令"
   warn "本脚本只负责框架安装，Claude Code 需另行安装(https://docs.claude.com/claude-code)"
   echo ""
 fi
+
+info "目标平台: $APP_NAME"
+info "安装目录: $INSTALL_DIR"
 
 # ============ 安装或更新 ============
 if [ -d "$INSTALL_DIR/.git" ]; then
@@ -160,9 +215,8 @@ info "注册 session-start hook..."
 HOOK_SCRIPT="$INSTALL_DIR/hooks/session-start"
 chmod +x "$HOOK_SCRIPT" 2>/dev/null || true
 
-SETTINGS_FILE="$HOME/.claude/settings.json"
-
 if [ ! -f "$SETTINGS_FILE" ]; then
+  mkdir -p "$(dirname "$SETTINGS_FILE")"
   echo '{}' > "$SETTINGS_FILE"
 fi
 
@@ -230,11 +284,11 @@ echo "${BOLD}${GREEN}║  ✅ ai-code-copilot 安装完成                ║${R
 echo "${BOLD}${GREEN}╚══════════════════════════════════════════╝${RESET}"
 echo ""
 echo "${BOLD}下一步:${RESET}"
-echo "  1. 重启 Claude Code 会话(让 skill 生效)"
+echo "  1. 重启 $APP_NAME 会话(让 skill 生效)"
 echo "  2. cd 到业务项目根目录"
 echo "  3. 输入: ${BOLD}初始化项目${RESET}"
 echo "  4. 之后输入: ${BOLD}帮我做 xxx 需求${RESET} 即可触发流程"
 echo ""
-echo "${BOLD}更新:${RESET}     bash $INSTALL_DIR/install.sh"
-echo "${BOLD}卸载:${RESET}     bash $INSTALL_DIR/install.sh --uninstall"
+echo "${BOLD}更新:${RESET}     bash $INSTALL_DIR/install.sh --$PLATFORM"
+echo "${BOLD}卸载:${RESET}     bash $INSTALL_DIR/install.sh --$PLATFORM --uninstall"
 echo ""

@@ -4,7 +4,7 @@
 
 ## 它是什么
 
-ai-code-copilot 是一个基于 **Claude Code** 的 AI 编码协作框架。它不直接写代码，而是帮你建立一套 **人机协作规范**：先搞清楚需求，再写规格说明，最后按规格编码、审查、归档。整个过程有文档沉淀、有质量门禁、有知识积累。
+ai-code-copilot 是一个兼容 **Codex** 与 **Claude Code** 的 AI 编码协作框架。它不直接写代码，而是帮你建立一套 **人机协作规范**：先搞清楚需求，再写规格说明，最后按规格编码、审查、归档。整个过程有文档沉淀、有质量门禁、有知识积累。
 
 ## 它解决了什么问题
 
@@ -84,9 +84,9 @@ flowchart LR
 
 | 档位 | 适用场景 | 流程 |
 |------|----------|------|
-| **Quick** | ≤1天，<5文件，不跨模块 | 说明范围 → 确认 → 执行 |
+| **Quick** | ≤1天，<5文件，不跨模块 | 说明范围 → quick-card → 确认 → 执行 → /review |
 | **Standard** | 1-5天，或明确要求 | /brainstorm → /propose → /apply → /review |
-| **Complex** | >5天，或跨 3+ 模块 | /brainstorm → 拆子项目 → 每个走 Standard |
+| **Complex** | >5天，或跨 3+ 模块 | /brainstorm → roadmap → 拆子项目 → 每个走 Standard |
 
 不确定时默认 Standard。
 
@@ -126,9 +126,10 @@ AI：好的，我来提两个方案...
   - 代码现状 + 功能点清单
   - 变更范围 + 风险点
   - 技术决策 + 待澄清项
-- 输出三个文件：
+- 输出四个文件：
   - `spec.md` — 需求合同（要做什么）
   - `tasks.md` — 执行计划（精确到文件路径和函数签名）
+  - `test-spec.md` — 测试策略草案（P0/P1/P2 + 验证命令）
   - `log.md` — 过程记录
 
 **硬性门控：spec 和 tasks 未确认，不准开始编码。**
@@ -190,11 +191,17 @@ AI：好的，我来提两个方案...
 ## 快速开始
 
 ```bash
-# 一行安装（clone 到 ~/.claude/ai_code_copilot，注册 skill + hook）
+# 自动安装（自动识别 Codex/Claude Code，注册 skill + hook）
 curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.sh | bash
+
+# 指定安装到 Codex
+curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.sh | bash -s -- --codex
+
+# 指定安装到 Claude Code
+curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.sh | bash -s -- --claude
 ```
 
-安装完成后，在任意后端项目中打开 Claude Code，说：
+安装完成后，在任意后端项目中打开 Codex 或 Claude Code，说：
 
 ```
 初始化项目
@@ -204,8 +211,8 @@ curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/insta
 >
 > **手动安装：**
 > ```bash
-> git clone https://github.com/ting2tao/ai-code-copilot.git ~/.claude/ai_code_copilot
-> bash ~/.claude/ai_code_copilot/install.sh
+> git clone https://github.com/ting2tao/ai-code-copilot.git ~/.codex/ai_code_copilot
+> bash ~/.codex/ai_code_copilot/install.sh --codex
 > ```
 
 ### Windows 用户
@@ -222,17 +229,17 @@ irm https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.ps1 
 
 ```powershell
 # 更新
-powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.claude\ai_code_copilot\install.ps1"
+powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\ai_code_copilot\install.ps1" -Codex
 
 # 卸载
-powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.claude\ai_code_copilot\install.ps1" -Uninstall
+powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\ai_code_copilot\install.ps1" -Codex -Uninstall
 ```
 
 ---
 
 ## 目录结构
 
-**全局层**（`~/.claude/ai_code_copilot/`）
+**全局层**（Codex 默认 `~/.codex/ai_code_copilot/`；Claude Code 默认 `~/.claude/ai_code_copilot/`）
 
 ```
 ai_code_copilot/
@@ -246,7 +253,7 @@ ai_code_copilot/
 │   ├── hooks.json              # SessionStart hook 配置
 │   └── session-start           # 每次会话自动注入安全规则
 ├── skill/
-│   └── SKILL.md                # Claude Code skill 注册文件
+│   └── SKILL.md                # Codex/Claude Code skill 注册文件
 ├── packs/
 │   └── java-spring/pack.md     # 技术栈规则包（/init 自动检测加载）
 ├── rules/                      # 全局编码规范（项目级可覆盖）
@@ -276,7 +283,7 @@ ai_code_copilot/
 
 ## Hooks 机制
 
-安装时自动向 `~/.claude/settings.json` 注册 SessionStart Hook。每次打开 Claude Code 会话，安全规则自动注入，无需手动触发 skill：
+安装时自动向对应平台的 `settings.json` 注册 SessionStart Hook。每次打开 Codex/Claude Code 会话，安全规则自动注入，无需手动触发 skill：
 
 - Standard/Complex 档：spec 未确认前禁止编码
 - 涉及资金 / 状态流转 / 权限变更：强制高亮提醒
@@ -287,5 +294,5 @@ ai_code_copilot/
 ## 卸载
 
 ```bash
-bash ~/.claude/ai_code_copilot/install.sh --uninstall
+bash ~/.codex/ai_code_copilot/install.sh --codex --uninstall
 ```
