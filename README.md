@@ -265,6 +265,9 @@ ai_code_copilot/
 ├── hooks/
 │   ├── hooks.json              # SessionStart hook 配置
 │   └── session-start           # 每次会话自动注入安全规则
+├── scripts/
+│   ├── init_project.sh         # 脚本化 /init 与 --sync
+│   └── check_framework.sh      # 框架自检
 ├── skill/
 │   └── SKILL.md                # Codex/Claude Code skill 注册文件
 ├── packs/
@@ -304,6 +307,39 @@ ai_code_copilot/
 - Standard/Complex 档：spec 未确认前禁止编码
 - 涉及资金 / 状态流转 / 权限变更：强制高亮提醒
 - 禁止硬编码密钥；禁止日志打印敏感信息
+
+---
+
+## 初始化与同步
+
+新项目或存量项目首次接入时，在业务项目根目录执行：
+
+```bash
+bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project .
+```
+
+Codex/Claude 中说“初始化项目”时，也会优先走这个脚本。它会自动检测 Java/Go/Python/Frontend pack，复制 core rules、命中的 pack rules 和 `changes/templates/`，并生成项目级 `project-context.md`。
+
+框架后续升级后，**不会静默覆盖存量项目**。需要同步新模板或新规则时显式执行：
+
+```bash
+bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project . --sync
+```
+
+同步策略：
+
+- 缺失文件会直接补齐
+- 已存在且内容相同的文件跳过
+- 已存在但内容不同的文件写成 `<文件名>.new`
+- 项目团队人工比较 `.new` 后决定是否合并
+
+框架开发者可运行：
+
+```bash
+bash scripts/check_framework.sh
+```
+
+它会检查 pack manifest、规则文件引用、模板和安装脚本语法。
 
 ---
 
