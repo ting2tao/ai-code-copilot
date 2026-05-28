@@ -1,0 +1,22 @@
+{
+  "id": "go",
+  "name": "Go",
+  "description": "Go projects using go.mod or go.work.",
+  "detect": {
+    "files": ["go.mod", "go.work"]
+  },
+  "scan": {
+    "command": "find . -name \"*.go\" -not -path \"./vendor/*\" -not -path \"./.git/*\" | head -100"
+  },
+  "rules": [
+    "rules/coding-style.md",
+    "rules/project-structure.md"
+  ],
+  "commands": {
+    "dependencyInstall": "go mod tidy",
+    "build": "go test ./...",
+    "test": "go test ./...",
+    "testSingle": "go test ./path/to/pkg",
+    "lint": "gofmt -w <files>"
+  }
+}

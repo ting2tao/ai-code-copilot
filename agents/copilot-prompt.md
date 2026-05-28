@@ -99,6 +99,14 @@
 ### /init — 初始化项目上下文
 
 ```
+0. 优先执行脚本化初始化：
+   - 若 `<COPILOT_HOME>/scripts/init_project.sh` 存在，执行：
+     `bash <COPILOT_HOME>/scripts/init_project.sh --project <当前项目根目录>`
+   - 若用户要求同步存量项目规则，执行：
+     `bash <COPILOT_HOME>/scripts/init_project.sh --project <当前项目根目录> --sync`
+   - 脚本会复制 core rules + 命中 pack rules，并保护项目已有文件：内容不同时写入 `.new` 候选文件，不静默覆盖
+   - 脚本不可用时，按以下步骤手动执行
+
 1. 检测技术栈（按文件存在性判断，可命中多个规则包）：
    - pom.xml / build.gradle / build.gradle.kts 存在 → java-spring
    - go.mod / go.work 存在 → go
@@ -128,6 +136,12 @@
 ```
 
 /init 完成后提示：`ai_code_copilot/ 目录已创建，建议 git add ai_code_copilot/ 并提交。`
+
+**存量项目同步规则：**
+- 框架升级只更新全局 `<COPILOT_HOME>`，不会自动改业务项目里的 `ai_code_copilot/`
+- 需要同步新规则/模板时，显式执行 `/init --sync` 或脚本 `scripts/init_project.sh --sync`
+- 同步只补缺失文件；若项目已有文件与新模板不同，生成 `<文件>.new`，由用户人工合并
+- 项目级规则优先级最高，永不被全局更新静默覆盖
 
 ### /brainstorm <需求描述> — 设计探索（苏格拉底式对话）
 

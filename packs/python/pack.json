@@ -1,0 +1,22 @@
+{
+  "id": "python",
+  "name": "Python",
+  "description": "Python projects using pyproject.toml, requirements.txt, setup.py, Poetry, or uv.",
+  "detect": {
+    "files": ["pyproject.toml", "requirements.txt", "setup.py", "poetry.lock", "uv.lock"]
+  },
+  "scan": {
+    "command": "find . -name \"*.py\" -not -path \"./.venv/*\" -not -path \"./venv/*\" -not -path \"./.git/*\" | head -100"
+  },
+  "rules": [
+    "rules/coding-style.md",
+    "rules/project-structure.md"
+  ],
+  "commands": {
+    "dependencyInstall": "uv sync or pip install -r requirements.txt",
+    "build": "mypy . or pyright",
+    "test": "pytest",
+    "testSingle": "pytest path/to/test_file.py",
+    "lint": "ruff check . / ruff format ."
+  }
+}

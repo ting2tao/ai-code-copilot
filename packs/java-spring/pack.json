@@ -1,0 +1,28 @@
+{
+  "id": "java-spring",
+  "name": "Java / Spring",
+  "description": "Java backend projects using Maven or Gradle, especially Spring Boot/Spring Cloud.",
+  "detect": {
+    "files": ["pom.xml", "build.gradle", "build.gradle.kts"]
+  },
+  "scan": {
+    "command": "find src/main/java -name \"*.java\" -type f | head -100"
+  },
+  "rules": [
+    "rules/coding-style.md",
+    "rules/java-p3c.md",
+    "rules/java-complexity.md",
+    "rules/spring-mvc.md",
+    "rules/spring-boot-config-files.md",
+    "rules/http-interface-spec.md",
+    "rules/custom-component-priority-principle.md",
+    "rules/project-struct.md"
+  ],
+  "commands": {
+    "dependencyInstall": "",
+    "build": "mvn compile -q",
+    "test": "mvn test",
+    "testSingle": "mvn test -pl <module>",
+    "lint": ""
+  }
+}

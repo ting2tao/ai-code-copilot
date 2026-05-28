@@ -1,0 +1,24 @@
+{
+  "id": "frontend-react",
+  "name": "Frontend React",
+  "description": "React, Next.js, Remix, or Vite frontend projects.",
+  "detect": {
+    "files": ["package.json"],
+    "packageJsonDependenciesAny": ["react", "next", "vite", "@remix-run/react", "@vitejs/plugin-react"]
+  },
+  "scan": {
+    "command": "find . \\( -name \"*.tsx\" -o -name \"*.ts\" -o -name \"*.jsx\" -o -name \"*.js\" \\) -not -path \"./node_modules/*\" -not -path \"./.git/*\" | head -120"
+  },
+  "rules": [
+    "rules/coding-style.md",
+    "rules/project-structure.md"
+  ],
+  "commands": {
+    "dependencyInstall": "npm install / pnpm install / yarn install",
+    "build": "npm run build",
+    "test": "npm test",
+    "testSingle": "npm test -- <file>",
+    "lint": "npm run lint",
+    "typecheck": "npm run typecheck or tsc --noEmit"
+  }
+}
