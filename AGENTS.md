@@ -1,15 +1,15 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
 ## 项目简介
 
-ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架（Claude Code skill，兼容 Codex）。它不是一个可运行的应用，而是一套部署到 `~/.claude/ai_code_copilot/`（Claude Code）或 `~/.codex/ai_code_copilot/`（Codex）的提示词、规则、Agent 和安装脚本。核心理念：**Code is Cheap, Context is Expensive**，通过 Spec 驱动的流程（brainstorm → propose → apply → review → archive）确保 AI 在正确的上下文里做正确的事。
+ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架（Codex skill，兼容 Claude Code）。它不是一个可运行的应用，而是一套部署到 `~/.codex/ai_code_copilot/`（Codex）或 `~/.claude/ai_code_copilot/`（Claude Code）的提示词、规则、Agent 和安装脚本。核心理念：**Code is Cheap, Context is Expensive**，通过 Spec 驱动的流程（brainstorm → propose → apply → review → archive）确保 AI 在正确的上下文里做正确的事。
 
 ## 架构：两层结构
 
-**全局层**（安装后位于 `~/.claude/ai_code_copilot/`）— 框架运行主体：
-- `skill/SKILL.md` — Claude Code skill 注册入口，定义触发条件
+**全局层**（安装后默认位于 `~/.codex/ai_code_copilot/`）— 框架运行主体：
+- `skill/SKILL.md` — Codex skill 注册入口，定义触发条件
 - `agents/copilot-prompt.md` — 主提示词，定义所有命令逻辑、流程控制、硬性门控
 - `agents/spec-reviewer.md` / `agents/code-quality-reviewer.md` — 双阶段审查的 Sub-Agent
 - `hooks/session-start` — 会话启动时通过 `hookSpecificOutput` 注入安全规则
@@ -36,7 +36,7 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 
 ## 安装脚本
 
-- `install.sh` — macOS/Linux：clone 到 `~/.claude/ai_code_copilot/`，创建 skill symlink，注册 SessionStart hook
+- `install.sh` — macOS/Linux：clone 到 `~/.codex/ai_code_copilot/`，创建 skill symlink，注册 SessionStart hook
 - `install.ps1` — Windows PowerShell：使用目录 Junction 替代 symlink
 - `install-wsl.sh` — WSL 变体
 

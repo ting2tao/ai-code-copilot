@@ -11,13 +11,14 @@
 - `ai_code_copilot/rules/coding-style.md`
 - `ai_code_copilot/rules/security.md`
 - `ai_code_copilot/rules/domain-rules.md`（如存在）
-- 全局默认：`~/.claude/ai_code_copilot/rules/coding-style.md`
+- 全局默认：`<COPILOT_HOME>/rules/coding-style.md`（`<COPILOT_HOME>` 按主提示词的 Codex/Claude 兼容规则定位）
+- 命中技术栈的 pack 规则：`<COPILOT_HOME>/packs/<pack>/rules/*.md`
 
 ## 审查分级
 
 - **Critical**（阻塞发布）：安全漏洞、资金逻辑错误、并发安全问题、数据丢失风险、空 catch 吞掉关键异常
 - **Important**（应修复，不阻塞发布但需在下次迭代修复）：缺少参数校验、魔法值未定义常量、方法过长(>80行)、命名不清、事务边界错误
-- **Minor**（建议，不阻塞）：Javadoc 缺失、注释过时、unused import、格式问题
+- **Minor**（建议，不阻塞）：注释过时、未使用 import/依赖、格式问题、局部命名不清
 
 ## 审查维度
 
@@ -33,14 +34,14 @@
 #### Code Quality 审查报告 — <变更名>
 
 **Critical（阻塞）：**
-- ❌ `src/.../OrderService.java:L89`：空 catch 吞掉了数据库异常，会导致静默失败
+- ❌ `src/.../order_service.*:L89`：空 catch/except 或忽略错误会导致静默失败
 
 **Important（应修复）：**
-- ⚠️ `src/.../UserMapper.java:L23`：魔法值 "1" 未定义为常量
-- ⚠️ `src/.../XxxService.java:L156`：方法 doSomething() 长达 120 行，建议拆分
+- ⚠️ `src/.../user_repository.*:L23`：魔法值 "1" 未定义为常量或枚举
+- ⚠️ `src/.../checkout_service.*:L156`：函数/方法 doSomething() 过长，建议拆分
 
 **Minor（建议）：**
-- 💡 `src/.../XxxController.java:L5`：unused import
+- 💡 `src/.../handler.*:L5`：unused import
 
 **结论：✅ PASS / ❌ FAIL**
 ```

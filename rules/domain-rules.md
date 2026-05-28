@@ -8,16 +8,16 @@ description: "当涉及业务领域特定逻辑、金额计算、状态流转时
 
 ## 1. 通用领域规则
 
-- 所有金额使用 Long 类型，单位为分（100 = 1元）
-- 时间字段统一使用 Date 类型（或 LocalDateTime），禁止用 String 存储时间
-- 外部接口调用必须设置超时（默认 connect 1s，read 3s）并做降级处理
-- 状态变更必须通过状态机，禁止直接调用 setter 修改状态字段
+- 金额必须使用精确数值模型，禁止使用浮点数表达货币金额；单位和舍入策略必须写入 spec。
+- 时间必须使用明确时区和格式，禁止在不同层随意用字符串传递时间语义。
+- 外部接口调用必须设置超时，并说明失败处理、重试和降级策略。
+- 状态变更必须通过显式状态机或等价的领域方法，禁止绕过规则直接改状态字段。
 
 ## 2. 项目特定规则
 
 （各项目在 /init 后，在 ai_code_copilot/rules/domain-rules.md 中补充）
 
 示例格式：
-- **订单状态机**：状态流转只能通过 OrderStateMachine.transition()，合法路径：CREATED→PAID→SHIPPED→DONE / CREATED→CANCELLED
+- **订单状态机**：状态流转只能通过领域状态机方法，合法路径：CREATED→PAID→SHIPPED→DONE / CREATED→CANCELLED
 - **幂等策略**：所有写接口以 outBizNo（外部业务单号）作为幂等 key
-- **金额校验**：actualPaidFee 必须 ≤ orderAmount，否则抛 BizException(AMOUNT_OVERFLOW)
+- **金额校验**：actualPaidFee 必须 ≤ orderAmount，否则返回明确业务错误

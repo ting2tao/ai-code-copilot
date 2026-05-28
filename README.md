@@ -1,10 +1,10 @@
 # ai-code-copilot
 
-> **Code is Cheap, Context is Expensive** — 面向后端项目的 AI 编码协作框架
+> **Code is Cheap, Context is Expensive** — 面向多技术栈软件项目的 AI 编码协作框架
 
 ## 它是什么
 
-ai-code-copilot 是一个基于 **Claude Code** 的 AI 编码协作框架。它不直接写代码，而是帮你建立一套 **人机协作规范**：先搞清楚需求，再写规格说明，最后按规格编码、审查、归档。整个过程有文档沉淀、有质量门禁、有知识积累。
+ai-code-copilot 是一个兼容 **Codex** 与 **Claude Code** 的 AI 编码协作框架。它不直接写代码，而是帮你建立一套 **人机协作规范**：先搞清楚需求，再写规格说明，最后按规格编码、审查、归档。整个过程有文档沉淀、有质量门禁、有知识积累。
 
 ## 它解决了什么问题
 
@@ -17,12 +17,25 @@ ai-code-copilot 是一个基于 **Claude Code** 的 AI 编码协作框架。它�
 
 ## 核心特点
 
-- **Spec 驱动** — 没有 spec 不准写代码（No Spec, No Code）
+- **Spec 驱动** — Standard/Complex 没有 spec 不准写代码；Quick 没有 quick-card 不准写代码
 - **渐进式复杂度** — 自动判断 Quick / Standard / Complex 三档
+- **规则分层** — core 只管 AI 协作流程，技术栈细节放在 Java/Go/Python/Frontend pack
 - **双阶段审查** — 先查有没有按 spec 实现，再查代码质量
 - **知识飞轮** — 每个项目的经验沉淀成知识库，AI 自动加载
 - **全程可审计** — 每次变更都有 log.md，记录决策、踩坑、review 结论
 - **安全红线** — 资金/权限/状态变更必须人工确认
+
+## 规则分层
+
+ai-code-copilot 不把所有语言规则揉成一套。通用流程和安全红线保留在 `rules/`，技术栈写法放进 `packs/`：
+
+| 层级 | 负责什么 | 示例 |
+|------|----------|------|
+| Core rules | AI 怎么协作、如何验证、通用安全和领域边界 | `rules/coding-style.md`、`rules/security.md` |
+| Tech pack | 这个技术栈怎么写代码、怎么测试、怎么分层 | `packs/java-spring/`、`packs/go/`、`packs/python/`、`packs/frontend-react/` |
+| Project rules | 业务项目自己的架构、命令、领域规则 | `<project>/ai_code_copilot/rules/` |
+
+`/init` 会自动检测技术栈，复制 core rules 和命中的 pack rules 到项目级 `ai_code_copilot/rules/`。
 
 ## 全景图
 
@@ -30,7 +43,7 @@ ai-code-copilot 是一个基于 **Claude Code** 的 AI 编码协作框架。它�
 flowchart LR
     subgraph Init ["  初始化（首次）"]
         direction TB
-        I1["自动检测技术栈<br/>Spring / Node / Go / Python"]
+        I1["自动检测技术栈<br/>Java / Go / Python / Frontend"]
         I2["扫描项目结构<br/>识别模块与分层"]
         I3["创建配置目录<br/>ai_code_copilot/"]
         I1 --> I2 --> I3
@@ -84,9 +97,9 @@ flowchart LR
 
 | 档位 | 适用场景 | 流程 |
 |------|----------|------|
-| **Quick** | ≤1天，<5文件，不跨模块 | 说明范围 → 确认 → 执行 |
+| **Quick** | ≤1天，<5文件，不跨模块 | 说明范围 → quick-card → 确认 → 执行 → /review |
 | **Standard** | 1-5天，或明确要求 | /brainstorm → /propose → /apply → /review |
-| **Complex** | >5天，或跨 3+ 模块 | /brainstorm → 拆子项目 → 每个走 Standard |
+| **Complex** | >5天，或跨 3+ 模块 | /brainstorm → roadmap → 拆子项目 → 每个走 Standard |
 
 不确定时默认 Standard。
 
@@ -126,9 +139,10 @@ AI：好的，我来提两个方案...
   - 代码现状 + 功能点清单
   - 变更范围 + 风险点
   - 技术决策 + 待澄清项
-- 输出三个文件：
+- 输出四个文件：
   - `spec.md` — 需求合同（要做什么）
   - `tasks.md` — 执行计划（精确到文件路径和函数签名）
+  - `test-spec.md` — 测试策略草案（P0/P1/P2 + 验证命令）
   - `log.md` — 过程记录
 
 **硬性门控：spec 和 tasks 未确认，不准开始编码。**
@@ -190,11 +204,17 @@ AI：好的，我来提两个方案...
 ## 快速开始
 
 ```bash
-# 一行安装（clone 到 ~/.claude/ai_code_copilot，注册 skill + hook）
+# 自动安装（自动识别 Codex/Claude Code，注册 skill + hook）
 curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.sh | bash
+
+# 指定安装到 Codex
+curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.sh | bash -s -- --codex
+
+# 指定安装到 Claude Code
+curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.sh | bash -s -- --claude
 ```
 
-安装完成后，在任意后端项目中打开 Claude Code，说：
+安装完成后，在任意业务项目中打开 Codex 或 Claude Code，说：
 
 ```
 初始化项目
@@ -204,8 +224,8 @@ curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/insta
 >
 > **手动安装：**
 > ```bash
-> git clone https://github.com/ting2tao/ai-code-copilot.git ~/.claude/ai_code_copilot
-> bash ~/.claude/ai_code_copilot/install.sh
+> git clone https://github.com/ting2tao/ai-code-copilot.git ~/.codex/ai_code_copilot
+> bash ~/.codex/ai_code_copilot/install.sh --codex
 > ```
 
 ### Windows 用户
@@ -222,17 +242,17 @@ irm https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.ps1 
 
 ```powershell
 # 更新
-powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.claude\ai_code_copilot\install.ps1"
+powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\ai_code_copilot\install.ps1" -Codex
 
 # 卸载
-powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.claude\ai_code_copilot\install.ps1" -Uninstall
+powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\ai_code_copilot\install.ps1" -Codex -Uninstall
 ```
 
 ---
 
 ## 目录结构
 
-**全局层**（`~/.claude/ai_code_copilot/`）
+**全局层**（Codex 默认 `~/.codex/ai_code_copilot/`；Claude Code 默认 `~/.claude/ai_code_copilot/`）
 
 ```
 ai_code_copilot/
@@ -246,10 +266,13 @@ ai_code_copilot/
 │   ├── hooks.json              # SessionStart hook 配置
 │   └── session-start           # 每次会话自动注入安全规则
 ├── skill/
-│   └── SKILL.md                # Claude Code skill 注册文件
+│   └── SKILL.md                # Codex/Claude Code skill 注册文件
 ├── packs/
-│   └── java-spring/pack.md     # 技术栈规则包（/init 自动检测加载）
-├── rules/                      # 全局编码规范（项目级可覆盖）
+│   ├── java-spring/            # Java/Spring 规则包
+│   ├── go/                     # Go 规则包
+│   ├── python/                 # Python 规则包
+│   └── frontend-react/         # React/前端规则包
+├── rules/                      # 跨语言通用规则（项目级可覆盖）
 ├── knowledge/                  # 全局知识库（/archive 写入）
 └── changes/templates/          # 变更文档模板
 ```
@@ -276,7 +299,7 @@ ai_code_copilot/
 
 ## Hooks 机制
 
-安装时自动向 `~/.claude/settings.json` 注册 SessionStart Hook。每次打开 Claude Code 会话，安全规则自动注入，无需手动触发 skill：
+安装时自动向对应平台的 `settings.json` 注册 SessionStart Hook。每次打开 Codex/Claude Code 会话，安全规则自动注入，无需手动触发 skill：
 
 - Standard/Complex 档：spec 未确认前禁止编码
 - 涉及资金 / 状态流转 / 权限变更：强制高亮提醒
@@ -287,5 +310,5 @@ ai_code_copilot/
 ## 卸载
 
 ```bash
-bash ~/.claude/ai_code_copilot/install.sh --uninstall
+bash ~/.codex/ai_code_copilot/install.sh --codex --uninstall
 ```

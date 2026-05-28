@@ -1,21 +1,40 @@
 #!/usr/bin/env bash
 # ai-code-copilot WSL 安装脚本
 #
-# 在 WSL (Windows Subsystem for Linux) 内运行，为 Windows Claude Code 安装框架
+# 在 WSL (Windows Subsystem for Linux) 内运行，为 Windows Codex/Claude Code 安装框架
 #
 # 使用方式:
 #   1. 远程一行安装:
 #      curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install-wsl.sh | bash
 #
-#   2. 本地安装(已 git clone 后):
-#      bash install-wsl.sh
+#   2. 指定平台:
+#      bash install-wsl.sh --codex
+#      bash install-wsl.sh --claude
 #
-#   3. 卸载:
-#      bash install-wsl.sh --uninstall
+#   3. 本地安装(已 git clone 后):
+#      bash install-wsl.sh --codex
+#
+#   4. 卸载:
+#      bash install-wsl.sh --codex --uninstall
 
 set -euo pipefail
 
 REPO_URL="${CODE_COPILOT_REPO:-https://github.com/ting2tao/ai-code-copilot.git}"
+PLATFORM="${CODE_COPILOT_PLATFORM:-auto}"
+UNINSTALL=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --codex) PLATFORM="codex" ;;
+    --claude) PLATFORM="claude" ;;
+    --uninstall|-u) UNINSTALL=1 ;;
+    *)
+      echo "未知参数: $arg" >&2
+      echo "用法: bash install-wsl.sh [--codex|--claude] [--uninstall]" >&2
+      exit 1
+      ;;
+  esac
+done
 
 # 判断是否从源码目录运行
 SCRIPT_DIR=""
@@ -51,19 +70,42 @@ if [ -z "$WIN_HOME" ]; then
 fi
 
 WIN_HOME_WSL=$(wslpath "$WIN_HOME")
-WIN_CLAUDE="$WIN_HOME_WSL/.claude"
-mkdir -p "$WIN_CLAUDE"
 
-INSTALL_DIR="$WIN_CLAUDE/ai_code_copilot"
-SKILLS_DIR="$WIN_CLAUDE/skills"
+if [ "$PLATFORM" = "auto" ]; then
+  if [ -n "${CODEX_HOME:-}" ] || command -v codex >/dev/null 2>&1; then
+    PLATFORM="codex"
+  else
+    PLATFORM="claude"
+  fi
+fi
+
+case "$PLATFORM" in
+  codex)
+    APP_NAME="Codex"
+    WIN_APP_HOME="$WIN_HOME_WSL/.codex"
+    ;;
+  claude)
+    APP_NAME="Claude Code"
+    WIN_APP_HOME="$WIN_HOME_WSL/.claude"
+    ;;
+  *)
+    err "平台必须是 auto、codex 或 claude"
+    exit 1
+    ;;
+esac
+
+mkdir -p "$WIN_APP_HOME"
+
+INSTALL_DIR="${AI_CODE_COPILOT_HOME:-$WIN_APP_HOME/ai_code_copilot}"
+SKILLS_DIR="$WIN_APP_HOME/skills"
 SKILL_LINK="$SKILLS_DIR/ai-code-copilot"
 SKILL_TARGET="$INSTALL_DIR/skill"
 HOOK_SCRIPT="$INSTALL_DIR/hooks/session-start"
-SETTINGS_FILE="$WIN_CLAUDE/settings.json"
+SETTINGS_FILE="$WIN_APP_HOME/settings.json"
 
 # ============ 卸载 ============
 uninstall() {
-  echo "${BOLD}卸载 ai-code-copilot${RESET}"
+  echo "${BOLD}卸载 ai-code-copilot ($APP_NAME)${RESET}"
   echo ""
   if [ -e "$SKILL_LINK" ]; then
     WIN_LINK=$(wslpath -w "$SKILL_LINK" 2>/dev/null || echo "")
@@ -84,14 +126,17 @@ uninstall() {
   exit 0
 }
 
-[ "${1:-}" = "--uninstall" ] || [ "${1:-}" = "-u" ] && uninstall
+if [ "$UNINSTALL" -eq 1 ]; then
+  uninstall
+fi
 
 # ============ Banner ============
 echo "${BOLD}╔══════════════════════════════════════════╗${RESET}"
 echo "${BOLD}║   ai-code-copilot — WSL 安装/更新          ║${RESET}"
 echo "${BOLD}╚══════════════════════════════════════════╝${RESET}"
 echo ""
-echo "  Windows .claude 目录: $WIN_CLAUDE"
+echo "  目标平台: $APP_NAME"
+echo "  Windows 配置目录: $WIN_APP_HOME"
 echo ""
 
 # ============ 环境检测 ============
@@ -173,7 +218,7 @@ if [ -e "$SKILL_LINK" ] || [ -L "$SKILL_LINK" ]; then
   fi
 fi
 
-# 优先创建 Windows Junction（Claude Code on Windows 最兼容）
+# 优先创建 Windows Junction（Windows 上的 Codex/Claude Code 最兼容）
 WIN_LINK=$(wslpath -w "$SKILL_LINK")
 WIN_TARGET=$(wslpath -w "$SKILL_TARGET")
 if cmd.exe /C "mklink /J \"$WIN_LINK\" \"$WIN_TARGET\"" >/dev/null 2>&1; then
@@ -191,7 +236,7 @@ chmod +x "$HOOK_SCRIPT" 2>/dev/null || true
 
 [ ! -f "$SETTINGS_FILE" ] && echo '{}' > "$SETTINGS_FILE"
 
-# hook 命令: Windows Claude Code 通过 wsl 调用 bash 执行脚本
+# hook 命令: Windows 上的 Codex/Claude Code 通过 wsl 调用 bash 执行脚本
 HOOK_CMD="wsl bash $HOOK_SCRIPT"
 
 if grep -q "ai-code-copilot" "$SETTINGS_FILE" 2>/dev/null; then
@@ -248,11 +293,11 @@ echo "${BOLD}${GREEN}║  ✅ ai-code-copilot WSL 安装完成            ║${R
 echo "${BOLD}${GREEN}╚══════════════════════════════════════════╝${RESET}"
 echo ""
 echo "${BOLD}下一步:${RESET}"
-echo "  1. 重启 Windows Claude Code 会话(让 skill 生效)"
+echo "  1. 重启 Windows $APP_NAME 会话(让 skill 生效)"
 echo "  2. cd 到业务项目根目录"
 echo "  3. 输入: ${BOLD}初始化项目${RESET}"
 echo "  4. 之后输入: ${BOLD}帮我做 xxx 需求${RESET} 即可触发流程"
 echo ""
-echo "${BOLD}更新:${RESET}  bash $INSTALL_DIR/install-wsl.sh"
-echo "${BOLD}卸载:${RESET}  bash $INSTALL_DIR/install-wsl.sh --uninstall"
+echo "${BOLD}更新:${RESET}  bash $INSTALL_DIR/install-wsl.sh --$PLATFORM"
+echo "${BOLD}卸载:${RESET}  bash $INSTALL_DIR/install-wsl.sh --$PLATFORM --uninstall"
 echo ""
