@@ -10,24 +10,22 @@ alwaysApply: true
 
 - 应用名：（待 /init 填充）
 - 简介：（一句话描述）
-- 技术栈：（待 /init 填充，如：Java 21 / Spring Boot 3.x / Maven）
+- 技术栈：（待 /init 填充，如：Java/Spring、Go、Python、Frontend React）
 - 主要中间件：（待填充：MySQL、Redis、MQ 等）
+- 命中的技术栈规则包：（待 /init 填充，如：java-spring、go、python、frontend-react）
 
 ## 2. 目录结构与模块职责
 
 > 执行 `tree -d -L 3 src/` 后填充。
 
-## 3. 分层架构
+## 3. 架构与边界
 
-```
-Controller (web/)      ← 入口层，参数校验 + 协议转换
-    ↓
-Service (service/)     ← 业务编排，事务边界
-    ↓
-Manager (manager/)     ← 领域能力，单一职责，可复用
-    ↓
-DAO (dao/)             ← 纯数据访问
-```
+> /init 时根据命中的技术栈 pack 填充。此处只记录项目事实，不写通用假设。
+
+- 入口层：（待填充）
+- 业务/领域层：（待填充）
+- 数据/基础设施层：（待填充）
+- 前端状态/组件边界（如适用）：（待填充）
 
 ## 4. 关键依赖
 
@@ -41,6 +39,8 @@ DAO (dao/)             ← 纯数据访问
 
 | 操作 | 命令 |
 |------|------|
-| 编译检查 | `mvn compile -q` |
-| 跑全量测试 | `mvn test` |
-| 跑单模块测试 | `mvn test -pl <module>` |
+| 依赖安装 | （待 /init 填充） |
+| 编译/类型检查 | （待 /init 填充） |
+| 跑全量测试 | （待 /init 填充） |
+| 跑单模块/单文件测试 | （待 /init 填充） |
+| 格式化/Lint | （待 /init 填充） |

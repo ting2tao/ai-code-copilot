@@ -32,7 +32,7 @@
 #### Spec Compliance 审查报告 — <变更名>
 
 **功能点逐条验证：**
-- ✅ 功能1：已实现，见 `src/.../XxxService.java:L42`
+- ✅ 功能1：已实现，见 `src/.../checkout_service.*:L42`
 - ❌ 功能2：未实现（spec §2 要求了 XX 逻辑，代码中未找到）
 - ⚠️ 功能3：实现方式与 spec 描述有偏差
   spec 要求：A

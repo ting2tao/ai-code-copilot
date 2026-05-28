@@ -4,16 +4,19 @@
 flowchart TD
     Start(["项目启动"]) --> Init[/init/]
     Init --> Detect{自动检测技术栈}
-    Detect -->|"pom.xml / build.gradle"| Java["Java/Spring"]
-    Detect -->|"package.json"| Node["Node/Frontend"]
-    Detect -->|"go.mod"| Go["Go"]
+    Detect -->|"pom.xml / build.gradle"| Java["java-spring"]
+    Detect -->|"package.json + React/Vite/Next/Remix"| Node["frontend-react"]
+    Detect -->|"go.mod / go.work"| Go["go"]
+    Detect -->|"pyproject.toml / requirements.txt"| Python["python"]
     Detect -->|"其他"| Manual["询问用户"]
     Java --> Scan["执行项目扫描<br/>识别模块 & 分层架构"]
     Node --> Scan
     Go --> Scan
+    Python --> Scan
     Manual --> Scan
     Scan --> CreateDir["创建 ai_code_copilot/ 目录"]
-    CreateDir --> FillContext["填充 project-context.md<br/>技术栈 / 构建命令 / 测试命令"]
+    CreateDir --> CopyRules["复制 core rules + 命中 pack rules"]
+    CopyRules --> FillContext["填充 project-context.md<br/>pack / 模块 / 构建命令 / 测试命令"]
     FillContext --> Ready(["✅ 初始化完成<br/>可用流程菜单"])
 
     Ready --> UserInput{用户输入}
@@ -84,7 +87,7 @@ flowchart TD
 
     FixFlow[/fix<br/>增量修正/] --> FixExec["修改代码"]
     FixExec --> FixVerify["编译检查 + 测试验证"]
-    FixVerify --> FixLog["同步更新 spec / tasks / log"]
+    FixVerify --> FixLog["同步更新 spec / tasks / test-spec / log<br/>Quick 同步 quick-card"]
     FixLog --> FixCommit["git commit<br/>变更名 fix: 简述"]
     FixCommit --> FixDone{回到 review<br/>或继续开发}
 
@@ -124,7 +127,7 @@ flowchart TD
     classDef doneNode fill:#9B59B6,stroke:#7D3C98,color:#fff
     classDef debugNode fill:#E74C3C,stroke:#C0392B,color:#fff
 
-    class Init,Scan,CreateDir,FillContext initNode
+    class Init,Scan,CreateDir,CopyRules,FillContext initNode
     class Brainstorm,BStep1,BStep2,BStep3,BStep4,BStep5,Propose,PStep1,PStep3,PStep4,PStep5,Apply,Preflight,ExecTask,Verify,WriteLog,GitCommit,FillLog,QuickCard,QuickExec,CRoadmap processNode
     class Detect,Complexity,BriefConfirm,SpecConfirm,CheckSpec,MoreTasks,SpecPass,CodePass,Coverage,ConfirmKnowledge decisionNode
     class Ready,ExecDone,ReviewDone,TestDone,Done doneNode

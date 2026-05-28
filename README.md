@@ -1,6 +1,6 @@
 # ai-code-copilot
 
-> **Code is Cheap, Context is Expensive** — 面向后端项目的 AI 编码协作框架
+> **Code is Cheap, Context is Expensive** — 面向多技术栈软件项目的 AI 编码协作框架
 
 ## 它是什么
 
@@ -17,12 +17,25 @@ ai-code-copilot 是一个兼容 **Codex** 与 **Claude Code** 的 AI 编码协�
 
 ## 核心特点
 
-- **Spec 驱动** — 没有 spec 不准写代码（No Spec, No Code）
+- **Spec 驱动** — Standard/Complex 没有 spec 不准写代码；Quick 没有 quick-card 不准写代码
 - **渐进式复杂度** — 自动判断 Quick / Standard / Complex 三档
+- **规则分层** — core 只管 AI 协作流程，技术栈细节放在 Java/Go/Python/Frontend pack
 - **双阶段审查** — 先查有没有按 spec 实现，再查代码质量
 - **知识飞轮** — 每个项目的经验沉淀成知识库，AI 自动加载
 - **全程可审计** — 每次变更都有 log.md，记录决策、踩坑、review 结论
 - **安全红线** — 资金/权限/状态变更必须人工确认
+
+## 规则分层
+
+ai-code-copilot 不把所有语言规则揉成一套。通用流程和安全红线保留在 `rules/`，技术栈写法放进 `packs/`：
+
+| 层级 | 负责什么 | 示例 |
+|------|----------|------|
+| Core rules | AI 怎么协作、如何验证、通用安全和领域边界 | `rules/coding-style.md`、`rules/security.md` |
+| Tech pack | 这个技术栈怎么写代码、怎么测试、怎么分层 | `packs/java-spring/`、`packs/go/`、`packs/python/`、`packs/frontend-react/` |
+| Project rules | 业务项目自己的架构、命令、领域规则 | `<project>/ai_code_copilot/rules/` |
+
+`/init` 会自动检测技术栈，复制 core rules 和命中的 pack rules 到项目级 `ai_code_copilot/rules/`。
 
 ## 全景图
 
@@ -30,7 +43,7 @@ ai-code-copilot 是一个兼容 **Codex** 与 **Claude Code** 的 AI 编码协�
 flowchart LR
     subgraph Init ["  初始化（首次）"]
         direction TB
-        I1["自动检测技术栈<br/>Spring / Node / Go / Python"]
+        I1["自动检测技术栈<br/>Java / Go / Python / Frontend"]
         I2["扫描项目结构<br/>识别模块与分层"]
         I3["创建配置目录<br/>ai_code_copilot/"]
         I1 --> I2 --> I3
@@ -201,7 +214,7 @@ curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/insta
 curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.sh | bash -s -- --claude
 ```
 
-安装完成后，在任意后端项目中打开 Codex 或 Claude Code，说：
+安装完成后，在任意业务项目中打开 Codex 或 Claude Code，说：
 
 ```
 初始化项目
@@ -255,8 +268,11 @@ ai_code_copilot/
 ├── skill/
 │   └── SKILL.md                # Codex/Claude Code skill 注册文件
 ├── packs/
-│   └── java-spring/pack.md     # 技术栈规则包（/init 自动检测加载）
-├── rules/                      # 全局编码规范（项目级可覆盖）
+│   ├── java-spring/            # Java/Spring 规则包
+│   ├── go/                     # Go 规则包
+│   ├── python/                 # Python 规则包
+│   └── frontend-react/         # React/前端规则包
+├── rules/                      # 跨语言通用规则（项目级可覆盖）
 ├── knowledge/                  # 全局知识库（/archive 写入）
 └── changes/templates/          # 变更文档模板
 ```

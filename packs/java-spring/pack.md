@@ -13,6 +13,19 @@
 find src/main/java -name "*.java" -type f | head -100
 ```
 
+## 规则文件
+
+`/init` 命中本包时，复制以下规则到项目级 `ai_code_copilot/rules/`：
+
+- `packs/java-spring/rules/coding-style.md`
+- `packs/java-spring/rules/java-p3c.md`
+- `packs/java-spring/rules/java-complexity.md`
+- `packs/java-spring/rules/spring-mvc.md`
+- `packs/java-spring/rules/spring-boot-config-files.md`
+- `packs/java-spring/rules/http-interface-spec.md`
+- `packs/java-spring/rules/custom-component-priority-principle.md`
+- `packs/java-spring/rules/project-struct.md`
+
 ## 分层架构
 
 ```
