@@ -266,7 +266,7 @@ ai_code_copilot/
 │   ├── hooks.json              # SessionStart hook 配置
 │   └── session-start           # 每次会话自动注入安全规则
 ├── scripts/
-│   ├── init_project.sh         # 脚本化 /init 与 --sync
+│   ├── init_project.sh         # 脚本化 /init、--sync、--upgrade、--dry-run
 │   └── check_framework.sh      # 框架自检
 ├── skill/
 │   └── SKILL.md                # Codex/Claude Code skill 注册文件
@@ -284,6 +284,7 @@ ai_code_copilot/
 
 ```
 ai_code_copilot/
+├── .copilot-state.json         # 框架版本、命中 pack、同步时间
 ├── rules/
 │   ├── project-context.md      # 工程上下文（/init 生成）
 │   ├── coding-style.md         # 项目编码规范（覆盖全局）
@@ -326,12 +327,19 @@ Codex/Claude 中说“初始化项目”时，也会优先走这个脚本。它�
 bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project . --sync
 ```
 
+想先预览升级影响而不写文件：
+
+```bash
+bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project . --upgrade --dry-run
+```
+
 同步策略：
 
 - 缺失文件会直接补齐
 - 已存在且内容相同的文件跳过
-- 已存在但内容不同的文件写成 `<文件名>.new`
+- 已存在但内容不同的规则/模板文件写成 `<文件名>.new`
 - 项目团队人工比较 `.new` 后决定是否合并
+- `ai_code_copilot/.copilot-state.json` 是机器维护的状态文件，会在非 dry-run 同步时刷新框架 commit、命中的 packs、初始化和同步时间
 
 框架开发者可运行：
 
@@ -339,7 +347,7 @@ bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project . --sync
 bash scripts/check_framework.sh
 ```
 
-它会检查 pack manifest、规则文件引用、模板和安装脚本语法。
+它会检查 pack manifest、规则文件引用、模板、安装脚本语法，并用 `tests/fixtures/` 验证 Java/Go/Python/Frontend/Monorepo 的 pack 检测。
 
 ---
 
