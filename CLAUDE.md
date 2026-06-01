@@ -16,6 +16,7 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 - `hooks/hooks.json` — hook 注册配置
 - `scripts/init_project.sh` — 脚本化 `/init` 和 `--sync`
 - `scripts/check_framework.sh` — 框架完整性自检
+- `tests/fixtures/` — Java/Go/Python/Frontend/Monorepo 的初始化检测样例
 - `rules/` — 跨语言通用规则（协作、安全、领域、项目上下文占位）
 - `knowledge/` — 知识库（由 `/archive` 沉淀积累）
 - `changes/templates/` — 变更文档模板（spec、tasks、test-spec、log、design-brief、quick-card、roadmap）
@@ -33,6 +34,7 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 - `skill/SKILL.md` — 触发条件和 skill 描述
 - `hooks/session-start` — 会话启动注入的安全规则
 - `scripts/*.sh` — 初始化、同步和框架自检
+- `tests/fixtures/**` — pack 检测与脚本自检样例
 - `rules/*.md` — 跨语言 core 规则和占位模板
 - `packs/*/pack.md`、`packs/*/rules/*.md` — 技术栈检测、命令和专用编码规则
 - `changes/templates/*.md` — 变更文档模板

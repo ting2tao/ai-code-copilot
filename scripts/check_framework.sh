@@ -89,4 +89,38 @@ for rel in [
         raise SystemExit(f"missing template: {rel}")
 PY
 
+if [ -d tests/fixtures ]; then
+  for fixture in tests/fixtures/*; do
+    [ -d "$fixture" ] || continue
+    tmpdir="$(mktemp -d /tmp/ai-code-copilot-fixture.XXXXXX)"
+    cp -R "$fixture"/. "$tmpdir"/
+    AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" >/tmp/ai-code-copilot-fixture.out
+    test -f "$tmpdir/ai_code_copilot/.copilot-state.json" || fail "fixture missing state: $fixture"
+    test -f "$tmpdir/ai_code_copilot/rules/project-context.md" || fail "fixture missing project context: $fixture"
+    case "$(basename "$fixture")" in
+      java-spring)
+        test -f "$tmpdir/ai_code_copilot/rules/java-spring-coding-style.md" || fail "java fixture did not load java-spring pack"
+        ;;
+      go)
+        test -f "$tmpdir/ai_code_copilot/rules/go-coding-style.md" || fail "go fixture did not load go pack"
+        ;;
+      python)
+        test -f "$tmpdir/ai_code_copilot/rules/python-coding-style.md" || fail "python fixture did not load python pack"
+        ;;
+      frontend-react)
+        test -f "$tmpdir/ai_code_copilot/rules/frontend-react-coding-style.md" || fail "frontend fixture did not load frontend-react pack"
+        ;;
+      monorepo)
+        test -f "$tmpdir/ai_code_copilot/rules/go-coding-style.md" || fail "monorepo fixture did not load go pack"
+        test -f "$tmpdir/ai_code_copilot/rules/frontend-react-coding-style.md" || fail "monorepo fixture did not load frontend-react pack"
+        ;;
+    esac
+    AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync --dry-run >/tmp/ai-code-copilot-fixture-dry-run.out
+    if find "$tmpdir/ai_code_copilot" -name '*.new' -type f | grep -q .; then
+      fail "dry-run wrote .new files for fixture: $fixture"
+    fi
+    rm -rf "$tmpdir"
+  done
+fi
+
 echo "ai-code-copilot framework check passed"
