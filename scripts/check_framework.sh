@@ -47,6 +47,25 @@ from pathlib import Path
 
 root = Path(sys.argv[1])
 pack_root = root / "packs"
+skill_text = (root / "skill" / "SKILL.md").read_text(encoding="utf-8")
+frontmatter = skill_text.split("---", 2)[1]
+description_lines = []
+capture_description = False
+for line in frontmatter.splitlines():
+    if line == "description: |":
+        capture_description = True
+        continue
+    if capture_description:
+        if line.startswith("  "):
+            description_lines.append(line[2:])
+        else:
+            break
+description = "\n".join(description_lines)
+if len(description) > 500:
+    raise SystemExit(f"skill description is too long for reliable discovery: {len(description)} characters")
+if "初始化项目" not in description[:160]:
+    raise SystemExit("skill description must surface 初始化项目 near the beginning")
+
 expected = {"java-spring", "go", "python", "frontend-react"}
 actual = {p.name for p in pack_root.iterdir() if p.is_dir()}
 missing = expected - actual
