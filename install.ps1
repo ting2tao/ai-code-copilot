@@ -184,29 +184,29 @@ if (-not (Test-Path $SettingsFile)) {
 }
 
 $settingsRaw = Get-Content $SettingsFile -Raw -Encoding UTF8
-if ($settingsRaw -match "ai-code-copilot") {
-    Ok "hook 已注册，跳过"
-} else {
-    # 找到 bash.exe（Git for Windows 提供）
-    $bashCommand = Get-Command bash -ErrorAction SilentlyContinue
-    $bashExe = if ($bashCommand) { $bashCommand.Source } else { "bash" }
-    $hookCmd = "$bashExe `"$HookScript`""
+# 找到 bash.exe（Git for Windows 提供）
+$bashCommand = Get-Command bash -ErrorAction SilentlyContinue
+$bashExe = if ($bashCommand) { $bashCommand.Source } else { "bash" }
+$hookCmd = "$bashExe `"$HookScript`""
 
-    $settings = $settingsRaw | ConvertFrom-Json
-    if (-not (Get-Member -InputObject $settings -Name hooks -MemberType NoteProperty)) {
-        $settings | Add-Member -NotePropertyName hooks -NotePropertyValue ([PSCustomObject]@{})
-    }
-    if (-not (Get-Member -InputObject $settings.hooks -Name SessionStart -MemberType NoteProperty)) {
-        $settings.hooks | Add-Member -NotePropertyName SessionStart -NotePropertyValue @()
-    }
-    $hookEntry = [PSCustomObject]@{
-        matcher = ""
-        hooks   = @([PSCustomObject]@{ type = "command"; command = $hookCmd; async = $false })
-    }
-    $settings.hooks.SessionStart = @($settings.hooks.SessionStart) + $hookEntry
-    $settings | ConvertTo-Json -Depth 10 | Set-Content $SettingsFile -Encoding UTF8
-    Ok "hook 已注册到 $SettingsFile"
+$settings = $settingsRaw | ConvertFrom-Json
+if (-not (Get-Member -InputObject $settings -Name hooks -MemberType NoteProperty)) {
+    $settings | Add-Member -NotePropertyName hooks -NotePropertyValue ([PSCustomObject]@{})
 }
+if (-not (Get-Member -InputObject $settings.hooks -Name SessionStart -MemberType NoteProperty)) {
+    $settings.hooks | Add-Member -NotePropertyName SessionStart -NotePropertyValue @()
+}
+$hookEntry = [PSCustomObject]@{
+    matcher = ""
+    hooks   = @([PSCustomObject]@{ type = "command"; command = $hookCmd; async = $false })
+}
+$existingHooks = @($settings.hooks.SessionStart) | Where-Object {
+    $entry = $_
+    -not (@($entry.hooks) | Where-Object { $_.command -like "*$HookScript*" })
+}
+$settings.hooks.SessionStart = @($existingHooks) + $hookEntry
+$settings | ConvertTo-Json -Depth 10 | Set-Content $SettingsFile -Encoding UTF8
+Ok "hook 已注册到 $SettingsFile"
 
 # ============ 自检 ============
 Write-Host ""

@@ -239,34 +239,47 @@ chmod +x "$HOOK_SCRIPT" 2>/dev/null || true
 # hook 命令: Windows 上的 Codex/Claude Code 通过 wsl 调用 bash 执行脚本
 HOOK_CMD="wsl bash $HOOK_SCRIPT"
 
-if grep -q "ai-code-copilot" "$SETTINGS_FILE" 2>/dev/null; then
-  ok "hook 已注册，跳过"
-elif command -v python3 >/dev/null 2>&1; then
-  python3 -c "
+if command -v python3 >/dev/null 2>&1; then
+  python3 - "$SETTINGS_FILE" "$HOOK_SCRIPT" "$HOOK_CMD" <<'PY'
 import json
-with open('$SETTINGS_FILE', 'r', encoding='utf-8') as f:
+import sys
+
+settings_path = sys.argv[1]
+hook_script = sys.argv[2]
+hook_cmd = sys.argv[3]
+with open(settings_path, 'r', encoding='utf-8') as f:
     s = json.load(f)
-s.setdefault('hooks', {}).setdefault('SessionStart', []).append({
+session_hooks = s.setdefault('hooks', {}).setdefault('SessionStart', [])
+session_hooks[:] = [
+    entry for entry in session_hooks
+    if not any(hook_script in hook.get('command', '') for hook in entry.get('hooks', []))
+]
+session_hooks.append({
     'matcher': '',
-    'hooks': [{'type': 'command', 'command': '$HOOK_CMD', 'async': False}]
+    'hooks': [{'type': 'command', 'command': hook_cmd, 'async': False}]
 })
-with open('$SETTINGS_FILE', 'w', encoding='utf-8') as f:
+with open(settings_path, 'w', encoding='utf-8') as f:
     json.dump(s, f, indent=2, ensure_ascii=False)
-" && ok "hook 已注册: $HOOK_CMD"
+PY
+  ok "hook 已注册: $HOOK_CMD"
 else
-  warn "请手动将以下内容合并到 $SETTINGS_FILE:"
-  echo ""
-  echo '  "hooks": {'
-  echo '    "SessionStart": [{'
-  echo '      "matcher": "",'
-  echo '      "hooks": [{'
-  echo '        "type": "command",'
-  echo "        \"command\": \"$HOOK_CMD\","
-  echo '        "async": false'
-  echo '      }]'
-  echo '    }]'
-  echo '  }'
-  echo ""
+  if grep -q "$HOOK_SCRIPT" "$SETTINGS_FILE" 2>/dev/null; then
+    ok "hook 已注册，跳过"
+  else
+    warn "请手动将以下内容合并到 $SETTINGS_FILE:"
+    echo ""
+    echo '  "hooks": {'
+    echo '    "SessionStart": [{'
+    echo '      "matcher": "",'
+    echo '      "hooks": [{'
+    echo '        "type": "command",'
+    echo "        \"command\": \"$HOOK_CMD\","
+    echo '        "async": false'
+    echo '      }]'
+    echo '    }]'
+    echo '  }'
+    echo ""
+  fi
 fi
 
 # ============ 自检 ============
