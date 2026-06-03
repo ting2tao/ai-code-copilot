@@ -17,7 +17,7 @@ find . -name "*.py" -not -path "./.venv/*" -not -path "./venv/*" -not -path "./.
 
 ## 规则文件
 
-`/init` 命中本包时，复制以下规则到项目级 `ai_code_copilot/rules/`：
+`/init` 命中本包时，复制以下规则到项目级 `.ai_code_copilot/rules/`：
 
 - `packs/python/rules/coding-style.md`
 - `packs/python/rules/project-structure.md`

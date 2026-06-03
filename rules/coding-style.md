@@ -3,7 +3,7 @@ alwaysApply: true
 ---
 # 通用编码规范
 
-> 本文件只放跨语言都成立的规则。语言、框架、目录结构、测试工具等细节必须放到 `packs/<tech-stack>/rules/` 或项目级 `ai_code_copilot/rules/`。
+> 本文件只放跨语言都成立的规则。语言、框架、目录结构、测试工具等细节必须放到 `packs/<tech-stack>/rules/` 或项目级 `.ai_code_copilot/rules/`。
 
 ## 1. 命名与可读性
 

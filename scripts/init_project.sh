@@ -12,10 +12,10 @@ usage() {
   cat <<'EOF'
 Usage: scripts/init_project.sh [--project <dir>] [--sync|--upgrade] [--dry-run]
 
-Initializes or synchronizes ai_code_copilot/ in a business project.
+Initializes or synchronizes .ai_code_copilot/ in a business project.
 
 Default behavior:
-  - Creates ai_code_copilot/ if missing.
+  - Creates .ai_code_copilot/ if missing.
   - Copies core rules and detected tech-pack rules.
   - Existing files are never overwritten.
   - If a generated file differs from an existing file, writes <file>.new.
@@ -76,7 +76,7 @@ project_dir = Path(sys.argv[2]).resolve()
 mode = sys.argv[3]
 dry_run = sys.argv[4] == "1"
 
-target = project_dir / "ai_code_copilot"
+target = project_dir / ".ai_code_copilot"
 rules_target = target / "rules"
 changes_target = target / "changes"
 knowledge_target = target / "knowledge"
@@ -91,6 +91,7 @@ excluded_dirs = {
     "build",
     "target",
     "ai_code_copilot",
+    ".ai_code_copilot",
 }
 
 

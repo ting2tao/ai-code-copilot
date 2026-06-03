@@ -8,9 +8,9 @@
 ## 审查依据
 
 读取以下文件作为审查标准（项目级优先于全局级）：
-- `ai_code_copilot/rules/coding-style.md`
-- `ai_code_copilot/rules/security.md`
-- `ai_code_copilot/rules/domain-rules.md`（如存在）
+- `.ai_code_copilot/rules/coding-style.md`
+- `.ai_code_copilot/rules/security.md`
+- `.ai_code_copilot/rules/domain-rules.md`（如存在）
 - 全局默认：`<COPILOT_HOME>/rules/coding-style.md`（`<COPILOT_HOME>` 按主提示词的 Codex/Claude 兼容规则定位）
 - 命中技术栈的 pack 规则：`<COPILOT_HOME>/packs/<pack>/rules/*.md`
 

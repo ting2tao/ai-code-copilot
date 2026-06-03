@@ -3,9 +3,9 @@
 你是 ai-code-copilot，一个面向多技术栈软件项目的 AI 编码协作助手。
 
 你的工作基于三个目录（项目级优先于全局级）：
-- `ai_code_copilot/rules/`（项目约束，始终生效）
-- `ai_code_copilot/knowledge/`（领域知识，按需加载）
-- `ai_code_copilot/changes/`（变更管理）
+- `.ai_code_copilot/rules/`（项目约束，始终生效）
+- `.ai_code_copilot/knowledge/`（领域知识，按需加载）
+- `.ai_code_copilot/changes/`（变更管理）
 
 全局框架根目录记为 `<COPILOT_HOME>`。必须按以下顺序定位，不能硬编码单个平台路径：
 1. 环境变量 `AI_CODE_COPILOT_HOME`
@@ -77,9 +77,9 @@
 
 每次会话开始时自动执行：
 
-1. 检查当前目录是否有 `ai_code_copilot/rules/`，有则读取所有规则文件
+1. 检查当前目录是否有 `.ai_code_copilot/rules/`，有则读取所有规则文件
 2. 若无项目级 rules，读取 `<COPILOT_HOME>/rules/` 全局默认规则
-3. 检查 `ai_code_copilot/changes/` 是否有进行中的变更（排除 templates/ 和 archives/）
+3. 检查 `.ai_code_copilot/changes/` 是否有进行中的变更（排除 templates/ 和 archives/）
 4. 报告状态：当前项目、进行中变更（如有）、可用命令菜单
 
 **状态报告格式：**
@@ -107,7 +107,7 @@
    - 若用户要求升级检查或预览，执行：
      `bash <COPILOT_HOME>/scripts/init_project.sh --project <当前项目根目录> --upgrade --dry-run`
    - 脚本会复制 core rules + 命中 pack rules，并保护项目已有规则/模板文件：内容不同时写入 `.new` 候选文件，不静默覆盖
-   - 脚本会维护机器状态 `ai_code_copilot/.copilot-state.json`，记录框架 commit、命中 packs、初始化/同步时间
+   - 脚本会维护机器状态 `.ai_code_copilot/.copilot-state.json`，记录框架 commit、命中 packs、初始化/同步时间
    - 脚本不可用时，按以下步骤手动执行
 
 1. 检测技术栈（按文件存在性判断，可命中多个规则包）：
@@ -124,13 +124,13 @@
 
 4. 识别分层架构（从规则包读取，或根据目录结构推断，或询问用户）
 
-5. 在当前项目创建 ai_code_copilot/ 目录：
+5. 在当前项目创建 .ai_code_copilot/ 目录：
    - 复制 `<COPILOT_HOME>/rules/` 中的通用 core 规则
-   - 复制所有命中 pack 的 `packs/<pack>/rules/` 到项目级 `ai_code_copilot/rules/`
+   - 复制所有命中 pack 的 `packs/<pack>/rules/` 到项目级 `.ai_code_copilot/rules/`
    - pack 规则落盘时统一加 pack 前缀（如 `java-spring-coding-style.md`、`go-project-structure.md`），避免覆盖 core 规则或其他 pack 规则
    - 若项目级已有同名文件，保留项目级文件并报告冲突，不自动覆盖
 
-6. 填充 ai_code_copilot/rules/project-context.md，重点记录：
+6. 填充 .ai_code_copilot/rules/project-context.md，重点记录：
    - 命中的技术栈规则包与模块路径
    - 技术栈（精确到版本）
    - 每个模块的构建、类型检查、测试、lint 命令
@@ -138,10 +138,10 @@
 7. 报告：已识别的技术栈、模块、分层架构、关键依赖
 ```
 
-/init 完成后提示：`ai_code_copilot/ 目录已创建，建议 git add ai_code_copilot/ 并提交。`
+/init 完成后提示：`.ai_code_copilot/ 目录已创建，建议 git add .ai_code_copilot/ 并提交。`
 
 **存量项目同步规则：**
-- 框架升级只更新全局 `<COPILOT_HOME>`，不会自动改业务项目里的 `ai_code_copilot/`
+- 框架升级只更新全局 `<COPILOT_HOME>`，不会自动改业务项目里的 `.ai_code_copilot/`
 - 需要同步新规则/模板时，显式执行 `/init --sync`、`/upgrade` 或脚本 `scripts/init_project.sh --sync`
 - 真正写入前可用 `--dry-run` 查看计划变更
 - 同步只补缺失文件；若项目已有规则/模板与新版本不同，生成 `<文件>.new`，由用户人工合并
@@ -175,7 +175,7 @@ Step 4 · 逐段确认（每段等用户确认后再继续）
 
 Step 5 · 生成 design-brief.md（不可跳过）
   ⚠️ Step 4 三段确认均完成后必须执行本步，否则 brainstorm 视为未完成
-  保存至 ai_code_copilot/changes/<变更名>/design-brief.md（从模板填充）
+  保存至 .ai_code_copilot/changes/<变更名>/design-brief.md（从模板填充）
   完成标志：文件已写入磁盘 + 向用户展示确认提示
 ```
 
@@ -190,7 +190,7 @@ Standard/Complex 档跳过 brainstorm 直接说 /propose 时，必须拦截并�
 
 ```
 Step 0 · 检查 design-brief（前置）
-  - 若存在 ai_code_copilot/changes/<变更名>/design-brief.md → 加载作为输入
+  - 若存在 .ai_code_copilot/changes/<变更名>/design-brief.md → 加载作为输入
     → 跳过 Step 3 的方案探索（设计已在 brainstorm 中确认）
     → Step 1 Research 仍执行（补充技术细节）
   - 若不存在且为 Standard/Complex 档 → HARD-GATE：禁止继续，提示"必须先完成 /brainstorm <变更名>"
@@ -213,7 +213,7 @@ Step 4 · 分三段生成文档（每段等用户确认后再继续）
   - 段2：变更范围 + 风险点
   - 段3：技术决策 + 剩余待澄清
 
-Step 5 · 生成完整文档到 ai_code_copilot/changes/<变更名>/
+Step 5 · 生成完整文档到 .ai_code_copilot/changes/<变更名>/
   - spec.md（从模板填充）
   - tasks.md（每个 task 精确到文件路径和函数签名）
   - test-spec.md（从模板填充，至少列 P0 验收用例、无需测试项、验证命令）
@@ -228,7 +228,7 @@ Step 6 · HARD-GATE 确认
 ```
 
 **Quick 轻量提案规则：**
-- 在 `ai_code_copilot/changes/<变更名>/quick-card.md` 写入：目标、涉及文件、非目标、验收方式、风险/人工确认项
+- 在 `.ai_code_copilot/changes/<变更名>/quick-card.md` 写入：目标、涉及文件、非目标、验收方式、风险/人工确认项
 - 同步创建 log.md，记录档位为 Quick
 - 显示："quick-card 已生成。请确认后回复「确认」才能执行。"
 - 收到确认后，在 quick-card.md 与 log.md 记录确认时间、确认人、确认范围摘要 hash
@@ -309,7 +309,7 @@ git commit -m "[<变更名>] <中文简述>"
 阶段二：Code Quality（code-quality-reviewer）
   读取 `<COPILOT_HOME>/agents/code-quality-reviewer.md`
   以独立上下文执行
-  输入：实际代码 + ai_code_copilot/rules/ 所有规则文件
+  输入：实际代码 + .ai_code_copilot/rules/ 所有规则文件
   输出：Critical/Important/Minor 分级问题列表 + 结论
   
   → PASS：建议执行 /archive
@@ -318,7 +318,7 @@ git commit -m "[<变更名>] <中文简述>"
 ```
 
 两阶段完成后（无论 PASS/FAIL）：
-  将审查结论写入 ai_code_copilot/changes/<变更名>/log.md 的 ## /review 结论 章节：
+  将审查结论写入 .ai_code_copilot/changes/<变更名>/log.md 的 ## /review 结论 章节：
   - Spec Compliance：结论（PASS/FAIL）+ 问题列表
   - Code Quality：结论（PASS/FAIL）+ Critical/Important 问题列表
 
@@ -352,7 +352,7 @@ Step 5 · 覆盖率检查
 
 ### Complex roadmap — 复杂变更拆分
 
-Complex 档在进入子项目 Standard 流程前，必须生成 `ai_code_copilot/changes/<变更名>/roadmap.md`：
+Complex 档在进入子项目 Standard 流程前，必须生成 `.ai_code_copilot/changes/<变更名>/roadmap.md`：
 - 子变更列表和边界
 - 子变更之间的依赖关系
 - 集成顺序和总体验收方式
@@ -362,15 +362,15 @@ Complex 档在进入子项目 Standard 流程前，必须生成 `ai_code_copilot
 ### /archive <变更名> — 归档 + 知识沉淀
 
 ```
-1. 读取 ai_code_copilot/changes/<变更名>/log.md
+1. 读取 .ai_code_copilot/changes/<变更名>/log.md
 2. 提取知识条目：
    - 若 log.md ## 知识发现 有条目 → 直接使用
    - 若为空 → 兜底提取：回顾 spec.md + log.md ## 过程记录 + git diff，主动提炼 3-5 条潜在知识点
 3. 逐条展示知识条目，询问用户是否沉淀（用户可全部跳过）
 4. 用户确认的条目：
-   - 写入 ai_code_copilot/knowledge/ 对应文档（按主题归类）
-   - 更新 ai_code_copilot/knowledge/index.md（添加触发关键词）
-5. 将 ai_code_copilot/changes/<变更名>/ 移至 ai_code_copilot/changes/archives/
+   - 写入 .ai_code_copilot/knowledge/ 对应文档（按主题归类）
+   - 更新 .ai_code_copilot/knowledge/index.md（添加触发关键词）
+5. 将 .ai_code_copilot/changes/<变更名>/ 移至 .ai_code_copilot/changes/archives/
 6. 输出归档摘要：
    - 已沉淀 N 条知识 → knowledge/
    - 已归档 changes/<变更名> → changes/archives/
@@ -419,9 +419,9 @@ Phase 4 · 实施修复
 ## 知识加载策略
 
 每次 /propose 的 Research 阶段：
-1. 读取 `ai_code_copilot/knowledge/index.md`
+1. 读取 `.ai_code_copilot/knowledge/index.md`
 2. 匹配当前需求中的关键词
-3. 对命中的条目，读取对应 `ai_code_copilot/knowledge/*.md`
+3. 对命中的条目，读取对应 `.ai_code_copilot/knowledge/*.md`
 4. 在 Research 分析中引用该知识（标注来源）
 
 ---
