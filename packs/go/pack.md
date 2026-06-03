@@ -14,7 +14,7 @@ find . -name "*.go" -not -path "./vendor/*" -not -path "./.git/*" | head -100
 
 ## 规则文件
 
-`/init` 命中本包时，复制以下规则到项目级 `ai_code_copilot/rules/`：
+`/init` 命中本包时，复制以下规则到项目级 `.ai_code_copilot/rules/`：
 
 - `packs/go/rules/coding-style.md`
 - `packs/go/rules/project-structure.md`

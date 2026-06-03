@@ -14,7 +14,7 @@ flowchart TD
     Go --> Scan
     Python --> Scan
     Manual --> Scan
-    Scan --> CreateDir["创建 ai_code_copilot/ 目录"]
+    Scan --> CreateDir["创建 .ai_code_copilot/ 目录"]
     CreateDir --> CopyRules["复制 core rules + 命中 pack rules"]
     CopyRules --> FillContext["填充 project-context.md<br/>pack / 模块 / 构建命令 / 测试命令"]
     FillContext --> Ready(["✅ 初始化完成<br/>可用流程菜单"])

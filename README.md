@@ -33,9 +33,9 @@ ai-code-copilot 不把所有语言规则揉成一套。通用流程和安全红�
 |------|----------|------|
 | Core rules | AI 怎么协作、如何验证、通用安全和领域边界 | `rules/coding-style.md`、`rules/security.md` |
 | Tech pack | 这个技术栈怎么写代码、怎么测试、怎么分层 | `packs/java-spring/`、`packs/go/`、`packs/python/`、`packs/frontend-react/` |
-| Project rules | 业务项目自己的架构、命令、领域规则 | `<project>/ai_code_copilot/rules/` |
+| Project rules | 业务项目自己的架构、命令、领域规则 | `<project>/.ai_code_copilot/rules/` |
 
-`/init` 会自动检测技术栈，复制 core rules 和命中的 pack rules 到项目级 `ai_code_copilot/rules/`。
+`/init` 会自动检测技术栈，复制 core rules 和命中的 pack rules 到项目级 `.ai_code_copilot/rules/`。
 
 ## 全景图
 
@@ -45,7 +45,7 @@ flowchart LR
         direction TB
         I1["自动检测技术栈<br/>Java / Go / Python / Frontend"]
         I2["扫描项目结构<br/>识别模块与分层"]
-        I3["创建配置目录<br/>ai_code_copilot/"]
+        I3["创建配置目录<br/>.ai_code_copilot/"]
         I1 --> I2 --> I3
     end
 
@@ -177,7 +177,7 @@ AI：好的，我来提两个方案...
 
 | 命令 | 自然语言触发 | 一句话 | 产出 |
 |------|-------------|--------|------|
-| `/init` | 初始化项目、分析工程结构、setup | 自动识别你的项目，配置协作环境 | `ai_code_copilot/` 目录 |
+| `/init` | 初始化项目、分析工程结构、setup | 自动识别你的项目，配置协作环境 | `.ai_code_copilot/` 目录 |
 | `/brainstorm` | 先讨论一下、帮我分析方案、设计探索、方案对比 | 先聊清楚再动手，避免写错方向 | `design-brief.md` |
 | `/propose` | 帮我实现、加功能、加接口、优化、重构 | 写规格说明书，明确改什么、怎么改 | `spec.md` + `tasks.md` |
 | `/apply` | 开始写代码、继续执行 | 按 spec 逐个 task 编码，每个都有证据验证 | 代码 + `log.md` |
@@ -280,10 +280,10 @@ ai_code_copilot/
 └── changes/templates/          # 变更文档模板
 ```
 
-**项目层**（`<project>/ai_code_copilot/`）
+**项目层**（`<project>/.ai_code_copilot/`）
 
 ```
-ai_code_copilot/
+.ai_code_copilot/
 ├── .copilot-state.json         # 框架版本、命中 pack、同步时间
 ├── rules/
 │   ├── project-context.md      # 工程上下文（/init 生成）
@@ -339,7 +339,7 @@ bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project . --upgrade --dr
 - 已存在且内容相同的文件跳过
 - 已存在但内容不同的规则/模板文件写成 `<文件名>.new`
 - 项目团队人工比较 `.new` 后决定是否合并
-- `ai_code_copilot/.copilot-state.json` 是机器维护的状态文件，会在非 dry-run 同步时刷新框架 commit、命中的 packs、初始化和同步时间
+- `.ai_code_copilot/.copilot-state.json` 是机器维护的状态文件，会在非 dry-run 同步时刷新框架 commit、命中的 packs、初始化和同步时间
 
 框架开发者可运行：
 

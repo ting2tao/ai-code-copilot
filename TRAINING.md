@@ -99,7 +99,7 @@ AI：方案对比：
 **Step 5：生成 design-brief.md**
 
 ```
-ai_code_copilot/changes/add-coupon/
+.ai_code_copilot/changes/add-coupon/
 └── design-brief.md   ← 记录需求理解、方案选择、风险识别
 ```
 
@@ -141,7 +141,7 @@ AI：【段3】技术决策 + 待澄清 — 还有什么问题？
 
 **HARD-GATE：** 待澄清全部解决、你显式回复「确认」后，才能进入编码。
 
-生成的文件在 `ai_code_copilot/changes/<变更名>/`：
+生成的文件在 `.ai_code_copilot/changes/<变更名>/`：
 ```
 add-coupon/
 ├── design-brief.md  ← /brainstorm 产出（若已执行）
@@ -297,15 +297,15 @@ AI：检测到 pom.xml，识别为 java-spring 项目，加载规则包...
     - 关键模块：order / coupon / user / payment
     - 构建命令：mvn compile -q / mvn test（已写入 project-context.md）
     
-    已创建 ai_code_copilot/ 目录，建议提交到 git：
-    git add ai_code_copilot/ && git commit -m "chore: 初始化 ai-code-copilot"
+    已创建 .ai_code_copilot/ 目录，建议提交到 git：
+    git add .ai_code_copilot/ && git commit -m "chore: 初始化 ai-code-copilot"
 ```
 
 > 非 Java 项目（如 Python、Go）也适用：AI 根据 `requirements.txt` / `go.mod` 等文件判断技术栈，询问确认后填入对应的构建和测试命令。
 
 生成的目录：
 ```
-<project>/ai_code_copilot/
+<project>/.ai_code_copilot/
 ├── rules/
 │   ├── project-context.md   ← AI 自动填充的工程上下文
 │   ├── coding-style.md      ← 可覆盖全局规范

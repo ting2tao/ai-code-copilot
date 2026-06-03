@@ -220,18 +220,22 @@ if [ ! -f "$SETTINGS_FILE" ]; then
   echo '{}' > "$SETTINGS_FILE"
 fi
 
-if grep -q "ai-code-copilot" "$SETTINGS_FILE" 2>/dev/null; then
-  ok "hook 已注册，跳过"
-else
-  if command -v python3 >/dev/null 2>&1; then
-    python3 -c "
-import json, sys
-settings_path = '$SETTINGS_FILE'
-hook_cmd = 'bash $HOOK_SCRIPT'
+if command -v python3 >/dev/null 2>&1; then
+    python3 - "$SETTINGS_FILE" "$HOOK_SCRIPT" <<'PY'
+import json
+import sys
+
+settings_path = sys.argv[1]
+hook_script = sys.argv[2]
+hook_cmd = f'bash {hook_script}'
 with open(settings_path, 'r') as f:
     settings = json.load(f)
 hooks = settings.setdefault('hooks', {})
 session_hooks = hooks.setdefault('SessionStart', [])
+session_hooks[:] = [
+    entry for entry in session_hooks
+    if not any(hook_script in hook.get('command', '') for hook in entry.get('hooks', []))
+]
 session_hooks.append({
     'matcher': '',
     'hooks': [{
@@ -242,7 +246,11 @@ session_hooks.append({
 })
 with open(settings_path, 'w') as f:
     json.dump(settings, f, indent=2, ensure_ascii=False)
-" && ok "hook 已注册到 $SETTINGS_FILE"
+PY
+    ok "hook 已注册到 $SETTINGS_FILE"
+else
+  if grep -q "$HOOK_SCRIPT" "$SETTINGS_FILE" 2>/dev/null; then
+    ok "hook 已注册，跳过"
   else
     warn "未找到 python3，请手动将以下 hook 配置添加到 $SETTINGS_FILE："
     echo ""

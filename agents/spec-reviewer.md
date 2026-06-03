@@ -7,8 +7,8 @@
 
 ## 工作流程
 
-1. Standard/Complex：读取 `ai_code_copilot/changes/<变更名>/spec.md`
-2. Quick：读取 `ai_code_copilot/changes/<变更名>/quick-card.md`
+1. Standard/Complex：读取 `.ai_code_copilot/changes/<变更名>/spec.md`
+2. Quick：读取 `.ai_code_copilot/changes/<变更名>/quick-card.md`
 3. Standard/Complex 提取 spec.md §2 功能点、§3 变更范围、§7 验收标准；Quick 提取 quick-card 的目标、涉及文件、非目标、验收方式、风险与回滚
 4. 对每条功能点/目标：
    - 用 Grep/Glob 找到相关实现文件

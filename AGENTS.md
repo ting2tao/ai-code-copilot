@@ -22,7 +22,7 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 - `changes/templates/` — 变更文档模板（spec、tasks、test-spec、log、design-brief、quick-card、roadmap）
 - `packs/` — 技术栈规则包，`/init` 时自动检测加载；Java/Go/Python/Frontend 规则都放在各自 pack 中
 
-**项目层**（`/init` 后在业务项目中生成 `<project>/ai_code_copilot/`）：
+**项目层**（`/init` 后在业务项目中生成 `<project>/.ai_code_copilot/`）：
 - `rules/project-context.md` — 自动检测的技术栈、构建命令、分层架构
 - `rules/coding-style.md` — 项目级编码规范（覆盖全局）
 - `rules/domain-rules.md` — 业务约束（用户手动填写）
@@ -60,7 +60,7 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 
 | 命令 | 用途 |
 |------|------|
-| `/init` | 检测技术栈，创建项目级 `ai_code_copilot/` |
+| `/init` | 检测技术栈，创建项目级 `.ai_code_copilot/` |
 | `/brainstorm` | 苏格拉底式设计探索，输出 `design-brief.md` |
 | `/propose` | Standard/Complex：生成 `spec.md` + `tasks.md` + `test-spec.md` + `log.md`；Quick：生成 `quick-card.md` + `log.md` |
 | `/apply` | 逐 task 执行编码，每步需证据验证 |

@@ -6,7 +6,7 @@ flowchart LR
         direction TB
         I1["自动检测技术栈<br/>Java / Go / Python / Frontend"]
         I2["扫描项目结构<br/>识别模块与分层"]
-        I3["创建配置目录<br/>ai_code_copilot/"]
+        I3["创建配置目录<br/>.ai_code_copilot/"]
         I1 --> I2 --> I3
     end
 
@@ -56,7 +56,7 @@ flowchart LR
 
 | 阶段 | 一句话 | 产出 |
 | --- | --- | --- |
-| **/init** | 自动识别你的项目，配置协作环境 | `ai_code_copilot/` 目录 |
+| **/init** | 自动识别你的项目，配置协作环境 | `.ai_code_copilot/` 目录 |
 | **/brainstorm** | 先聊清楚再动手，避免写错方向 | `design-brief.md` |
 | **/propose** | 写规格说明书，明确改什么、怎么改 | Standard/Complex：`spec.md` + `tasks.md` + `test-spec.md`；Quick：`quick-card.md` |
 | **/apply** | 按 spec 逐个 task 编码，每个都有证据验证 | 代码 + `log.md` |

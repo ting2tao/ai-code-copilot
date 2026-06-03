@@ -4,7 +4,7 @@ description: "当涉及业务领域特定逻辑、金额计算、状态流转时
 ---
 # 业务领域约束
 
-> 本文件是模板，各项目应在 ai_code_copilot/rules/domain-rules.md 中覆盖为项目特定规则。
+> 本文件是模板，各项目应在 .ai_code_copilot/rules/domain-rules.md 中覆盖为项目特定规则。
 
 ## 1. 通用领域规则
 
@@ -15,7 +15,7 @@ description: "当涉及业务领域特定逻辑、金额计算、状态流转时
 
 ## 2. 项目特定规则
 
-（各项目在 /init 后，在 ai_code_copilot/rules/domain-rules.md 中补充）
+（各项目在 /init 后，在 .ai_code_copilot/rules/domain-rules.md 中补充）
 
 示例格式：
 - **订单状态机**：状态流转只能通过领域状态机方法，合法路径：CREATED→PAID→SHIPPED→DONE / CREATED→CANCELLED

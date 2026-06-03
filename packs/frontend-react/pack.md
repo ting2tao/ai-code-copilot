@@ -14,7 +14,7 @@ find . \( -name "*.tsx" -o -name "*.ts" -o -name "*.jsx" -o -name "*.js" \) -not
 
 ## 规则文件
 
-`/init` 命中本包时，复制以下规则到项目级 `ai_code_copilot/rules/`：
+`/init` 命中本包时，复制以下规则到项目级 `.ai_code_copilot/rules/`：
 
 - `packs/frontend-react/rules/coding-style.md`
 - `packs/frontend-react/rules/project-structure.md`

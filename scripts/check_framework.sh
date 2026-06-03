@@ -47,6 +47,25 @@ from pathlib import Path
 
 root = Path(sys.argv[1])
 pack_root = root / "packs"
+skill_text = (root / "skill" / "SKILL.md").read_text(encoding="utf-8")
+frontmatter = skill_text.split("---", 2)[1]
+description_lines = []
+capture_description = False
+for line in frontmatter.splitlines():
+    if line == "description: |":
+        capture_description = True
+        continue
+    if capture_description:
+        if line.startswith("  "):
+            description_lines.append(line[2:])
+        else:
+            break
+description = "\n".join(description_lines)
+if len(description) > 500:
+    raise SystemExit(f"skill description is too long for reliable discovery: {len(description)} characters")
+if "初始化项目" not in description[:160]:
+    raise SystemExit("skill description must surface 初始化项目 near the beginning")
+
 expected = {"java-spring", "go", "python", "frontend-react"}
 actual = {p.name for p in pack_root.iterdir() if p.is_dir()}
 missing = expected - actual
@@ -95,28 +114,28 @@ if [ -d tests/fixtures ]; then
     tmpdir="$(mktemp -d /tmp/ai-code-copilot-fixture.XXXXXX)"
     cp -R "$fixture"/. "$tmpdir"/
     AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" >/tmp/ai-code-copilot-fixture.out
-    test -f "$tmpdir/ai_code_copilot/.copilot-state.json" || fail "fixture missing state: $fixture"
-    test -f "$tmpdir/ai_code_copilot/rules/project-context.md" || fail "fixture missing project context: $fixture"
+    test -f "$tmpdir/.ai_code_copilot/.copilot-state.json" || fail "fixture missing state: $fixture"
+    test -f "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "fixture missing project context: $fixture"
     case "$(basename "$fixture")" in
       java-spring)
-        test -f "$tmpdir/ai_code_copilot/rules/java-spring-coding-style.md" || fail "java fixture did not load java-spring pack"
+        test -f "$tmpdir/.ai_code_copilot/rules/java-spring-coding-style.md" || fail "java fixture did not load java-spring pack"
         ;;
       go)
-        test -f "$tmpdir/ai_code_copilot/rules/go-coding-style.md" || fail "go fixture did not load go pack"
+        test -f "$tmpdir/.ai_code_copilot/rules/go-coding-style.md" || fail "go fixture did not load go pack"
         ;;
       python)
-        test -f "$tmpdir/ai_code_copilot/rules/python-coding-style.md" || fail "python fixture did not load python pack"
+        test -f "$tmpdir/.ai_code_copilot/rules/python-coding-style.md" || fail "python fixture did not load python pack"
         ;;
       frontend-react)
-        test -f "$tmpdir/ai_code_copilot/rules/frontend-react-coding-style.md" || fail "frontend fixture did not load frontend-react pack"
+        test -f "$tmpdir/.ai_code_copilot/rules/frontend-react-coding-style.md" || fail "frontend fixture did not load frontend-react pack"
         ;;
       monorepo)
-        test -f "$tmpdir/ai_code_copilot/rules/go-coding-style.md" || fail "monorepo fixture did not load go pack"
-        test -f "$tmpdir/ai_code_copilot/rules/frontend-react-coding-style.md" || fail "monorepo fixture did not load frontend-react pack"
+        test -f "$tmpdir/.ai_code_copilot/rules/go-coding-style.md" || fail "monorepo fixture did not load go pack"
+        test -f "$tmpdir/.ai_code_copilot/rules/frontend-react-coding-style.md" || fail "monorepo fixture did not load frontend-react pack"
         ;;
     esac
     AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync --dry-run >/tmp/ai-code-copilot-fixture-dry-run.out
-    if find "$tmpdir/ai_code_copilot" -name '*.new' -type f | grep -q .; then
+    if find "$tmpdir/.ai_code_copilot" -name '*.new' -type f | grep -q .; then
       fail "dry-run wrote .new files for fixture: $fixture"
     fi
     rm -rf "$tmpdir"
