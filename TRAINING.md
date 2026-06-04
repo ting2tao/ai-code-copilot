@@ -158,7 +158,7 @@ add-coupon/
 你：apply add-coupon
 ```
 
-**开发标准流：** 严禁无票开发。每个代码变更必须关联 Issue，spec/quick-card 里要记录 Issue ID 或 URL；推荐一个 Issue 对应一个开发分支，分支名使用 `<type>/<description>-<IssueID>`，例如 `feature/login-123`、`fix/header-456`。可以使用云端 Copilot 或本地 AI 助手，但必须遵守 Issue、验证、提交与 PR 门禁。
+**开发标准流：** 严禁无票开发。每个代码变更必须关联 Issue，spec/quick-card 里要记录 Issue ID 或 URL。
 
 AI 逐 task 执行，每完成一个 task，必须展示**可验证证据**：
 
@@ -202,7 +202,7 @@ AI：⚠️ 发现问题：spec §3.2 要求发放记录写 coupon_issue_log 表
 
 **前置检查：** AI 先读取 tasks.md/log.md 中记录的 /apply commit hash。没有则停止，提示先补录提交记录或执行 `/apply`——没有代码证据就没有可审查的对象。
 
-**PR 要求：** 提交 PR 时必须用 `Closes #ID` 关联对应 Issue，并确保 CodeQL 静态审查与 CI 编译自动化审查被触发。
+**PR 要求：** 提交 PR 时必须用 `Closes #ID` 关联对应 Issue，并确保 CodeQL 静态审查与 CI 编译自动化审查被触发。PR body 按 `.github/PULL_REQUEST_TEMPLATE.md` 填写，便于 GitHub 统计 Issue、测试、CI 与风险数据。
 
 **阶段一：Spec Compliance**（独立 Sub-Agent）
 
@@ -234,11 +234,23 @@ Important（应修复）：
 结论：❌ FAIL（有 Critical 问题）
 ```
 
-**两阶段完成后，无论 PASS/FAIL，AI 自动将结论写入 log.md `## /review 结论`。**
+**审查完成后，无论 PASS/FAIL/NEEDS_INFO，AI 自动将结论写入 log.md `## /review 结论`。**
 
-FAIL → 回到 `/fix`，修完重新 `/review`，直到双阶段 PASS。
+**GitHub Readiness：** 两阶段之后，AI 会检查 PR 是否具备可统计信号：Issue closing keyword、Change Type、Test Evidence、Risk、AI Collaboration、CI/CodeQL 状态和验证命令。这个检查不替代 GitHub 统计，只保证 GitHub/API/Actions 后续能拿到干净数据。
+
+Spec Compliance 或 Code Quality FAIL → 回到 `/fix`，修完重新 `/review`，直到双阶段 PASS。GitHub Readiness NEEDS_INFO → 补齐 PR/CI/测试证据后再审。
 
 > 如果你接受某个 Important 问题不改，说「这个问题我们接受」，AI 会记到 log.md `## 遗留问题` 并注明原因，不阻塞流程。但 Critical 不能跳过。
+
+---
+
+### CI 失败：/fix-ci — 基于日志做最小修复
+
+```
+你：fix-ci add-coupon
+```
+
+当 GitHub Actions、CodeQL、lint、类型检查、单测或编译失败时，把完整失败日志或 workflow run URL 给 AI。AI 会识别失败类型和失败命令，优先本地复现，只修导致 CI 失败的必要文件，然后重新运行失败命令。完成后，AI 会把 CI run、根因、修复摘要、验证输出和 commit 写入 log.md `## /fix-ci 记录`。
 
 ---
 
@@ -313,7 +325,8 @@ AI：检测到 pom.xml，识别为 java-spring 项目，加载规则包...
 ├── rules/
 │   ├── project-context.md   ← AI 自动填充的工程上下文
 │   ├── coding-style.md      ← 可覆盖全局规范
-│   ├── commit-convention.md ← Issue / 分支 / commit / PR 规范
+│   ├── commit-convention.md ← Issue / commit / PR 规范
+│   ├── github-metrics.md    ← GitHub 指标统计口径
 │   └── domain-rules.md      ← 项目业务约束（你来填）
 ├── knowledge/
 │   └── index.md             ← 知识索引（/archive 自动维护）

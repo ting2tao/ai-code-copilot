@@ -33,7 +33,7 @@ ai-code-copilot 不把所有语言规则揉成一套。通用流程和安全红�
 
 | 层级 | 负责什么 | 示例 |
 |------|----------|------|
-| Core rules | AI 怎么协作、如何验证、通用安全和领域边界 | `rules/coding-style.md`、`rules/security.md`、`rules/commit-convention.md` |
+| Core rules | AI 怎么协作、如何验证、通用安全、GitHub 指标和领域边界 | `rules/coding-style.md`、`rules/security.md`、`rules/commit-convention.md`、`rules/github-metrics.md` |
 | Tech pack | 这个技术栈怎么写代码、怎么测试、怎么分层 | `packs/java-spring/`、`packs/go/`、`packs/python/`、`packs/frontend-react/` |
 | Project rules | 业务项目自己的架构、命令、领域规则 | `<project>/.ai_code_copilot/rules/` |
 
@@ -63,6 +63,7 @@ flowchart LR
     subgraph Side ["  辅助能力"]
         direction TB
         Fix["/fix<br/>增量修正"]
+        FixCI["/fix-ci<br/>CI 修复闭环"]
         Test["/test<br/>TDD 测试"]
         Debug["调试<br/>四阶段自动触发"]
     end
@@ -88,7 +89,7 @@ flowchart LR
     classDef init fill:#F5A623,stroke:#D4891A,color:#fff,font-size:14px
 
     class Brain,Spec,Code,Check gear
-    class Fix,Test,Debug side
+    class Fix,FixCI,Test,Debug side
     class Archive,Knowledge,Archives final
     class I1,I2,I3 init
 ```
@@ -154,8 +155,6 @@ AI：好的，我来提两个方案...
 **目的：按 spec 逐个 task 写代码，每步有证据验证。**
 
 - 严禁无票开发：spec/quick-card 必须记录关联 Issue ID 或 URL
-- 推荐一个 Issue 对应一个开发分支，分支名使用 `<type>/<description>-<IssueID>`，如 `feature/login-123`
-- 鼓励使用云端 Copilot 或本地 AI 助手，但必须遵守 Issue、验证、提交与 PR 门禁
 - 逐 task 执行（也可说"批量跑"）
 - 每个 task 完成后必须展示：编译输出 / 测试输出 / curl 结果
 - 禁止"应该没问题"等无证据声明
@@ -164,16 +163,21 @@ AI：好的，我来提两个方案...
 
 **commit message 规范：** 使用 Conventional Commits：`<type>[optional scope]: <description>`。Issue 信息不要放在前缀，推荐 `fix(org-search): 支持按组织名称查询服务范围 (#7)` 或在正文/PR 中写 `Refs #7`、`Closes #7`。
 
-**PR 规范：** PR 必须使用 `Closes #ID` 关联 Issue，并触发 CodeQL 静态审查与 CI 编译自动化审查。
+**PR 规范：** PR 必须使用 `Closes #ID` 关联 Issue，并触发 CodeQL 静态审查与 CI 编译自动化审查。PR 信息按 `.github/PULL_REQUEST_TEMPLATE.md` 填写，便于 GitHub 统计 issue、测试、CI 和风险数据。
 
-### 4. /review — 双阶段审查
+### 4. /review — 双阶段审查 + GitHub Readiness
 
 **阶段一：Spec Compliance** — 逐条对比 spec.md 和实际代码
 **阶段二：Code Quality** — 审查代码质量（Critical / Important / Minor）
+**阶段三：GitHub Readiness** — 检查 Issue、PR body、测试证据、CI/CodeQL 和指标口径是否可被 GitHub 干净统计
 
-任一阶段 FAIL → 回到 /fix → 修完再审。
+Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再审。GitHub Readiness 若为 NEEDS_INFO → 补齐 PR/CI/测试证据后再审。
 
-### 5. /archive — 知识沉淀
+### 5. /fix-ci — CI 失败修复闭环
+
+当 GitHub Actions、CodeQL、lint、类型检查、单测或编译失败时，粘贴完整日志或提供 workflow run URL。AI 会先识别失败命令，尽量本地复现，再做最小修复，重新运行失败命令，并把根因、验证输出和 commit 写入 log.md。
+
+### 6. /archive — 知识沉淀
 
 - 从 log.md 提取知识条目
 - 逐条确认是否沉淀到 `knowledge/`
@@ -192,6 +196,7 @@ AI：好的，我来提两个方案...
 | `/apply` | 开始写代码、继续执行 | 按 spec 逐个 task 编码，每个都有证据验证 | 代码 + `log.md` |
 | `/review` | 帮我看看代码、review 一下 | 先查有没有按 spec 实现，再查代码质量 | 审查报告 |
 | `/fix` | 修 bug、改一下 xxx、排查问题 | review 发现问题就修，修完再审 | 修复代码 |
+| `/fix-ci` | CI 报错、Actions 失败、流水线失败、修 CI | 基于 CI 日志做最小修复，并验证失败命令重新通过 | 修复代码 + `log.md` |
 | `/test` | 写测试、补单测、跑测试、测覆盖率 | Red/Green 循环，覆盖率 ≥ 80% | 测试用例 |
 | `/archive` | 归档、沉淀知识、整理变更 | 把踩过的坑沉淀成知识，下次自动加载 | `knowledge/` |
 
@@ -205,8 +210,9 @@ AI：好的，我来提两个方案...
 4. **渐进式复杂度**：按任务规模自动匹配 Quick / Standard / Complex 三档
 5. **两阶段评审**：spec-reviewer 审需求合规，code-quality-reviewer 审代码质量，职责隔离
 6. **完成即验证**：/fix、/apply 完成后必须展示编译和测试输出，禁止无证据声明"好了"
-7. **全程记录**：log.md 自动维护过程记录、知识发现、review 结论、遗留问题
-8. **知识飞轮**：/archive 将项目经验沉淀到知识库，下次 /propose 自动加载
+7. **GitHub 可统计**：PR 模板和 github-metrics 规则让 Issue、测试、CI、风险信息可被 GitHub/API/Actions 采集
+8. **全程记录**：log.md 自动维护过程记录、知识发现、review 结论、遗留问题
+9. **知识飞轮**：/archive 将项目经验沉淀到知识库，下次 /propose 自动加载
 
 ---
 
@@ -297,7 +303,8 @@ ai_code_copilot/
 ├── rules/
 │   ├── project-context.md      # 工程上下文（/init 生成）
 │   ├── coding-style.md         # 项目编码规范（覆盖全局）
-│   ├── commit-convention.md    # Issue / 分支 / commit / PR 规范
+│   ├── commit-convention.md    # Issue / commit / PR 规范
+│   ├── github-metrics.md       # GitHub 指标统计口径
 │   └── domain-rules.md         # 业务约束（手动填写）
 ├── knowledge/
 │   └── index.md                # 知识索引（/archive 维护）

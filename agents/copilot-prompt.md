@@ -66,6 +66,7 @@
 | "开始写代码" / "继续执行" / "apply" | → /apply |
 | "帮我看看代码" / "review 一下" | → /review |
 | "写测试" / "补单测" / "测覆盖率" | → /test |
+| "CI 报错" / "Actions 失败" / "流水线失败" / "修 CI" | → /fix-ci |
 | "归档 xxx" / "archive" | → /archive |
 | "初始化" / "分析工程结构" | → /init |
 
@@ -89,7 +90,7 @@
 📁 项目：[从 project-context.md 读取应用名，若未初始化则显示"未初始化，建议说「初始化项目」"]
 🔄 进行中变更：[变更名列表，或"无"]
 
-可用流程：init / brainstorm / propose / apply / fix / review / test / archive
+可用流程：init / brainstorm / propose / apply / fix / fix-ci / review / test / archive
 ```
 
 ---
@@ -243,8 +244,7 @@ Step 6 · HARD-GATE 确认
 
 Preflight（任一不满足则停止）：
 - 执行 `git status --short`，识别用户已有改动；不得覆盖与当前 task 无关的未提交改动
-- 检查当前分支；在 master/main 分支立即停止；推荐一个 Issue 对应一个开发分支
-- 检查分支名：推荐格式 `<type>/<description>-<IssueID>`，例如 `feature/login-123`、`fix/header-456`
+- 检查当前分支；在 master/main 分支立即停止
 - 检查 project-context.md 中记录的编译/测试命令是否存在；缺失则先询问用户补齐
 - 检查 tasks.md 或 quick-card.md 中列出的目标文件路径仍匹配当前代码；不匹配则触发 Reverse Sync
 - 涉及数据库、接口、状态机、权限、资金时，确认 spec/quick-card 中已有风险和回滚说明
@@ -297,7 +297,49 @@ git commit -m "<type>(<scope>): <中文简述>"
 5. git commit
 6. 此时才可说"修复完成"
 
-### /review <变更名> — 两阶段 Sub-Agent 审查
+### /fix-ci <变更名> — CI 失败修复闭环
+
+适用场景：GitHub Actions、CodeQL、lint、类型检查、单测、编译或安全扫描失败，需要基于 CI 日志做最小修复。
+
+```
+前置检查（任一不满足则停止）：
+- Standard/Complex：`spec.md`、`tasks.md`、`test-spec.md` 存在；Quick：`quick-card.md` 存在
+- 当前变更已有 /apply 或 /fix 的代码证据；若用户明确要求修当前工作区，必须先说明这是未提交工作区修复
+- 用户提供完整 CI 失败日志、workflow run URL、或足够定位的失败片段；日志不足时只要求补充日志，不猜测
+- 执行 `git status --short`，识别用户已有改动；不得覆盖与 CI 修复无关的改动
+
+Step 1 · 失败分类
+  - 标记失败类型：编译 / 单测 / lint / 类型检查 / CodeQL / 依赖安装 / 环境配置 / 其他
+  - 提取失败命令、报错文件、报错行、失败 job、首次失败时间（若日志包含）
+
+Step 2 · 本地复现
+  - 优先执行 CI 日志中的精确失败命令
+  - 若命令缺失，使用 project-context.md 中最接近的编译/测试/检查命令
+  - 无法本地复现时，必须说明原因，并把后续修复标记为"基于日志推断"
+
+Step 3 · 根因判断
+  - 写出具体根因假设："我认为失败是 X，因为日志中的 Y 与代码中的 Z 对应"
+  - 不允许用大范围重构掩盖 CI 失败；一次只修一个失败类别
+
+Step 4 · 最小修复
+  - 只修改导致 CI 失败的必要文件
+  - 单测失败优先补充或修正回归测试；CodeQL/安全扫描失败必须说明风险消除方式
+  - 若发现 spec/quick-card 与修复方向冲突，停止并触发 Reverse Sync
+
+Step 5 · 验证与记录
+  - 重新运行失败命令；若可行，再运行相关测试或完整检查命令
+  - 将记录写入 log.md `## /fix-ci 记录`：
+    - CI run URL / job 名称 / 失败类型 / 失败命令
+    - 根因
+    - 修复摘要
+    - 验证命令和实际输出摘要
+    - commit hash 和完整 message
+  - 自动 commit：`fix(ci): <中文简述>`、`fix(test): <中文简述>` 或 `ci(<scope>): <中文简述>`
+```
+
+完成声明铁律：必须先展示失败命令重新运行后的实际输出，才能说 CI 修复完成。
+
+### /review <变更名> — 两阶段 Sub-Agent 审查 + GitHub Readiness
 
 ```
 前置检查（任一不满足则停止）：
@@ -323,12 +365,24 @@ git commit -m "<type>(<scope>): <中文简述>"
   → PASS：建议执行 /archive
   → FAIL：回到 /fix，Critical 和 Important 必须修复
   → 用户显式接受某 Important 问题时：写入 log.md ## 遗留问题（注明接受原因）
+
+阶段三：GitHub Readiness（本地检查，不替代 GitHub 统计）
+  读取 `.ai_code_copilot/rules/github-metrics.md`；若项目级不存在则读取 `<COPILOT_HOME>/rules/github-metrics.md`
+  检查 GitHub 是否能干净统计本次变更：
+  - Issue ID/URL 已记录，PR body 应使用 `Closes #ID`
+  - PR 模板字段应填写 Change Type、Test Evidence、Risk、AI Collaboration
+  - 新增/更新测试，或给出无需测试原因
+  - 验证命令和实际结果已记录
+  - CI / CodeQL 已触发；缺失时已明示缺口并获得人工确认
+  - PR size、generated/vendor/lock/snapshot 等统计排除项已按规则说明
+  - 若存在 CI 失败，已通过 /fix-ci 或等效记录说明失败原因、修复命令和结果
 ```
 
-两阶段完成后（无论 PASS/FAIL）：
+审查完成后（无论 PASS/FAIL / NEEDS_INFO）：
   将审查结论写入 .ai_code_copilot/changes/<变更名>/log.md 的 ## /review 结论 章节：
   - Spec Compliance：结论（PASS/FAIL）+ 问题列表
   - Code Quality：结论（PASS/FAIL）+ Critical/Important 问题列表
+  - GitHub Readiness：READY / NEEDS_INFO + 缺失字段列表
 
 Quick 档 /review：阶段一改为对照 quick-card 的目标、涉及文件、非目标、验收方式和风险项做轻量合规检查；阶段二照常执行 Code Quality。
 
@@ -420,14 +474,14 @@ Phase 4 · 实施修复
 
 1. 严禁无票开发；Issue ID/URL 必须写入 `spec.md` 或 `quick-card.md`
 2. 禁止在 `master`/`main` 直接开发或提交
-3. 分支命名不是 GitHub 官方强制；若仓库无既有规范，推荐 `<branch-type>/<description>-<IssueID>`，例如 `feature/login-123`、`fix/header-456`
-4. 每个 task/fix 原则上一 task 一 commit
-5. commit message 使用 Conventional Commits：`<type>[optional scope]: <description>`
-6. commit 前执行 `project-context.md` 中记录的编译/测试/检查命令
-7. commit hash 和完整 message 必须写入 `tasks.md` 或 `log.md`
-8. 禁止自动 push — push 由用户主动触发
-9. PR body 必须使用 GitHub closing keyword，例如 `Closes #ID`
-10. PR 必须触发 CodeQL 和 CI；缺失时必须在 PR 中标明并获得人工确认
+3. 每个 task/fix 原则上一 task 一 commit
+4. commit message 使用 Conventional Commits：`<type>[optional scope]: <description>`
+5. commit 前执行 `project-context.md` 中记录的编译/测试/检查命令
+6. commit hash 和完整 message 必须写入 `tasks.md` 或 `log.md`
+7. 禁止自动 push — push 由用户主动触发
+8. PR body 必须使用 GitHub closing keyword，例如 `Closes #ID`
+9. PR 必须触发 CodeQL 和 CI；缺失时必须在 PR 中标明并获得人工确认
+10. GitHub 指标口径见 `rules/github-metrics.md`；项目侧负责留下可统计信号，最终统计由 GitHub/API/Actions 完成
 
 ---
 
