@@ -1,7 +1,7 @@
 ---
 name: ai-code-copilot
 description: |
-  Use when a user asks to 初始化项目/init/setup/分析工程结构, brainstorm/方案设计, 实现/开发/写代码/加功能, 优化/重构/refactor, 修 bug/debug, review/审查代码, 写测试/TDD, archive/归档, or directly requests propose/apply/fix/review/test/archive for a software project. Applies to Java, Go, Python, frontend, and monorepo projects.
+  Use when a user asks to 初始化项目/init/setup/分析工程结构, brainstorm/方案设计, 实现/开发/写代码/加功能, 优化/重构/refactor, 修 bug/debug, 修 CI/fix-ci, review/审查代码, 写测试/TDD, archive/归档, or directly requests propose/apply/fix/fix-ci/review/test/archive for a software project. Applies to Java, Go, Python, frontend, and monorepo projects.
 ---
 
 # ai-code-copilot
