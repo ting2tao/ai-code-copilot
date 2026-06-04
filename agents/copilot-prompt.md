@@ -228,7 +228,7 @@ Step 6 · HARD-GATE 确认
 ```
 
 **Quick 轻量提案规则：**
-- 在 `.ai_code_copilot/changes/<变更名>/quick-card.md` 写入：目标、涉及文件、非目标、验收方式、风险/人工确认项
+- 在 `.ai_code_copilot/changes/<变更名>/quick-card.md` 写入：关联 Issue、目标、涉及文件、非目标、验收方式、风险/人工确认项
 - 同步创建 log.md，记录档位为 Quick
 - 显示："quick-card 已生成。请确认后回复「确认」才能执行。"
 - 收到确认后，在 quick-card.md 与 log.md 记录确认时间、确认人、确认范围摘要 hash
@@ -239,10 +239,12 @@ Step 6 · HARD-GATE 确认
 - Standard/Complex：`spec.md`、`tasks.md`、`test-spec.md` 存在
 - Quick：`quick-card.md` 存在
 - 用户在本次会话中已显式确认，或文档中存在确认记录且当前确认范围摘要 hash 未变化
+- 关联 Issue 已记录：Standard/Complex 必须在 spec.md 写明 Issue ID/URL；Quick 必须在 quick-card.md 写明 Issue ID/URL。严禁无票开发
 
 Preflight（任一不满足则停止）：
 - 执行 `git status --short`，识别用户已有改动；不得覆盖与当前 task 无关的未提交改动
-- 检查当前分支；在 master/main 分支立即停止
+- 检查当前分支；在 master/main 分支立即停止；推荐一个 Issue 对应一个开发分支
+- 检查分支名：推荐格式 `<type>/<description>-<IssueID>`，例如 `feature/login-123`、`fix/header-456`
 - 检查 project-context.md 中记录的编译/测试命令是否存在；缺失则先询问用户补齐
 - 检查 tasks.md 或 quick-card.md 中列出的目标文件路径仍匹配当前代码；不匹配则触发 Reverse Sync
 - 涉及数据库、接口、状态机、权限、资金时，确认 spec/quick-card 中已有风险和回滚说明
@@ -265,20 +267,27 @@ Preflight（任一不满足则停止）：
 **自动 git commit：**
 ```bash
 git add <changed files>
-git commit -m "[<变更名>] <中文简述>"
+git commit -m "<type>(<scope>): <中文简述>"
 ```
 注意：禁止在 master/main 分支提交。提交前执行 project-context.md 中记录的编译检查命令确认可编译。
+
+**commit message 规范（Conventional Commits）：**
+- 格式：`<type>[optional scope]: <description>`，例如 `feat(org-search): 支持按组织名称查询服务范围`
+- 常用 type：`feat`（新功能）、`fix`（修复）、`docs`（文档）、`refactor`（重构）、`test`（测试）、`chore`（杂项）、`perf`（性能）、`ci`（CI）、`build`（构建）
+- scope 使用模块或能力名，例如 `search`、`org-search`、`coupon`；不要把 `[issue-xxx]` 放在 commit message 前缀
+- 关联 Issue 时优先使用 `fix(org-search): 支持按组织名称查询服务范围 (#7)`，或在 commit body/PR body 写 `Refs #7` / `Closes #7`
+- 提交完成后必须立即把 commit hash 和完整 message 写入 tasks.md 或 log.md，作为 /review 的提交证据
 
 **所有 task 完成后，回填 log.md ## 变更信息：**
 - 完成时间：当天日期
 - 涉及文件数：本次变更实际改动的文件数
-- commit 列表：优先读取 tasks.md/log.md 中记录的 commit hash；缺失时再用 `git log --oneline | grep "^\[<变更名>\]"` 兜底
+- commit 列表：读取 tasks.md/log.md 中记录的 commit hash 和 message；若缺失则先补录，不依赖非标准 message 前缀兜底
 
 ### /fix <变更名> [描述] — 增量修正
 
 - /review 后的修正环节，在已完成基础上做增量改动
 - **文档同步铁律**：每次 /fix 完成后必须同步更新 spec.md/tasks.md/test-spec.md/log.md；Quick 档同步 quick-card.md/log.md
-- 自动 commit：`[<变更名>] fix: <中文简述>`
+- 自动 commit：`fix(<scope>): <中文简述>`，scope 使用模块或能力名
 
 **完成声明铁律（/fix 执行顺序）：**
 1. 修改代码
@@ -293,8 +302,7 @@ git commit -m "[<变更名>] <中文简述>"
 ```
 前置检查（任一不满足则停止）：
 - 优先读取 log.md/tasks.md 中记录的 /apply commit hash
-- 若无 commit hash，再执行 `git log --oneline | grep "^\[<变更名>\]"` 兜底
-- 若仍无匹配提交 → 停止，提示："未检测到 /apply 的提交记录，请先执行 /apply <变更名>"
+- 若无 commit hash → 停止，提示："未检测到 /apply 的提交记录，请先补录 tasks.md/log.md 或执行 /apply <变更名>"
 - Quick 档也需要有 quick-card 与代码变更证据；无提交但有用户明确要求 review 当前工作区时，必须先说明这是未提交工作区审查
 
 阶段一：Spec Compliance（spec-reviewer）
@@ -375,7 +383,7 @@ Complex 档在进入子项目 Standard 流程前，必须生成 `.ai_code_copilo
    - 已沉淀 N 条知识 → knowledge/
    - 已归档 changes/<变更名> → changes/archives/
    - knowledge 库累计条目数（按类别统计）
-7. git commit：[<变更名>] archive: 知识沉淀完成
+7. git commit：`docs(archive): 归档 <变更名>`
 ```
 
 ### 调试流程（自动触发，无需命令）
@@ -408,11 +416,17 @@ Phase 4 · 实施修复
 
 ## Git 规范
 
-1. 禁止 master/main 分支直接变更 — 每次 apply 前检查，在主干上立即停止
-2. 每个 task/fix 自动 commit — 一 task 一 commit
-3. commit 前执行 project-context.md 中记录的编译检查命令
-4. 禁止自动 push — push 由用户主动触发
-5. commit message 格式：`[<变更名>] <中文简述>`
+1. Issue 依赖：严禁无票开发；所有代码变更必须关联一个 Issue，并在 spec.md 或 quick-card.md 中记录 Issue ID/URL
+2. 分支管理：推荐一个 Issue 对应一个开发分支；分支命名推荐 `<type>/<description>-<IssueID>`，例如 `feature/login-123`、`fix/header-456`
+3. 禁止 master/main 分支直接变更 — 每次 apply 前检查，在主干上立即停止
+4. 辅助开发：鼓励使用云端 Copilot 或本地 AI 助手，但必须遵守本流程的 Issue、验证、提交与 PR 门禁
+5. 每个 task/fix 自动 commit — 一 task 一 commit
+6. commit 前执行 project-context.md 中记录的编译检查命令
+7. commit message 使用 Conventional Commits：`<type>[optional scope]: <description>`
+8. Issue 信息不要放在 commit 前缀；需要关联时使用 `(#7)`、`Refs #7`
+9. 禁止自动 push — push 由用户主动触发
+10. PR 必须关联对应 Issue ID，使用 `Closes #ID` 关键字
+11. 提交 PR 时必须触发 CodeQL 静态审查与 CI 编译自动化审查；若仓库未配置，应在 PR 中标明缺口并停止合并
 
 ---
 

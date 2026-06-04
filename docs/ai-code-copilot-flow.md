@@ -64,11 +64,11 @@ flowchart TD
 
     Apply[/apply<br/>执行编码/] --> CheckSpec{spec/tasks/test-spec<br/>或 quick-card 存在?}
     CheckSpec -->|"否"| Propose
-    CheckSpec -->|"是"| Preflight["Preflight<br/>git status / 分支 / 命令 / 路径 / 风险"]
+    CheckSpec -->|"是"| Preflight["Preflight<br/>Issue / git status / 分支 / 命令 / 路径 / 风险"]
     Preflight --> ExecTask["逐 task 执行"]
     ExecTask --> Verify["Verification 铁律<br/>展示编译/测试输出"]
     Verify --> WriteLog["实时写入 log.md<br/>决策 + 知识发现"]
-    WriteLog --> GitCommit["自动 git commit<br/>变更名 简述"]
+    WriteLog --> GitCommit["自动 git commit<br/>Conventional Commits"]
     GitCommit --> MoreTasks{还有 task?}
     MoreTasks -->|"是"| ExecTask
     MoreTasks -->|"否"| FillLog["回填 log.md<br/>变更信息"]
@@ -88,7 +88,7 @@ flowchart TD
     FixFlow[/fix<br/>增量修正/] --> FixExec["修改代码"]
     FixExec --> FixVerify["编译检查 + 测试验证"]
     FixVerify --> FixLog["同步更新 spec / tasks / test-spec / log<br/>Quick 同步 quick-card"]
-    FixLog --> FixCommit["git commit<br/>变更名 fix: 简述"]
+    FixLog --> FixCommit["git commit<br/>fix(scope): 简述"]
     FixCommit --> FixDone{回到 review<br/>或继续开发}
 
     TestFlow[/test<br/>TDD 测试/] --> TestRun["先跑已有测试套件"]
@@ -105,7 +105,7 @@ flowchart TD
     ExtKnowledge --> ConfirmKnowledge{用户确认<br/>沉淀哪些?}
     ConfirmKnowledge --> SaveKnowledge["写入 knowledge/<br/>更新 index.md"]
     SaveKnowledge --> MoveArchive["变更目录移至<br/>changes/archives/"]
-    MoveArchive --> ArchiveCommit["git commit<br/>变更名 archive: 知识沉淀完成"]
+    MoveArchive --> ArchiveCommit["git commit<br/>docs(archive): 归档"]
     ArchiveCommit --> Done(["✅ 全流程完成"])
 
     ExecTask -.->|"遇到 bug"| DebugFlow

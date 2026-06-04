@@ -153,11 +153,18 @@ AI：好的，我来提两个方案...
 
 **目的：按 spec 逐个 task 写代码，每步有证据验证。**
 
+- 严禁无票开发：spec/quick-card 必须记录关联 Issue ID 或 URL
+- 推荐一个 Issue 对应一个开发分支，分支名使用 `<type>/<description>-<IssueID>`，如 `feature/login-123`
+- 鼓励使用云端 Copilot 或本地 AI 助手，但必须遵守 Issue、验证、提交与 PR 门禁
 - 逐 task 执行（也可说"批量跑"）
 - 每个 task 完成后必须展示：编译输出 / 测试输出 / curl 结果
 - 禁止"应该没问题"等无证据声明
 - 实时写入 log.md（决策、踩坑、知识发现）
-- 自动 git commit：`[变更名] 中文简述`
+- 自动 git commit：`feat(scope): 中文简述` / `fix(scope): 中文简述`
+
+**commit message 规范：** 使用 Conventional Commits：`<type>[optional scope]: <description>`。Issue 信息不要放在前缀，推荐 `fix(org-search): 支持按组织名称查询服务范围 (#7)` 或在正文/PR 中写 `Refs #7`、`Closes #7`。
+
+**PR 规范：** PR 必须使用 `Closes #ID` 关联 Issue，并触发 CodeQL 静态审查与 CI 编译自动化审查。
 
 ### 4. /review — 双阶段审查
 
