@@ -157,7 +157,9 @@ AI：好的，我来提两个方案...
 - 每个 task 完成后必须展示：编译输出 / 测试输出 / curl 结果
 - 禁止"应该没问题"等无证据声明
 - 实时写入 log.md（决策、踩坑、知识发现）
-- 自动 git commit：`[变更名] 中文简述`
+- 自动 git commit：`feat(scope): 中文简述` / `fix(scope): 中文简述`
+
+**commit message 规范：** 使用 Conventional Commits：`<type>[optional scope]: <description>`。Issue 信息不要放在前缀，推荐 `fix(org-search): 支持按组织名称查询服务范围 (#7)` 或在正文/PR 中写 `Refs #7`、`Closes #7`。
 
 ### 4. /review — 双阶段审查
 
