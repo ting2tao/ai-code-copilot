@@ -228,7 +228,7 @@ Step 6 · HARD-GATE 确认
 ```
 
 **Quick 轻量提案规则：**
-- 在 `.ai_code_copilot/changes/<变更名>/quick-card.md` 写入：目标、涉及文件、非目标、验收方式、风险/人工确认项
+- 在 `.ai_code_copilot/changes/<变更名>/quick-card.md` 写入：关联 Issue、目标、涉及文件、非目标、验收方式、风险/人工确认项
 - 同步创建 log.md，记录档位为 Quick
 - 显示："quick-card 已生成。请确认后回复「确认」才能执行。"
 - 收到确认后，在 quick-card.md 与 log.md 记录确认时间、确认人、确认范围摘要 hash
@@ -239,10 +239,12 @@ Step 6 · HARD-GATE 确认
 - Standard/Complex：`spec.md`、`tasks.md`、`test-spec.md` 存在
 - Quick：`quick-card.md` 存在
 - 用户在本次会话中已显式确认，或文档中存在确认记录且当前确认范围摘要 hash 未变化
+- 关联 Issue 已记录：Standard/Complex 必须在 spec.md 写明 Issue ID/URL；Quick 必须在 quick-card.md 写明 Issue ID/URL。严禁无票开发
 
 Preflight（任一不满足则停止）：
 - 执行 `git status --short`，识别用户已有改动；不得覆盖与当前 task 无关的未提交改动
-- 检查当前分支；在 master/main 分支立即停止
+- 检查当前分支；在 master/main 分支立即停止；推荐一个 Issue 对应一个开发分支
+- 检查分支名：推荐格式 `<type>/<description>-<IssueID>`，例如 `feature/login-123`、`fix/header-456`
 - 检查 project-context.md 中记录的编译/测试命令是否存在；缺失则先询问用户补齐
 - 检查 tasks.md 或 quick-card.md 中列出的目标文件路径仍匹配当前代码；不匹配则触发 Reverse Sync
 - 涉及数据库、接口、状态机、权限、资金时，确认 spec/quick-card 中已有风险和回滚说明
@@ -414,12 +416,17 @@ Phase 4 · 实施修复
 
 ## Git 规范
 
-1. 禁止 master/main 分支直接变更 — 每次 apply 前检查，在主干上立即停止
-2. 每个 task/fix 自动 commit — 一 task 一 commit
-3. commit 前执行 project-context.md 中记录的编译检查命令
-4. 禁止自动 push — push 由用户主动触发
-5. commit message 使用 Conventional Commits：`<type>[optional scope]: <description>`
-6. Issue 信息不要放在前缀；需要关联时使用 `(#7)`、`Refs #7` 或 `Closes #7`
+1. Issue 依赖：严禁无票开发；所有代码变更必须关联一个 Issue，并在 spec.md 或 quick-card.md 中记录 Issue ID/URL
+2. 分支管理：推荐一个 Issue 对应一个开发分支；分支命名推荐 `<type>/<description>-<IssueID>`，例如 `feature/login-123`、`fix/header-456`
+3. 禁止 master/main 分支直接变更 — 每次 apply 前检查，在主干上立即停止
+4. 辅助开发：鼓励使用云端 Copilot 或本地 AI 助手，但必须遵守本流程的 Issue、验证、提交与 PR 门禁
+5. 每个 task/fix 自动 commit — 一 task 一 commit
+6. commit 前执行 project-context.md 中记录的编译检查命令
+7. commit message 使用 Conventional Commits：`<type>[optional scope]: <description>`
+8. Issue 信息不要放在 commit 前缀；需要关联时使用 `(#7)`、`Refs #7`
+9. 禁止自动 push — push 由用户主动触发
+10. PR 必须关联对应 Issue ID，使用 `Closes #ID` 关键字
+11. 提交 PR 时必须触发 CodeQL 静态审查与 CI 编译自动化审查；若仓库未配置，应在 PR 中标明缺口并停止合并
 
 ---
 

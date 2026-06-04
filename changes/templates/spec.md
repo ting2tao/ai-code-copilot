@@ -3,7 +3,7 @@
 > **状态**：[ ] 草稿 / [ ] 已确认 / [ ] 实施中 / [ ] 已完成
 > **复杂度档位**：[ ] Quick / [ ] Standard / [ ] Complex
 > **创建时间**：{YYYY-MM-DD}
-> **关联需求**：{需求描述或 Issue 链接}
+> **关联 Issue**：{Issue ID 或 URL，必填；严禁无票开发}
 > **确认时间**：{YYYY-MM-DD HH:mm 或"未确认"}
 > **确认人**：{用户/姓名}
 > **确认范围 Hash**：{spec.md + tasks.md + test-spec.md 内容摘要}

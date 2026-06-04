@@ -158,6 +158,8 @@ add-coupon/
 你：apply add-coupon
 ```
 
+**开发标准流：** 严禁无票开发。每个代码变更必须关联 Issue，spec/quick-card 里要记录 Issue ID 或 URL；推荐一个 Issue 对应一个开发分支，分支名使用 `<type>/<description>-<IssueID>`，例如 `feature/login-123`、`fix/header-456`。可以使用云端 Copilot 或本地 AI 助手，但必须遵守 Issue、验证、提交与 PR 门禁。
+
 AI 逐 task 执行，每完成一个 task，必须展示**可验证证据**：
 
 ```
@@ -199,6 +201,8 @@ AI：⚠️ 发现问题：spec §3.2 要求发放记录写 coupon_issue_log 表
 ```
 
 **前置检查：** AI 先读取 tasks.md/log.md 中记录的 /apply commit hash。没有则停止，提示先补录提交记录或执行 `/apply`——没有代码证据就没有可审查的对象。
+
+**PR 要求：** 提交 PR 时必须用 `Closes #ID` 关联对应 Issue，并确保 CodeQL 静态审查与 CI 编译自动化审查被触发。
 
 **阶段一：Spec Compliance**（独立 Sub-Agent）
 

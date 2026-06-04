@@ -3,7 +3,7 @@
 > **状态**：[ ] 探索中 / [ ] 已确定
 > **复杂度预判**：[ ] Quick / [ ] Standard / [ ] Complex
 > **创建时间**：{YYYY-MM-DD}
-> **关联需求**：{需求描述或 Issue 链接}
+> **关联 Issue**：{Issue ID 或 URL，必填；严禁无票开发}
 
 ---
 

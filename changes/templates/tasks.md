@@ -8,7 +8,9 @@
 ## Preflight
 
 - [ ] `git status --short` 已检查，未覆盖用户无关改动
+- [ ] spec.md 或 quick-card.md 已记录关联 Issue ID/URL，未无票开发
 - [ ] 当前分支不是 master/main
+- [ ] 当前分支名符合推荐格式 `<type>/<description>-<IssueID>`，或已记录例外原因
 - [ ] project-context.md 中的编译/测试命令可执行
 - [ ] 本文件列出的目标文件路径仍匹配当前代码
 - [ ] 数据库/接口/状态机/权限/资金相关风险已在 spec.md 标注，且有回滚说明

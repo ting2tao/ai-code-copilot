@@ -64,7 +64,7 @@ flowchart TD
 
     Apply[/apply<br/>执行编码/] --> CheckSpec{spec/tasks/test-spec<br/>或 quick-card 存在?}
     CheckSpec -->|"否"| Propose
-    CheckSpec -->|"是"| Preflight["Preflight<br/>git status / 分支 / 命令 / 路径 / 风险"]
+    CheckSpec -->|"是"| Preflight["Preflight<br/>Issue / git status / 分支 / 命令 / 路径 / 风险"]
     Preflight --> ExecTask["逐 task 执行"]
     ExecTask --> Verify["Verification 铁律<br/>展示编译/测试输出"]
     Verify --> WriteLog["实时写入 log.md<br/>决策 + 知识发现"]
