@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ai-code-copilot 团队推广演讲</title>
+  <style>
+    :root {
+      --ink: #14211b;
+      --muted: #5d6a63;
+      --paper: #f7f3ea;
+      --panel: #fffaf0;
+      --line: #d8cdb9;
+      --green: #21664f;
+      --green-2: #70a987;
+      --amber: #c7862a;
+      --red: #a9493a;
+      --blue: #345d8c;
+      --shadow: 0 24px 70px rgba(20, 33, 27, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--ink);
+      background:
+        linear-gradient(120deg, rgba(33, 102, 79, 0.09), transparent 34%),
+        linear-gradient(300deg, rgba(199, 134, 42, 0.12), transparent 38%),
+        var(--paper);
+      font-family: Charter, "Iowan Old Style", "Songti SC", "Noto Serif CJK SC", Georgia, serif;
+      letter-spacing: 0;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.34;
+      background-image:
+        linear-gradient(rgba(20, 33, 27, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20, 33, 27, 0.04) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent 84%);
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: minmax(64px, 1fr) minmax(0, 1120px) minmax(64px, 1fr);
+      grid-template-rows: minmax(44px, 0.7fr) minmax(0, 740px) minmax(64px, 0.9fr);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(28px) scale(0.985);
+      transition: opacity 260ms ease, transform 260ms ease;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0) scale(1);
+    }
+
+    .sheet {
+      grid-column: 2;
+      grid-row: 2;
+      position: relative;
+      min-height: 0;
+      padding: 54px 62px 44px;
+      border: 1px solid rgba(20, 33, 27, 0.12);
+      background: rgba(255, 250, 240, 0.86);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .sheet::before {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      border: 1px solid rgba(20, 33, 27, 0.08);
+      pointer-events: none;
+    }
+
+    .kicker {
+      margin: 0 0 18px;
+      color: var(--green);
+      font: 700 13px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2 {
+      margin: 0;
+      max-width: 980px;
+      font-family: "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-weight: 820;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      font-size: clamp(52px, 7vw, 108px);
+      line-height: 0.96;
+    }
+
+    h2 {
+      font-size: clamp(38px, 4.4vw, 72px);
+      line-height: 1.02;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 24px;
+      line-height: 1.55;
+    }
+
+    .lead {
+      margin-top: 26px;
+      max-width: 820px;
+      color: #2c3c33;
+      font-size: 28px;
+      line-height: 1.48;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+      margin-top: 34px;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .card {
+      border: 1px solid rgba(20, 33, 27, 0.13);
+      background: rgba(255, 255, 255, 0.48);
+      padding: 22px 24px;
+      min-height: 156px;
+    }
+
+    .card strong {
+      display: block;
+      margin-bottom: 12px;
+      color: var(--ink);
+      font: 780 23px/1.25 "Avenir Next", "PingFang SC", sans-serif;
+    }
+
+    .card span,
+    .card li {
+      color: var(--muted);
+      font-size: 20px;
+      line-height: 1.45;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 23px;
+    }
+
+    li + li {
+      margin-top: 9px;
+    }
+
+    .quote {
+      margin-top: 46px;
+      padding: 28px 32px;
+      border-left: 7px solid var(--green);
+      background: rgba(33, 102, 79, 0.08);
+      color: var(--ink);
+      font: 760 32px/1.35 "Avenir Next", "PingFang SC", sans-serif;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 40px;
+      align-items: stretch;
+    }
+
+    .step {
+      position: relative;
+      padding: 22px 18px;
+      min-height: 142px;
+      border: 1px solid rgba(20, 33, 27, 0.13);
+      background: rgba(255, 255, 255, 0.48);
+    }
+
+    .step::after {
+      content: ">";
+      position: absolute;
+      top: 50%;
+      right: -12px;
+      z-index: 1;
+      width: 24px;
+      height: 24px;
+      transform: translateY(-50%);
+      border-radius: 50%;
+      color: #fff;
+      background: var(--green);
+      text-align: center;
+      font: 800 16px/23px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .step:last-child::after {
+      display: none;
+    }
+
+    .step b {
+      display: block;
+      margin-bottom: 8px;
+      font: 780 20px/1.2 "Avenir Next", "PingFang SC", sans-serif;
+    }
+
+    .step small {
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.35;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      padding: 8px 13px;
+      border: 1px solid rgba(20, 33, 27, 0.15);
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.44);
+      font: 700 15px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1.04fr 0.96fr;
+      gap: 34px;
+      margin-top: 34px;
+      align-items: start;
+    }
+
+    .mini-title {
+      margin-bottom: 14px;
+      color: var(--ink);
+      font: 780 24px/1.2 "Avenir Next", "PingFang SC", sans-serif;
+    }
+
+    .codebox {
+      padding: 22px;
+      border: 1px solid rgba(20, 33, 27, 0.13);
+      background: #16241d;
+      color: #edf6ee;
+      font: 16px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 34px;
+    }
+
+    .bad,
+    .good {
+      min-height: 280px;
+      padding: 26px;
+      border: 1px solid rgba(20, 33, 27, 0.13);
+      background: rgba(255, 255, 255, 0.46);
+    }
+
+    .bad h3,
+    .good h3 {
+      margin: 0 0 18px;
+      font: 780 28px/1.2 "Avenir Next", "PingFang SC", sans-serif;
+    }
+
+    .bad h3 {
+      color: var(--red);
+    }
+
+    .good h3 {
+      color: var(--green);
+    }
+
+    .metric {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 16px;
+      align-items: center;
+      margin-top: 24px;
+    }
+
+    .metric b {
+      font: 800 42px/1 "Avenir Next", "PingFang SC", sans-serif;
+      color: var(--green);
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 20px;
+      line-height: 1.4;
+    }
+
+    .callout {
+      margin-top: 32px;
+      padding: 26px 28px;
+      color: var(--ink);
+      background: rgba(199, 134, 42, 0.12);
+      border: 1px solid rgba(199, 134, 42, 0.34);
+      font-size: 23px;
+      line-height: 1.48;
+    }
+
+    .footer {
+      position: fixed;
+      left: 28px;
+      right: 28px;
+      bottom: 20px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      color: rgba(20, 33, 27, 0.58);
+      font: 700 13px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      pointer-events: none;
+    }
+
+    .progress {
+      flex: 1;
+      height: 6px;
+      border: 1px solid rgba(20, 33, 27, 0.18);
+      background: rgba(255, 255, 255, 0.42);
+    }
+
+    .bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--green), var(--amber));
+      transition: width 180ms ease;
+    }
+
+    .nav {
+      position: fixed;
+      right: 30px;
+      top: 26px;
+      z-index: 20;
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav button {
+      width: 40px;
+      height: 40px;
+      border: 1px solid rgba(20, 33, 27, 0.18);
+      color: var(--ink);
+      background: rgba(255, 250, 240, 0.88);
+      cursor: pointer;
+    }
+
+    .nav button:hover {
+      background: #fff;
+    }
+
+    .notes {
+      position: absolute;
+      left: 62px;
+      right: 62px;
+      bottom: 36px;
+      color: rgba(20, 33, 27, 0.52);
+      font: 700 14px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .accent {
+      color: var(--green);
+    }
+
+    .amber {
+      color: var(--amber);
+    }
+
+    .blue {
+      color: var(--blue);
+    }
+
+    @media (max-width: 880px) {
+      body {
+        overflow: auto;
+      }
+
+      .deck {
+        height: auto;
+      }
+
+      .slide,
+      .slide.active {
+        position: relative;
+        display: block;
+        min-height: 100vh;
+        padding: 18px;
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+      }
+
+      .slide:not(.active) {
+        display: none;
+      }
+
+      .sheet {
+        min-height: calc(100vh - 36px);
+        padding: 34px 24px 72px;
+      }
+
+      .sheet::before {
+        inset: 10px;
+      }
+
+      h1 {
+        font-size: 48px;
+      }
+
+      h2 {
+        font-size: 36px;
+      }
+
+      p,
+      .lead {
+        font-size: 20px;
+      }
+
+      .grid.two,
+      .grid.three,
+      .split,
+      .comparison,
+      .flow {
+        grid-template-columns: 1fr;
+      }
+
+      .step::after {
+        display: none;
+      }
+
+      .notes {
+        left: 24px;
+        right: 24px;
+      }
+    }
+
+    @media print {
+      html,
+      body {
+        overflow: visible;
+        background: white;
+      }
+
+      .deck {
+        height: auto;
+      }
+
+      .slide,
+      .slide.active {
+        position: relative;
+        display: block;
+        width: 100%;
+        height: 100vh;
+        page-break-after: always;
+        opacity: 1;
+        transform: none;
+      }
+
+      .sheet {
+        box-shadow: none;
+      }
+
+      .nav,
+      .footer {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" aria-live="polite">
+    <section class="slide active">
+      <div class="sheet">
+        <p class="kicker">TEAM TALK / 10-15 MIN</p>
+        <h1>让 AI 在正确的上下文里写代码</h1>
+        <p class="lead">ai-code-copilot 是一套面向工程团队的协作纪律：先对齐需求，再锁定规格，最后编码、验证、审查、归档。</p>
+        <div class="quote">Context First, Code Follows.</div>
+        <div class="tag-row">
+          <span class="tag">Codex</span>
+          <span class="tag">Claude Code</span>
+          <span class="tag">Spec-driven</span>
+          <span class="tag">Evidence Before Claims</span>
+        </div>
+        <div class="notes">开场建议：先强调这不是“多一个提示词”，而是把团队协作流程产品化。</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="sheet">
+        <p class="kicker">01 / WHY</p>
+        <h2>问题不是 AI 不会写代码，而是它经常不知道该写什么</h2>
+        <div class="comparison">
+          <div class="bad">
+            <h3>直接开写</h3>
+            <ul>
+              <li>需求理解靠聊天记忆</li>
+              <li>变更范围不清，容易越写越多</li>
+              <li>测试和验证变成事后补票</li>
+              <li>下次会话重新解释一遍背景</li>
+            </ul>
+          </div>
+          <div class="good">
+            <h3>上下文先行</h3>
+            <ul>
+              <li>项目规则、领域约束先加载</li>
+              <li>spec / quick-card 明确边界</li>
+              <li>每个 task 有验证证据</li>
+              <li>经验沉淀到 knowledge，下一次自动复用</li>
+            </ul>
+          </div>
+        </div>
+        <div class="notes">这一页的重点：AI 写代码很便宜，但修偏航、补上下文、复盘事故很贵。</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="sheet">
+        <p class="kicker">02 / CORE IDEA</p>
+        <h2>ai-code-copilot 把“上下文”变成项目资产</h2>
+        <div class="grid three">
+          <div class="card">
+            <strong>rules/</strong>
+            <span>项目架构、编码风格、业务约束、安全红线。AI 每次工作前先读规则。</span>
+          </div>
+          <div class="card">
+            <strong>changes/</strong>
+            <span>每个需求的 design-brief、spec、tasks、test-spec、log。过程可追溯。</span>
+          </div>
+          <div class="card">
+            <strong>knowledge/</strong>
+            <span>从 review 和 archive 沉淀经验。踩过的坑不靠人肉提醒。</span>
+          </div>
+        </div>
+        <div class="callout">这些内容放在 <b>.ai_code_copilot/</b>，建议提交到业务项目 Git。它不是缓存，是团队共享上下文。</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="sheet">
+        <p class="kicker">03 / FLOW</p>
+        <h2>完整流程：从想法到归档</h2>
+        <div class="flow">
+          <div class="step">
+            <b>brainstorm</b>
+            <small>对齐问题、现状、方案和风险。</small>
+          </div>
+          <div class="step">
+            <b>propose</b>
+            <small>生成 spec、tasks、test-spec 和 log。</small>
+          </div>
+          <div class="step">
+            <b>apply</b>
+            <small>按 task 写代码，每步验证。</small>
+          </div>
+          <div class="step">
+            <b>review</b>
+            <small>先查需求合规，再查代码质量。</small>
+          </div>
+          <div class="step">
+            <b>archive</b>
+            <small>把经验沉淀到 knowledge。</small>
+          </div>
+        </div>
+        <p class="lead">核心变化：AI 不再是“即时生成器”，而是沿着团队认可的流程推进。</p>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="sheet">
+        <p class="kicker">04 / COMPLEXITY</p>
+        <h2>不是所有需求都走同一套重量级流程</h2>
+        <div class="grid three">
+          <div class="card">
+            <strong>Quick</strong>
+            <span>小改动，少于 5 个文件。生成 quick-card + log，轻量审查。</span>
+          </div>
+          <div class="card">
+            <strong>Standard</strong>
+            <span>默认新需求。brainstorm → propose → apply → review。</span>
+          </div>
+          <div class="card">
+            <strong>Complex</strong>
+            <span>跨模块或长周期。先 roadmap，再拆子项目分别 Standard。</span>
+          </div>
+        </div>
+        <div class="quote">默认建议：业务逻辑走 Standard，纯小修才走 Quick。</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="sheet">
+        <p class="kicker">05 / GATES</p>
+        <h2>两条硬门禁，挡住大多数“AI 写歪了”</h2>
+        <div class="grid two">
+          <div class="card">
+            <strong>No Spec / Quick Card, No Code</strong>
+            <span>Standard/Complex 没有确认过的 spec 不写代码。Quick 没有 quick-card 不写代码。</span>
+          </div>
+          <div class="card">
+            <strong>Evidence Before Claims</strong>
+            <span>不能说“应该好了”。每个 task 完成都要展示编译、测试或可验证命令输出。</span>
+          </div>
+        </div>
+        <div class="callout">这不是为了变慢，而是为了不把“快”花在返工上。</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="sheet">
+        <p class="kicker">06 / INIT</p>
+        <h2>第一次接入项目，只需要初始化一次</h2>
+        <div class="split">
+          <div>
+            <p class="lead">在业务项目根目录说“初始化项目”，或执行脚本。框架会自动检测 Java / Go / Python / Frontend，并生成项目级上下文。</p>
+            <div class="metric">
+              <b>.ai</b>
+              <span>项目目录使用隐藏名 <code>.ai_code_copilot/</code>，全局安装目录仍是 <code>ai_code_copilot/</code>。</span>
+            </div>
+          </div>
+          <pre class="codebox">bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project .
+
+git add .ai_code_copilot/
+git commit -m "chore: init ai-code-copilot"</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="sheet">
+        <p class="kicker">07 / GIT</p>
+        <h2>为什么 .ai_code_copilot/ 要提交到 Git</h2>
+        <div class="grid two">
+          <div class="card">
+            <strong>提交</strong>
+            <ul>
+              <li>rules：团队规范和业务约束</li>
+              <li>changes：需求规格和执行记录</li>
+              <li>knowledge：项目经验库</li>
+            </ul>
+          </div>
+          <div class="card">
+            <strong>忽略</strong>
+            <ul>
+              <li><code>.ai_code_copilot/**/*.new</code></li>
+              <li><code>.ai_code_copilot/**/.DS_Store</code></li>
+              <li>团队可选忽略 <code>.copilot-state.json</code></li>
+            </ul>
+          </div>
+        </div>
+        <p class="lead">判断标准：能帮助团队复用上下文的提交；只代表本机状态或合并候选的忽略。</p>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="sheet">
+        <p class="kicker">08 / REVIEW</p>
+        <h2>Review 不是“看看代码”，而是两阶段验收</h2>
+        <div class="split">
+          <div class="card">
+            <strong>Spec Compliance</strong>
+            <span>独立上下文读取 spec 或 quick-card，逐条验证实际代码是否满足目标、范围和验收条件。</span>
+          </div>
+          <div class="card">
+            <strong>Code Quality</strong>
+            <span>对照 rules、安全红线和技术栈规则，检查 Critical / Important / Minor 问题。</span>
+          </div>
+        </div>
+        <div class="quote">先确认做对了，再确认写好了。</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="sheet">
+        <p class="kicker">09 / ARCHIVE</p>
+        <h2>每次需求结束，都让团队记忆变厚一点</h2>
+        <div class="grid two">
+          <div class="card">
+            <strong>log.md</strong>
+            <span>记录过程决策、验证输出、review 结论、遗留问题。</span>
+          </div>
+          <div class="card">
+            <strong>knowledge/</strong>
+            <span>从 log 里提取可复用经验，下次 propose 自动按关键词加载。</span>
+          </div>
+        </div>
+        <p class="lead">这一步解决的是团队长期问题：同样的坑，不要每个新人、每个 AI 会话都重新踩。</p>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="sheet">
+        <p class="kicker">10 / ROLLOUT</p>
+        <h2>团队落地建议：先试点，不要一口气全流程铺开</h2>
+        <div class="grid three">
+          <div class="card">
+            <strong>第 1 周</strong>
+            <span>选 1 个服务初始化，补齐 project-context 和 domain-rules。</span>
+          </div>
+          <div class="card">
+            <strong>第 2 周</strong>
+            <span>选 2-3 个 Standard 需求走完整流程，保留 review 记录。</span>
+          </div>
+          <div class="card">
+            <strong>第 3 周</strong>
+            <span>复盘模板、规则和知识库，形成团队默认用法。</span>
+          </div>
+        </div>
+        <div class="callout">不要先追求“自动化一切”。先让上下文、边界和证据变成默认动作。</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div class="sheet">
+        <p class="kicker">11 / TAKEAWAY</p>
+        <h2>今天希望大家带走三句话</h2>
+        <div class="grid three">
+          <div class="card">
+            <strong>先上下文，后代码</strong>
+            <span>AI 生成能力不稀缺，准确上下文才稀缺。</span>
+          </div>
+          <div class="card">
+            <strong>先证据，后结论</strong>
+            <span>编译、测试、审查输出比“我觉得没问题”可靠。</span>
+          </div>
+          <div class="card">
+            <strong>先沉淀，后复用</strong>
+            <span>把规则、spec、知识提交到项目里，让团队一起受益。</span>
+          </div>
+        </div>
+        <div class="quote">试点入口：找一个真实需求，从“初始化项目”开始。</div>
+      </div>
+    </section>
+  </main>
+
+  <div class="nav" aria-label="Slide controls">
+    <button type="button" id="prev" aria-label="上一页">‹</button>
+    <button type="button" id="next" aria-label="下一页">›</button>
+  </div>
+  <div class="footer">
+    <span id="count">01 / 12</span>
+    <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
+    <span>← / → 翻页 · P 打印</span>
+  </div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const count = document.getElementById("count");
+    const bar = document.getElementById("bar");
+    const prev = document.getElementById("prev");
+    const next = document.getElementById("next");
+    let index = 0;
+
+    function pad(value) {
+      return String(value).padStart(2, "0");
+    }
+
+    function show(nextIndex) {
+      index = Math.max(0, Math.min(slides.length - 1, nextIndex));
+      slides.forEach((slide, slideIndex) => {
+        slide.classList.toggle("active", slideIndex === index);
+      });
+      count.textContent = `${pad(index + 1)} / ${pad(slides.length)}`;
+      bar.style.width = `${((index + 1) / slides.length) * 100}%`;
+      const hash = `#${index + 1}`;
+      if (location.hash !== hash) {
+        history.replaceState(null, "", hash);
+      }
+    }
+
+    prev.addEventListener("click", () => show(index - 1));
+    next.addEventListener("click", () => show(index + 1));
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") {
+        event.preventDefault();
+        show(index + 1);
+      }
+      if (event.key === "ArrowLeft" || event.key === "PageUp") {
+        event.preventDefault();
+        show(index - 1);
+      }
+      if (event.key.toLowerCase() === "home") {
+        show(0);
+      }
+      if (event.key.toLowerCase() === "end") {
+        show(slides.length - 1);
+      }
+      if (event.key.toLowerCase() === "p") {
+        window.print();
+      }
+    });
+
+    const initial = Number(location.hash.replace("#", ""));
+    show(Number.isFinite(initial) && initial > 0 ? initial - 1 : 0);
+  </script>
+</body>
+</html>

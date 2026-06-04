@@ -4,7 +4,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## 项目简介
 
-ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架（Codex skill，兼容 Claude Code）。它不是一个可运行的应用，而是一套部署到 `~/.codex/ai_code_copilot/`（Codex）或 `~/.claude/ai_code_copilot/`（Claude Code）的提示词、规则、Agent 和安装脚本。核心理念：**Code is Cheap, Context is Expensive**，通过 Spec 驱动的流程（brainstorm → propose → apply → review → archive）确保 AI 在正确的上下文里做正确的事。
+ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架（Codex skill，兼容 Claude Code）。它不是一个可运行的应用，而是一套部署到 `~/.codex/ai_code_copilot/`（Codex）或 `~/.claude/ai_code_copilot/`（Claude Code）的提示词、规则、Agent 和安装脚本。核心理念：**Context First, Code Follows.** AI 让代码更容易生成，ai-code-copilot 通过 Spec 驱动的流程（brainstorm → propose → apply → review → archive）让上下文变得明确、可审查、可复用，确保 AI 在正确的上下文里做正确的事。
 
 ## 架构：两层结构
 

@@ -19,7 +19,7 @@
 
 ## 核心法则
 
-### Spec 驱动（Code is Cheap, Context is Expensive）
+### Spec 驱动（Context First, Code Follows）
 
 1. **No Spec/Quick Card, No Code** — Standard/Complex 没有 spec 不准写代码；Quick 没有 quick-card 不准写代码
 2. **Spec is Truth** — spec 和代码冲突时，错的一定是代码

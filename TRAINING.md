@@ -1,7 +1,7 @@
 # ai-code-copilot 使用培训
 
-> **核心理念：Code is Cheap, Context is Expensive**
-> AI 不缺生成代码的能力，缺的是准确理解你要做什么的上下文。
+> **核心理念：Context First, Code Follows.**
+> AI 让代码更容易生成，真正稀缺的是准确理解需求、约束和验证标准的共享上下文。
 > ai-code-copilot 的所有设计，都是为了让 AI 在正确的上下文里做正确的事。
 
 ---
