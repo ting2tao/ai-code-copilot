@@ -33,7 +33,7 @@ ai-code-copilot 不把所有语言规则揉成一套。通用流程和安全红�
 
 | 层级 | 负责什么 | 示例 |
 |------|----------|------|
-| Core rules | AI 怎么协作、如何验证、通用安全和领域边界 | `rules/coding-style.md`、`rules/security.md` |
+| Core rules | AI 怎么协作、如何验证、通用安全和领域边界 | `rules/coding-style.md`、`rules/security.md`、`rules/commit-convention.md` |
 | Tech pack | 这个技术栈怎么写代码、怎么测试、怎么分层 | `packs/java-spring/`、`packs/go/`、`packs/python/`、`packs/frontend-react/` |
 | Project rules | 业务项目自己的架构、命令、领域规则 | `<project>/.ai_code_copilot/rules/` |
 
@@ -297,6 +297,7 @@ ai_code_copilot/
 ├── rules/
 │   ├── project-context.md      # 工程上下文（/init 生成）
 │   ├── coding-style.md         # 项目编码规范（覆盖全局）
+│   ├── commit-convention.md    # Issue / 分支 / commit / PR 规范
 │   └── domain-rules.md         # 业务约束（手动填写）
 ├── knowledge/
 │   └── index.md                # 知识索引（/archive 维护）
