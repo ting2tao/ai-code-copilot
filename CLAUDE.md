@@ -25,6 +25,7 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 **项目层**（`/init` 后在业务项目中生成 `<project>/.ai_code_copilot/`）：
 - `rules/project-context.md` — 自动检测的技术栈、构建命令、分层架构
 - `rules/coding-style.md` — 项目级编码规范（覆盖全局）
+- `rules/commit-convention.md` — Issue、分支、commit message、PR 与自动化审查规范
 - `rules/domain-rules.md` — 业务约束（用户手动填写）
 - `changes/<变更名>/` — 活跃变更目录，含 design-brief/spec/tasks/test-spec/quick-card/roadmap/log
 
