@@ -416,17 +416,18 @@ Phase 4 · 实施修复
 
 ## Git 规范
 
-1. Issue 依赖：严禁无票开发；所有代码变更必须关联一个 Issue，并在 spec.md 或 quick-card.md 中记录 Issue ID/URL
-2. 分支管理：推荐一个 Issue 对应一个开发分支；分支命名推荐 `<type>/<description>-<IssueID>`，例如 `feature/login-123`、`fix/header-456`
-3. 禁止 master/main 分支直接变更 — 每次 apply 前检查，在主干上立即停止
-4. 辅助开发：鼓励使用云端 Copilot 或本地 AI 助手，但必须遵守本流程的 Issue、验证、提交与 PR 门禁
-5. 每个 task/fix 自动 commit — 一 task 一 commit
-6. commit 前执行 project-context.md 中记录的编译检查命令
-7. commit message 使用 Conventional Commits：`<type>[optional scope]: <description>`
-8. Issue 信息不要放在 commit 前缀；需要关联时使用 `(#7)`、`Refs #7`
-9. 禁止自动 push — push 由用户主动触发
-10. PR 必须关联对应 Issue ID，使用 `Closes #ID` 关键字
-11. 提交 PR 时必须触发 CodeQL 静态审查与 CI 编译自动化审查；若仓库未配置，应在 PR 中标明缺口并停止合并
+完整规则见 `rules/commit-convention.md`。执行时必须遵守以下摘要：
+
+1. 严禁无票开发；Issue ID/URL 必须写入 `spec.md` 或 `quick-card.md`
+2. 禁止在 `master`/`main` 直接开发或提交
+3. 分支命名不是 GitHub 官方强制；若仓库无既有规范，推荐 `<branch-type>/<description>-<IssueID>`，例如 `feature/login-123`、`fix/header-456`
+4. 每个 task/fix 原则上一 task 一 commit
+5. commit message 使用 Conventional Commits：`<type>[optional scope]: <description>`
+6. commit 前执行 `project-context.md` 中记录的编译/测试/检查命令
+7. commit hash 和完整 message 必须写入 `tasks.md` 或 `log.md`
+8. 禁止自动 push — push 由用户主动触发
+9. PR body 必须使用 GitHub closing keyword，例如 `Closes #ID`
+10. PR 必须触发 CodeQL 和 CI；缺失时必须在 PR 中标明并获得人工确认
 
 ---
 

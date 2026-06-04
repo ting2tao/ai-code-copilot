@@ -1,53 +1,171 @@
 ---
 alwaysApply: true
 ---
-# Git 提交与开发标准流
+# GitHub 协作与 Commit 规范
 
-本规则约束 Issue、分支、commit 和 PR。任何代码变更都必须能从 Issue 追踪到分支、提交、PR 和验证结果。
+本规则不照抄用户输入的提交格式。用户给出的 Issue 名、分支名或 commit 示例可能不规范，AI 必须先归一化为 GitHub 可识别、社区通用、自动化工具友好的格式。
 
-## 1. Issue 依赖
+## 0. 规范来源与边界
 
-- 严禁无票开发；所有代码变更必须关联一个 Issue。
+### GitHub 官方可识别
+
+- PR 或 commit 中使用 closing keywords 关联并关闭 Issue，例如 `Closes #7`、`Fixes #7`、`Resolves #7`。
+- closing keywords 只有在合并到默认分支时才会自动关闭 Issue。
+- PR 可以手动或通过关键字关联 Issue；PR body 使用 `Closes #ID` 是本项目推荐的标准方式。
+
+### 社区通用规范
+
+- commit message 使用 Conventional Commits：`<type>[optional scope]: <description>`。
+- 该格式利于 changelog、release note、语义化版本和自动化工具识别。
+
+### 项目约定，不冒充 GitHub 官方标准
+
+- "严禁无票开发"是本项目协作策略，不是 GitHub 官方强制。
+- 分支命名是团队推荐，不是 GitHub 官方强制。
+- CodeQL 和 CI 是本项目 PR 门禁；仓库未配置时必须明示缺口。
+
+## 1. 开工前门禁
+
+### 必须
+
+- 所有代码、规则、配置、脚本、测试、文档变更都必须关联 Issue。
 - Standard/Complex 变更必须在 `spec.md` 写明 Issue ID 或 URL。
 - Quick 变更必须在 `quick-card.md` 写明 Issue ID 或 URL。
-- 没有关联 Issue 时，必须先停止并提示用户补充 Issue；不要继续编码。
+- `tasks.md` 的 Preflight 必须确认 Issue 已记录。
+- 当前分支不得是 `master` 或 `main`。
+
+### 如果用户没有提供 Issue
+
+- 停止，不要继续编码。
+- 提醒用户先创建 Issue 或提供已有 Issue。
+- 紧急修复也不能空缺 Issue；可以使用故障/Hotfix Issue，但必须记录。
 
 ## 2. 分支管理
 
-- 推荐一个 Issue 对应一个开发分支。
-- 分支命名推荐：`<type>/<description>-<IssueID>`。
-- 示例：`feature/login-123`、`fix/header-456`、`docs/workflow-789`。
+### 必须
+
 - 禁止在 `master` 或 `main` 分支直接开发或提交。
+
+### 推荐
+
+- 一个 Issue 对应一个开发分支。
+- 分支命名使用：`<branch-type>/<description>-<IssueID>`。
+
+### branch-type 示例
+
+- `feature`：新功能
+- `fix`：缺陷修复
+- `docs`：文档或规则
+- `refactor`：重构
+- `test`：测试
+- `chore`：维护性改动
+
+### 分支示例
+
+- `feature/login-123`
+- `fix/header-456`
+- `docs/workflow-789`
+- `refactor/order-service-321`
+
+如果仓库已有不同分支规范，优先遵守项目已有规范，并在 `tasks.md` 或 `log.md` 记录原因。
 
 ## 3. Commit Message
 
+### 必须
+
 - 使用 Conventional Commits：`<type>[optional scope]: <description>`。
-- 常用 type：
-  - `feat`：新功能
-  - `fix`：缺陷修复
-  - `docs`：文档变更
-  - `refactor`：重构
-  - `test`：测试
-  - `chore`：杂项维护
-  - `perf`：性能优化
-  - `ci`：CI 配置
-  - `build`：构建系统或依赖
-- scope 使用模块或能力名，例如 `search`、`org-search`、`coupon`、`workflow`。
-- 不要把 `[issue-xxx]` 放在 commit message 前缀；这不属于 Conventional Commits 标准，可能影响 changelog/release 工具识别。
-- 关联 Issue 时，优先使用：
-  - `fix(org-search): 支持按组织名称查询服务范围 (#7)`
-  - 或在 commit body / PR body 写 `Refs #7`
-- 每次 commit 后，必须把 commit hash 和完整 message 写入 `tasks.md` 或 `log.md`，作为 `/review` 的提交证据。
+- 不要使用用户随手输入的非标准前缀，例如 `[issue-7-org-keyword-search] fix: ...`。
+- 不要把 Issue ID 当作 scope。
+- 每个 task/fix 原则上一 task 一 commit。
+- commit 前必须执行 `project-context.md` 中记录的编译/测试/检查命令。
+- commit 后必须把 commit hash 和完整 message 写入 `tasks.md` 或 `log.md`，作为 `/review` 的提交证据。
+
+### type
+
+- `feat`：新功能
+- `fix`：缺陷修复
+- `docs`：文档、规则、提示词、模板
+- `refactor`：重构
+- `test`：测试
+- `chore`：维护性改动
+- `perf`：性能优化
+- `ci`：CI 配置
+- `build`：构建系统或依赖
+
+### scope
+
+- scope 使用模块、领域或能力名，例如 `search`、`org-search`、`coupon`、`workflow`、`git`。
+- scope 应保持短、稳定、可复用。
+
+### Issue 关联
+
+- 简单关联可放在 description 末尾：`(#7)`。
+- 更推荐把自动关闭语义放在 PR body：`Closes #7`。
+- commit body/footer 可使用 `Refs #7` 表示关联但不自动关闭。
+
+### 推荐示例
+
+- `feat(org-search): 支持按组织名称查询服务范围 (#7)`
+- `fix(header): 修复移动端导航遮挡问题 (#456)`
+- `docs(git): 补充 commit message 规范`
+- `ci(codeql): 启用 CodeQL 静态扫描`
+
+### 不推荐示例
+
+- `[issue-7-org-keyword-search] fix: 支持按组织名称查询服务范围`
+- `[add-coupon] 新增 issueCoupon 核心逻辑`
+- `fix: issue-7-org-keyword-search`
 
 ## 4. PR 与自动化审查
 
-- PR 必须关联对应 Issue ID，并使用 `Closes #ID` 关键字。
-- 提交 PR 时必须触发 CodeQL 静态审查与 CI 编译自动化审查。
-- 若仓库未配置 CodeQL 或 CI，必须在 PR 中标明缺口，并在合并前补齐或获得人工确认。
-- PR 描述必须列出验证命令和实际结果，不能只写"已测试"。
+### 必须
+
+- PR 必须关联对应 Issue ID。
+- PR body 必须使用 GitHub closing keyword，例如 `Closes #7`。
+- PR 必须列出验证命令和实际结果，不能只写"已测试"。
+- 提交 PR 时必须触发：
+  - CodeQL 静态审查
+  - CI 编译/测试自动化审查
+
+### 例外处理
+
+- 如果仓库未配置 CodeQL 或 CI，必须在 PR 中明确标明缺口。
+- 自动化审查缺失时，不得静默合并；必须补齐配置或获得人工确认。
+- 如果 PR 只包含非代码文档，也仍应关联 Issue，并说明不需要编译验证的原因。
 
 ## 5. AI 辅助开发
 
 - 鼓励使用云端 Copilot 或本地 AI 助手提升效率。
-- AI 生成的代码仍必须遵守本规则中的 Issue、分支、commit、PR 和验证门禁。
+- AI 生成的代码、规则、文档仍必须遵守 Issue、分支、commit、PR 和验证门禁。
 - AI 不得绕过人工确认、CodeQL、CI 或项目已有 review 流程。
+
+## 6. 归一化示例
+
+用户输入：
+
+```text
+[issue-7-org-keyword-search] fix: 按组织名称查询服务范围
+```
+
+应归一化为：
+
+```text
+fix(org-search): 支持按组织名称查询服务范围 (#7)
+```
+
+PR body 应包含：
+
+```text
+Closes #7
+```
+
+## 7. 快速检查清单
+
+- [ ] Issue ID/URL 已写入 `spec.md` 或 `quick-card.md`
+- [ ] 当前分支不是 `master`/`main`
+- [ ] 已遵守项目分支命名规范；若无规范，优先使用 `<branch-type>/<description>-<IssueID>`
+- [ ] commit message 符合 Conventional Commits
+- [ ] commit hash 和 message 已写入 `tasks.md` 或 `log.md`
+- [ ] PR body 使用 GitHub closing keyword，例如 `Closes #ID`
+- [ ] PR 触发 CodeQL 和 CI；若缺失，PR 已明示缺口
+- [ ] PR 描述列出验证命令和实际结果
