@@ -265,20 +265,27 @@ Preflight（任一不满足则停止）：
 **自动 git commit：**
 ```bash
 git add <changed files>
-git commit -m "[<变更名>] <中文简述>"
+git commit -m "<type>(<scope>): <中文简述>"
 ```
 注意：禁止在 master/main 分支提交。提交前执行 project-context.md 中记录的编译检查命令确认可编译。
+
+**commit message 规范（Conventional Commits）：**
+- 格式：`<type>[optional scope]: <description>`，例如 `feat(org-search): 支持按组织名称查询服务范围`
+- 常用 type：`feat`（新功能）、`fix`（修复）、`docs`（文档）、`refactor`（重构）、`test`（测试）、`chore`（杂项）、`perf`（性能）、`ci`（CI）、`build`（构建）
+- scope 使用模块或能力名，例如 `search`、`org-search`、`coupon`；不要把 `[issue-xxx]` 放在 commit message 前缀
+- 关联 Issue 时优先使用 `fix(org-search): 支持按组织名称查询服务范围 (#7)`，或在 commit body/PR body 写 `Refs #7` / `Closes #7`
+- 提交完成后必须立即把 commit hash 和完整 message 写入 tasks.md 或 log.md，作为 /review 的提交证据
 
 **所有 task 完成后，回填 log.md ## 变更信息：**
 - 完成时间：当天日期
 - 涉及文件数：本次变更实际改动的文件数
-- commit 列表：优先读取 tasks.md/log.md 中记录的 commit hash；缺失时再用 `git log --oneline | grep "^\[<变更名>\]"` 兜底
+- commit 列表：读取 tasks.md/log.md 中记录的 commit hash 和 message；若缺失则先补录，不依赖非标准 message 前缀兜底
 
 ### /fix <变更名> [描述] — 增量修正
 
 - /review 后的修正环节，在已完成基础上做增量改动
 - **文档同步铁律**：每次 /fix 完成后必须同步更新 spec.md/tasks.md/test-spec.md/log.md；Quick 档同步 quick-card.md/log.md
-- 自动 commit：`[<变更名>] fix: <中文简述>`
+- 自动 commit：`fix(<scope>): <中文简述>`，scope 使用模块或能力名
 
 **完成声明铁律（/fix 执行顺序）：**
 1. 修改代码
@@ -293,8 +300,7 @@ git commit -m "[<变更名>] <中文简述>"
 ```
 前置检查（任一不满足则停止）：
 - 优先读取 log.md/tasks.md 中记录的 /apply commit hash
-- 若无 commit hash，再执行 `git log --oneline | grep "^\[<变更名>\]"` 兜底
-- 若仍无匹配提交 → 停止，提示："未检测到 /apply 的提交记录，请先执行 /apply <变更名>"
+- 若无 commit hash → 停止，提示："未检测到 /apply 的提交记录，请先补录 tasks.md/log.md 或执行 /apply <变更名>"
 - Quick 档也需要有 quick-card 与代码变更证据；无提交但有用户明确要求 review 当前工作区时，必须先说明这是未提交工作区审查
 
 阶段一：Spec Compliance（spec-reviewer）
@@ -375,7 +381,7 @@ Complex 档在进入子项目 Standard 流程前，必须生成 `.ai_code_copilo
    - 已沉淀 N 条知识 → knowledge/
    - 已归档 changes/<变更名> → changes/archives/
    - knowledge 库累计条目数（按类别统计）
-7. git commit：[<变更名>] archive: 知识沉淀完成
+7. git commit：`docs(archive): 归档 <变更名>`
 ```
 
 ### 调试流程（自动触发，无需命令）
@@ -412,7 +418,8 @@ Phase 4 · 实施修复
 2. 每个 task/fix 自动 commit — 一 task 一 commit
 3. commit 前执行 project-context.md 中记录的编译检查命令
 4. 禁止自动 push — push 由用户主动触发
-5. commit message 格式：`[<变更名>] <中文简述>`
+5. commit message 使用 Conventional Commits：`<type>[optional scope]: <description>`
+6. Issue 信息不要放在前缀；需要关联时使用 `(#7)`、`Refs #7` 或 `Closes #7`
 
 ---
 

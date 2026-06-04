@@ -167,7 +167,7 @@ AI：T1 完成：CouponService.issueCoupon() 方法已实现
     $ mvn compile -pl coupon-service -q
     BUILD SUCCESS
 
-    已 commit：[add-coupon] 新增 issueCoupon 核心逻辑
+    已 commit：feat(coupon): 新增 issueCoupon 核心逻辑
 
     继续 T2？
 ```
@@ -198,7 +198,7 @@ AI：⚠️ 发现问题：spec §3.2 要求发放记录写 coupon_issue_log 表
 你：review add-coupon
 ```
 
-**前置检查：** AI 先验证 git log 中是否存在 `[add-coupon]` 的提交记录。没有则停止，提示先执行 `/apply`——没有代码就没有可审查的对象。
+**前置检查：** AI 先读取 tasks.md/log.md 中记录的 /apply commit hash。没有则停止，提示先补录提交记录或执行 `/apply`——没有代码证据就没有可审查的对象。
 
 **阶段一：Spec Compliance**（独立 Sub-Agent）
 
