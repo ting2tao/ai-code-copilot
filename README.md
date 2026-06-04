@@ -1,6 +1,8 @@
 # ai-code-copilot
 
-> **Code is Cheap, Context is Expensive** — 面向多技术栈软件项目的 AI 编码协作框架
+> **Context First, Code Follows.** — 面向多技术栈软件项目的 AI 编码协作框架
+>
+> AI 让代码更容易生成，ai-code-copilot 让上下文变得明确、可审查、可复用。
 
 ## 它是什么
 
