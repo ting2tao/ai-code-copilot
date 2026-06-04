@@ -313,6 +313,7 @@ AI：检测到 pom.xml，识别为 java-spring 项目，加载规则包...
 ├── rules/
 │   ├── project-context.md   ← AI 自动填充的工程上下文
 │   ├── coding-style.md      ← 可覆盖全局规范
+│   ├── commit-convention.md ← Issue / 分支 / commit / PR 规范
 │   └── domain-rules.md      ← 项目业务约束（你来填）
 ├── knowledge/
 │   └── index.md             ← 知识索引（/archive 自动维护）
