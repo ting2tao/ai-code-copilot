@@ -30,7 +30,7 @@ need_dir changes/templates
 
 for f in rules/*.md; do
   case "$(basename "$f")" in
-    coding-style.md|security.md|domain-rules.md|project-context.md|commit-convention.md) ;;
+    coding-style.md|security.md|domain-rules.md|project-context.md|commit-convention.md|github-metrics.md) ;;
     *) fail "core rules must stay generic; unexpected file in rules/: $f" ;;
   esac
 done
@@ -117,6 +117,7 @@ if [ -d tests/fixtures ]; then
     test -f "$tmpdir/.ai_code_copilot/.copilot-state.json" || fail "fixture missing state: $fixture"
     test -f "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "fixture missing project context: $fixture"
     test -f "$tmpdir/.ai_code_copilot/rules/commit-convention.md" || fail "fixture missing commit convention: $fixture"
+    test -f "$tmpdir/.ai_code_copilot/rules/github-metrics.md" || fail "fixture missing github metrics rule: $fixture"
     case "$(basename "$fixture")" in
       java-spring)
         test -f "$tmpdir/.ai_code_copilot/rules/java-spring-coding-style.md" || fail "java fixture did not load java-spring pack"

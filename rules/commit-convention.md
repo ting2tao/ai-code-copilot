@@ -3,7 +3,8 @@ alwaysApply: true
 ---
 # GitHub 协作与 Commit 规范
 
-本规则不照抄用户输入的提交格式。用户给出的 Issue 名、分支名或 commit 示例可能不规范，AI 必须先归一化为 GitHub 可识别、社区通用、自动化工具友好的格式。
+本规则不照抄用户输入的提交格式。用户给出的 Issue 名或 commit 示例可能不规范，AI 必须先归一化为 GitHub 可识别、社区通用、自动化工具友好的格式。
+GitHub 指标统计口径见 `github-metrics.md`；本文件只定义协作、commit 和 PR 的基础门禁。
 
 ## 0. 规范来源与边界
 
@@ -21,7 +22,6 @@ alwaysApply: true
 ### 项目约定，不冒充 GitHub 官方标准
 
 - "严禁无票开发"是本项目协作策略，不是 GitHub 官方强制。
-- 分支命名是团队推荐，不是 GitHub 官方强制。
 - CodeQL 和 CI 是本项目 PR 门禁；仓库未配置时必须明示缺口。
 
 ## 1. 开工前门禁
@@ -45,29 +45,6 @@ alwaysApply: true
 ### 必须
 
 - 禁止在 `master` 或 `main` 分支直接开发或提交。
-
-### 推荐
-
-- 一个 Issue 对应一个开发分支。
-- 分支命名使用：`<branch-type>/<description>-<IssueID>`。
-
-### branch-type 示例
-
-- `feature`：新功能
-- `fix`：缺陷修复
-- `docs`：文档或规则
-- `refactor`：重构
-- `test`：测试
-- `chore`：维护性改动
-
-### 分支示例
-
-- `feature/login-123`
-- `fix/header-456`
-- `docs/workflow-789`
-- `refactor/order-service-321`
-
-如果仓库已有不同分支规范，优先遵守项目已有规范，并在 `tasks.md` 或 `log.md` 记录原因。
 
 ## 3. Commit Message
 
@@ -133,13 +110,7 @@ alwaysApply: true
 - 自动化审查缺失时，不得静默合并；必须补齐配置或获得人工确认。
 - 如果 PR 只包含非代码文档，也仍应关联 Issue，并说明不需要编译验证的原因。
 
-## 5. AI 辅助开发
-
-- 鼓励使用云端 Copilot 或本地 AI 助手提升效率。
-- AI 生成的代码、规则、文档仍必须遵守 Issue、分支、commit、PR 和验证门禁。
-- AI 不得绕过人工确认、CodeQL、CI 或项目已有 review 流程。
-
-## 6. 归一化示例
+## 5. 归一化示例
 
 用户输入：
 
@@ -159,11 +130,10 @@ PR body 应包含：
 Closes #7
 ```
 
-## 7. 快速检查清单
+## 6. 快速检查清单
 
 - [ ] Issue ID/URL 已写入 `spec.md` 或 `quick-card.md`
 - [ ] 当前分支不是 `master`/`main`
-- [ ] 已遵守项目分支命名规范；若无规范，优先使用 `<branch-type>/<description>-<IssueID>`
 - [ ] commit message 符合 Conventional Commits
 - [ ] commit hash 和 message 已写入 `tasks.md` 或 `log.md`
 - [ ] PR body 使用 GitHub closing keyword，例如 `Closes #ID`

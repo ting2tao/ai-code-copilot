@@ -51,6 +51,24 @@
 
 ---
 
+## /fix-ci 记录
+
+> CI 失败后使用 `/fix-ci` 时填写。无 CI 失败可保留为空。
+
+| 字段 | 内容 |
+|------|------|
+| CI run URL | {URL 或"未提供"} |
+| Job 名称 | {job name} |
+| 失败类型 | 编译 / 单测 / lint / 类型检查 / CodeQL / 依赖安装 / 环境配置 / 其他 |
+| 失败命令 | `{command}` |
+| 根因 | {基于日志和代码定位出的原因} |
+| 修复摘要 | {改了什么，为什么是最小修复} |
+| 验证命令 | `{command}` |
+| 验证结果 | {实际输出摘要} |
+| commit | {commit hash + message} |
+
+---
+
 ## /review 结论
 
 ### Spec Compliance（spec-reviewer）
@@ -67,3 +85,9 @@
 
 **Important 问题**：
 - {问题描述}
+
+### GitHub Readiness
+
+**结论**：READY / NEEDS_INFO
+**缺失字段**：
+- {Issue / PR body / Test Evidence / CI / CodeQL / Risk / AI Collaboration / PR size 等缺失项}
