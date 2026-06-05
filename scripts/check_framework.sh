@@ -27,6 +27,7 @@ need_file hooks/session-start
 need_dir rules
 need_dir packs
 need_dir changes/templates
+need_dir tests/fixtures/monorepo
 
 for f in rules/*.md; do
   case "$(basename "$f")" in
@@ -42,11 +43,14 @@ bash -n scripts/init_project.sh
 
 python3 - "$ROOT" <<'PY'
 import json
+import re
 import sys
 from pathlib import Path
 
 root = Path(sys.argv[1])
 pack_root = root / "packs"
+prompt_text = (root / "agents" / "copilot-prompt.md").read_text(encoding="utf-8")
+hook_text = (root / "hooks" / "session-start").read_text(encoding="utf-8")
 skill_text = (root / "skill" / "SKILL.md").read_text(encoding="utf-8")
 frontmatter = skill_text.split("---", 2)[1]
 description_lines = []
@@ -65,6 +69,22 @@ if len(description) > 500:
     raise SystemExit(f"skill description is too long for reliable discovery: {len(description)} characters")
 if "初始化项目" not in description[:160]:
     raise SystemExit("skill description must surface 初始化项目 near the beginning")
+
+def command_set(text, label):
+    match = re.search(rf"{label}[:：]\s*([a-z0-9_ /\-]+)", text)
+    if not match:
+        raise SystemExit(f"missing command menu labeled {label!r}")
+    return {part.strip().lstrip("/") for part in match.group(1).split("/") if part.strip()}
+
+prompt_commands = command_set(prompt_text, "可用流程")
+hook_commands = command_set(hook_text, "可用命令")
+if prompt_commands != hook_commands:
+    raise SystemExit(
+        "command menus drifted: "
+        f"prompt={sorted(prompt_commands)} hook={sorted(hook_commands)}"
+    )
+if "fix-ci" not in prompt_commands:
+    raise SystemExit("command menus must include fix-ci")
 
 expected = {"java-spring", "go", "python", "frontend-react"}
 actual = {p.name for p in pack_root.iterdir() if p.is_dir()}
@@ -106,6 +126,15 @@ for rel in [
 ]:
     if not (root / rel).exists():
         raise SystemExit(f"missing template: {rel}")
+
+test_spec = (root / "changes" / "templates" / "test-spec.md").read_text(encoding="utf-8")
+java_only_terms = ["Mockito", "MockMvc", "mvn test", "jacoco", "XxxServiceImpl", "XxxMapper"]
+found_java_terms = [term for term in java_only_terms if term in test_spec]
+if found_java_terms:
+    raise SystemExit(
+        "core test-spec template must stay stack-neutral; found Java-only terms: "
+        + ", ".join(found_java_terms)
+    )
 PY
 
 if [ -d tests/fixtures ]; then
@@ -121,19 +150,27 @@ if [ -d tests/fixtures ]; then
     case "$(basename "$fixture")" in
       java-spring)
         test -f "$tmpdir/.ai_code_copilot/rules/java-spring-coding-style.md" || fail "java fixture did not load java-spring pack"
+        grep -q '| `java-spring` |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "java fixture context missing java-spring command row"
         ;;
       go)
         test -f "$tmpdir/.ai_code_copilot/rules/go-coding-style.md" || fail "go fixture did not load go pack"
+        grep -q '| `go` |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "go fixture context missing go command row"
         ;;
       python)
         test -f "$tmpdir/.ai_code_copilot/rules/python-coding-style.md" || fail "python fixture did not load python pack"
+        grep -q '| `python` |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "python fixture context missing python command row"
         ;;
       frontend-react)
         test -f "$tmpdir/.ai_code_copilot/rules/frontend-react-coding-style.md" || fail "frontend fixture did not load frontend-react pack"
+        grep -q '| `frontend-react` |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "frontend fixture context missing frontend-react command row"
         ;;
       monorepo)
         test -f "$tmpdir/.ai_code_copilot/rules/go-coding-style.md" || fail "monorepo fixture did not load go pack"
         test -f "$tmpdir/.ai_code_copilot/rules/frontend-react-coding-style.md" || fail "monorepo fixture did not load frontend-react pack"
+        grep -q '| `go` |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "monorepo fixture context missing go command row"
+        grep -q '| `frontend-react` |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "monorepo fixture context missing frontend-react command row"
+        grep -q '| `services/api` | `go` | `services/api/go.mod` |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "monorepo fixture context missing go module row"
+        grep -q '| `apps/web` | `frontend-react` | `apps/web/package.json` |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "monorepo fixture context missing frontend module row"
         ;;
     esac
     AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync --dry-run >/tmp/ai-code-copilot-fixture-dry-run.out

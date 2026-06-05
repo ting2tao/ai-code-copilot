@@ -1,84 +1,94 @@
 # 测试 Spec：{变更名}
 
 > **关联 Spec**：`spec.md`
-> **Red/Green 铁律**：每个测试必须先验证 RED（测试确实失败），再实施代码使其 GREEN。跳过 RED 的测试视为无效。
-> **覆盖率门禁**：statement ≥ 80%，branch ≥ 70%
+> **Red/Green 铁律**：新增或修正测试必须先验证 RED（测试确实失败），再实施代码使其 GREEN。跳过 RED 的测试视为无效。
+> **覆盖率门禁**：默认 statement ≥ 80%，branch ≥ 70%；如项目规则另有约定，以 `.ai_code_copilot/rules/project-context.md` 为准。
+
+---
+
+## 0. 项目测试上下文
+
+> 从 `.ai_code_copilot/rules/project-context.md` 读取并填写。多技术栈项目按模块分别列出。
+
+| 模块路径 | 技术栈/规则包 | 测试框架 | 全量测试命令 | 单测/定向测试命令 | 覆盖率命令/报告 |
+|----------|---------------|----------|--------------|-------------------|----------------|
+| `{module}` | `{pack}` | `{framework}` | `{test command}` | `{single test command}` | `{coverage command or report}` |
 
 ---
 
 ## P0 核心逻辑测试（必测）
 
-> 覆盖主流程 + 关键边界。单元测试，Mockito mock 外部依赖。
+> 覆盖主流程、关键边界和失败分支。优先选择最快、最稳定的测试层级。
 
 ### TC-P0-01：{测试场景名}
 
-**测试类**：`{XxxServiceTest.java}`
-**测试方法**：`test_{场景描述}()`
-**前置条件**：{数据准备、mock 设置}
-**操作**：{调用什么方法，传什么参数}
-**预期结果**：{断言什么}
+**模块**：`{module path}`
+**测试文件**：`{test file path}`
+**测试目标**：`{function / class / component / endpoint}`
+**前置条件**：{数据准备、依赖替身、环境配置}
+**操作**：{调用方式或用户行为}
+**预期结果**：{断言内容}
+**RED 证据**：`{先失败的命令和失败摘要}`
+**GREEN 证据**：`{修复后通过的命令和输出摘要}`
 
-```java
-@Test
-void test_{场景描述}() {
-    // given
-    {mock 设置}
-    
-    // when
-    {调用}
-    
-    // then
-    {断言}
-}
-```
+### TC-P0-02：{异常或边界场景}
 
-### TC-P0-02：{异常场景}
-
-**测试类**：`{XxxServiceTest.java}`
-**前置条件**：{触发异常的条件}
-**预期结果**：抛出 `{XxxException}`，message 包含 `{关键字}`
+**模块**：`{module path}`
+**测试文件**：`{test file path}`
+**触发条件**：{异常/边界输入}
+**预期结果**：{错误、返回值、状态、日志或副作用断言}
+**RED 证据**：`{先失败的命令和失败摘要}`
+**GREEN 证据**：`{修复后通过的命令和输出摘要}`
 
 ---
 
-## P1 数据层测试（应测）
+## P1 集成/数据/状态测试（应测）
 
-> Mapper/Repository 层，使用 H2 或 @MybatisTest。
+> 覆盖跨边界协作：数据访问、外部接口适配、状态变化、权限校验、组件交互等。
 
-### TC-P1-01：{数据操作场景}
+### TC-P1-01：{集成场景名}
 
-**测试类**：`{XxxMapperTest.java}`
-**操作**：{insert/select/update/delete}
-**预期结果**：{数据变更验证}
+**模块**：`{module path}`
+**测试文件**：`{test file path}`
+**依赖边界**：{database / api / filesystem / browser / queue / cache / other}
+**操作**：{执行步骤}
+**预期结果**：{持久化结果、接口响应、状态变化或交互断言}
 
 ---
 
-## P2 入口层测试（选测）
+## P2 入口/端到端测试（选测）
 
-> Controller 层，MockMvc，验证 HTTP 状态码 + 响应结构。
+> 覆盖用户入口、HTTP/API、CLI、页面交互或端到端主路径。若不需要，必须说明原因。
 
-### TC-P2-01：{接口场景}
+### TC-P2-01：{入口场景名}
 
-**测试类**：`{XxxControllerTest.java}`
-**请求**：`{METHOD} {/path}` Body: `{json}`
-**预期**：HTTP `{status}`，响应包含 `{字段=值}`
+**入口**：`{route / command / page / endpoint}`
+**测试文件**：`{test file path}`
+**操作**：{请求、命令或用户行为}
+**预期结果**：{响应、页面状态、输出或副作用}
+
+---
+
+## 不测试项
+
+| 项目 | 原因 | 风险接受人/确认方式 |
+|------|------|-------------------|
+| `{item}` | `{reason}` | `{confirmation}` |
 
 ---
 
 ## 覆盖率目标
 
-| 类 | Statement | Branch | 备注 |
-|----|-----------|--------|------|
-| `{XxxServiceImpl}` | ≥ 80% | ≥ 70% | |
-| `{XxxMapper}` | ≥ 80% | - | |
+| 模块/文件 | Statement | Branch | 说明 |
+|-----------|-----------|--------|------|
+| `{module or file}` | ≥ 80% | ≥ 70% | `{notes}` |
 
 ---
 
 ## 实际测试结果
 
-> /test 完成后填写，必须粘贴 `mvn test` 实际输出
+> /test 或 /apply 完成后填写，必须记录实际命令输出摘要。
 
-```
-{mvn test 实际输出}
-```
-
-覆盖率报告：`target/site/jacoco/index.html`
+| 命令 | 结果 | 输出摘要 |
+|------|------|----------|
+| `{command}` | PASS / FAIL | `{actual output summary}` |
