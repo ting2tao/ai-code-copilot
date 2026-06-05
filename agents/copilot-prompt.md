@@ -6,6 +6,7 @@
 - `.ai_code_copilot/rules/`（项目约束，始终生效）
 - `.ai_code_copilot/knowledge/`（领域知识，按需加载）
 - `.ai_code_copilot/changes/`（变更管理）
+- `.ai_code_copilot/config.json`（项目级工作流配置）
 
 全局框架根目录记为 `<COPILOT_HOME>`。必须按以下顺序定位，不能硬编码单个平台路径：
 1. 环境变量 `AI_CODE_COPILOT_HOME`
@@ -67,6 +68,7 @@
 | "帮我看看代码" / "review 一下" | → /review |
 | "写测试" / "补单测" / "测覆盖率" | → /test |
 | "CI 报错" / "Actions 失败" / "流水线失败" / "修 CI" | → /fix-ci |
+| "完成收尾" / "finish" / "开 PR" / "发 PR" | → /finish |
 | "归档 xxx" / "archive" | → /archive |
 | "初始化" / "分析工程结构" | → /init |
 
@@ -90,7 +92,7 @@
 📁 项目：[从 project-context.md 读取应用名，若未初始化则显示"未初始化，建议说「初始化项目」"]
 🔄 进行中变更：[变更名列表，或"无"]
 
-可用流程：init / brainstorm / propose / apply / fix / fix-ci / review / test / archive
+可用流程：init / brainstorm / propose / apply / fix / fix-ci / review / finish / test / archive
 ```
 
 ---
@@ -108,6 +110,7 @@
    - 若用户要求升级检查或预览，执行：
      `bash <COPILOT_HOME>/scripts/init_project.sh --project <当前项目根目录> --upgrade --dry-run`
    - 脚本会复制 core rules + 命中 pack rules，并按同步策略保护项目已有文件：项目主权文件保留、流程模板自动更新、其他规则内容不同时写入 `.new`
+   - 脚本会创建 `.ai_code_copilot/config.json`（若缺失），默认 GitHub 收尾策略为 ask
    - 脚本会维护机器状态 `.ai_code_copilot/.copilot-state.json`，记录框架 commit、命中 packs、初始化/同步时间
    - 脚本不可用时，按以下步骤手动执行
 
@@ -146,6 +149,7 @@
 - 需要同步新规则/模板时，显式执行 `/init --sync`、`/upgrade` 或脚本 `scripts/init_project.sh --sync`
 - 真正写入前可用 `--dry-run` 查看计划变更
 - `.ai_code_copilot/rules/project-context.md` 和 `.ai_code_copilot/rules/domain-rules.md` 是项目主权文件：若已存在，默认保留项目内容，不生成 `.new`
+- `.ai_code_copilot/config.json` 是项目主权配置文件：若已存在，默认保留项目内容，不生成 `.new`
 - `.ai_code_copilot/changes/templates/*.md` 是框架托管流程模板：若与新版本不同，`--sync` 默认直接更新；`--dry-run` 只报告计划更新，不写入
 - 其他规则文件若与新版本不同，生成 `<文件>.new`，由用户人工合并
 - `.copilot-state.json` 是机器维护状态，非 dry-run 同步时允许自动刷新
@@ -387,6 +391,68 @@ Step 5 · 验证与记录
   - GitHub Readiness：READY / NEEDS_INFO + 缺失字段列表
 
 Quick 档 /review：阶段一改为对照 quick-card 的目标、涉及文件、非目标、验收方式和风险项做轻量合规检查；阶段二照常执行 Code Quality。
+
+### /finish <变更名> — GitHub 收尾（Issue + PR）
+
+适用场景：变更已完成并通过 /review 后，一键完成验证、push、创建 PR，并用 GitHub closing keyword 关闭关联 Issue。/finish 负责 GitHub 收尾，/archive 负责知识沉淀，两者边界独立。
+
+**项目级配置：**
+- 优先读取 `.ai_code_copilot/config.json`
+- 若配置缺失，首次触发 /finish 时必须询问用户选择并写入配置：
+  1. 每次询问（推荐）：`finishMode=ask`
+  2. review PASS 后自动创建 PR：`finishMode=auto-pr`
+  3. 只记录提示，不自动操作：`finishMode=manual`
+- 默认配置：
+```json
+{
+  "githubWorkflow": {
+    "finishMode": "ask",
+    "issueWhenMissing": "ask",
+    "createPrAfterReviewPass": false,
+    "defaultBaseBranch": "main",
+    "pushRemote": "origin",
+    "prDraft": false
+  }
+}
+```
+
+**模式含义：**
+- `finishMode=ask`：每次 /finish 前展示将执行的动作，等待用户确认
+- `finishMode=auto-pr`：/review PASS 后用户说"完成收尾"或"/finish"时自动执行 push + PR；不得跳过验证
+- `finishMode=manual`：只输出待执行命令和 PR body，不执行 push/PR
+- `issueWhenMissing=ask`：spec/quick-card 缺 Issue 时询问是否创建 Issue
+- `issueWhenMissing=auto`：缺 Issue 时用 `gh issue create` 自动创建，并把 Issue ID 写回 spec/quick-card 与 log.md
+
+前置检查（任一不满足则停止）：
+- 当前分支不是 master/main
+- 工作区干净，或只有本次变更已明确 staged/committed 的文件；不得把用户无关改动带入 PR
+- Standard/Complex：`spec.md`、`tasks.md`、`test-spec.md`、`log.md` 存在；Quick：`quick-card.md`、`log.md` 存在
+- 已有 /apply 或 /fix commit 证据；若无 commit hash，停止并要求补录
+- /review 结论已记录且 Spec Compliance、Code Quality 均 PASS；GitHub Readiness 若为 NEEDS_INFO，必须列出缺口并获得人工确认才能继续
+- Issue ID/URL 已记录；若缺失，按 `issueWhenMissing` 执行 ask/auto/manual
+- `gh auth status` 可用；若不可用，停止并提示用户认证
+
+执行流程：
+1. 读取 config，必要时首次询问并写入 `.ai_code_copilot/config.json`
+2. 读取 Issue ID/URL、验证命令、风险说明、测试证据、commit 列表
+3. 执行验证命令：
+   - 优先使用 `test-spec.md`/`log.md` 已记录命令
+   - 缺失时使用 `project-context.md` 中最接近的编译/测试/检查命令
+   - 必须展示实际输出；验证失败则停止，不得 push/PR
+4. 若缺 Issue：
+   - ask：询问用户是否创建 Issue；确认后 `gh issue create`
+   - auto：直接 `gh issue create`
+   - manual：停止并输出缺失项
+5. `git push -u <pushRemote> <branch>`
+6. `gh pr create --base <defaultBaseBranch> --head <branch>`，PR body 必须包含：
+   - Summary
+   - Test Evidence（粘贴实际验证命令）
+   - Risk
+   - AI Collaboration
+   - `Closes #ID`
+7. 将 PR URL、Issue、验证命令、验证结果、分支、远端写入 log.md `## /finish 记录`
+
+完成声明铁律：必须先展示验证输出、push 输出、PR URL，才能说"收尾完成"。
 
 ### /test <变更名> — TDD 测试
 

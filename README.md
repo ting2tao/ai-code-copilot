@@ -57,7 +57,9 @@ flowchart LR
         Spec["/propose<br/>变更提案"]
         Code["/apply<br/>执行编码"]
         Check["/review<br/>双阶段审查"]
+        Finish["/finish<br/>GitHub 收尾"]
         Brain --> Spec --> Code --> Check
+        Check --> Finish
     end
 
     subgraph Side ["  辅助能力"]
@@ -89,6 +91,7 @@ flowchart LR
     classDef init fill:#F5A623,stroke:#D4891A,color:#fff,font-size:14px
 
     class Brain,Spec,Code,Check gear
+    class Finish gear
     class Fix,FixCI,Test,Debug side
     class Archive,Knowledge,Archives final
     class I1,I2,I3 init
@@ -100,8 +103,8 @@ flowchart LR
 
 | 档位 | 适用场景 | 流程 |
 |------|----------|------|
-| **Quick** | ≤1天，<5文件，不跨模块 | 说明范围 → quick-card → 确认 → 执行 → /review |
-| **Standard** | 1-5天，或明确要求 | /brainstorm → /propose → /apply → /review |
+| **Quick** | ≤1天，<5文件，不跨模块 | 说明范围 → quick-card → 确认 → 执行 → /review → /finish |
+| **Standard** | 1-5天，或明确要求 | /brainstorm → /propose → /apply → /review → /finish |
 | **Complex** | >5天，或跨 3+ 模块 | /brainstorm → roadmap → 拆子项目 → 每个走 Standard |
 
 不确定时默认 Standard。
@@ -171,13 +174,23 @@ AI：好的，我来提两个方案...
 **阶段二：Code Quality** — 审查代码质量（Critical / Important / Minor）
 **阶段三：GitHub Readiness** — 检查 Issue、PR body、测试证据、CI/CodeQL 和指标口径是否可被 GitHub 干净统计
 
-Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再审。GitHub Readiness 若为 NEEDS_INFO → 补齐 PR/CI/测试证据后再审。
+Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再审。GitHub Readiness 若为 NEEDS_INFO → 补齐 PR/CI/测试证据后再审。审查通过后可执行 `/finish` 做 GitHub 收尾。
 
 ### 5. /fix-ci — CI 失败修复闭环
 
 当 GitHub Actions、CodeQL、lint、类型检查、单测或编译失败时，粘贴完整日志或提供 workflow run URL。AI 会先识别失败命令，尽量本地复现，再做最小修复，重新运行失败命令，并把根因、验证输出和 commit 写入 log.md。
 
-### 6. /archive — 知识沉淀
+### 6. /finish — GitHub 收尾
+
+**目的：验证、push、创建 PR，并用 `Closes #ID` 关闭关联 Issue。**
+
+- 默认读取 `.ai_code_copilot/config.json` 的 `githubWorkflow`
+- 缺配置时首次触发会询问并写入配置
+- `finishMode=ask` 每次执行前确认，`auto-pr` 自动 push + PR，`manual` 只输出命令和 PR body
+- PR body 自动包含 Summary、Test Evidence、Risk、AI Collaboration 和 `Closes #ID`
+- 收尾结果写入 log.md 的 `/finish 记录`
+
+### 7. /archive — 知识沉淀
 
 - 从 log.md 提取知识条目
 - 逐条确认是否沉淀到 `knowledge/`
@@ -197,6 +210,7 @@ Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再
 | `/review` | 帮我看看代码、review 一下 | 先查有没有按 spec 实现，再查代码质量 | 审查报告 |
 | `/fix` | 修 bug、改一下 xxx、排查问题 | review 发现问题就修，修完再审 | 修复代码 |
 | `/fix-ci` | CI 报错、Actions 失败、流水线失败、修 CI | 基于 CI 日志做最小修复，并验证失败命令重新通过 | 修复代码 + `log.md` |
+| `/finish` | 完成收尾、开 PR、发 PR | 验证、push、创建 PR，并用 `Closes #ID` 关闭 Issue | PR + `log.md` |
 | `/test` | 写测试、补单测、跑测试、测覆盖率 | Red/Green 循环，覆盖率 ≥ 80% | 测试用例 |
 | `/archive` | 归档、沉淀知识、整理变更 | 把踩过的坑沉淀成知识，下次自动加载 | `knowledge/` |
 
@@ -210,7 +224,7 @@ Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再
 4. **渐进式复杂度**：按任务规模自动匹配 Quick / Standard / Complex 三档
 5. **两阶段评审**：spec-reviewer 审需求合规，code-quality-reviewer 审代码质量，职责隔离
 6. **完成即验证**：/fix、/apply 完成后必须展示编译和测试输出，禁止无证据声明"好了"
-7. **GitHub 可统计**：PR 模板和 github-metrics 规则让 Issue、测试、CI、风险信息可被 GitHub/API/Actions 采集
+7. **GitHub 可统计**：/finish、PR 模板和 github-metrics 规则让 Issue、测试、CI、风险信息可被 GitHub/API/Actions 采集
 8. **全程记录**：log.md 自动维护过程记录、知识发现、review 结论、遗留问题
 9. **知识飞轮**：/archive 将项目经验沉淀到知识库，下次 /propose 自动加载
 
@@ -300,6 +314,7 @@ ai_code_copilot/
 ```
 .ai_code_copilot/
 ├── .copilot-state.json         # 框架版本、命中 pack、同步时间
+├── config.json                 # 项目级工作流配置（如 /finish 策略）
 ├── rules/
 │   ├── project-context.md      # 工程上下文（/init 生成）
 │   ├── coding-style.md         # 项目编码规范（覆盖全局）
@@ -336,7 +351,7 @@ ai_code_copilot/
 bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project .
 ```
 
-Codex/Claude 中说“初始化项目”时，也会优先走这个脚本。它会自动检测 Java/Go/Python/Frontend pack，复制 core rules、命中的 pack rules 和 `changes/templates/`，并生成项目级 `project-context.md`。
+Codex/Claude 中说“初始化项目”时，也会优先走这个脚本。它会自动检测 Java/Go/Python/Frontend pack，复制 core rules、命中的 pack rules 和 `changes/templates/`，并生成项目级 `project-context.md` 与 `.ai_code_copilot/config.json`。
 
 框架后续升级后，**不会自动触碰业务项目**。需要同步新模板或新规则时显式执行：
 
@@ -354,6 +369,7 @@ bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project . --upgrade --dr
 
 - 缺失文件会直接补齐
 - 已存在且内容相同的文件跳过
+- `config.json` 是项目主权配置文件，已存在时保留项目内容，不生成 `.new`
 - `rules/project-context.md` 和 `rules/domain-rules.md` 是项目主权文件，已存在时保留项目内容，不生成 `.new`
 - `changes/templates/*.md` 是框架托管流程模板，已存在但内容不同则自动更新到新版
 - 其他规则文件已存在但内容不同会写成 `<文件名>.new`，项目团队人工比较后决定是否合并
