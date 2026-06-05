@@ -107,7 +107,7 @@
      `bash <COPILOT_HOME>/scripts/init_project.sh --project <当前项目根目录> --sync`
    - 若用户要求升级检查或预览，执行：
      `bash <COPILOT_HOME>/scripts/init_project.sh --project <当前项目根目录> --upgrade --dry-run`
-   - 脚本会复制 core rules + 命中 pack rules，并保护项目已有规则/模板文件：内容不同时写入 `.new` 候选文件，不静默覆盖
+   - 脚本会复制 core rules + 命中 pack rules，并按同步策略保护项目已有文件：项目主权文件保留、流程模板自动更新、其他规则内容不同时写入 `.new`
    - 脚本会维护机器状态 `.ai_code_copilot/.copilot-state.json`，记录框架 commit、命中 packs、初始化/同步时间
    - 脚本不可用时，按以下步骤手动执行
 
@@ -145,7 +145,9 @@
 - 框架升级只更新全局 `<COPILOT_HOME>`，不会自动改业务项目里的 `.ai_code_copilot/`
 - 需要同步新规则/模板时，显式执行 `/init --sync`、`/upgrade` 或脚本 `scripts/init_project.sh --sync`
 - 真正写入前可用 `--dry-run` 查看计划变更
-- 同步只补缺失文件；若项目已有规则/模板与新版本不同，生成 `<文件>.new`，由用户人工合并
+- `.ai_code_copilot/rules/project-context.md` 和 `.ai_code_copilot/rules/domain-rules.md` 是项目主权文件：若已存在，默认保留项目内容，不生成 `.new`
+- `.ai_code_copilot/changes/templates/*.md` 是框架托管流程模板：若与新版本不同，`--sync` 默认直接更新；`--dry-run` 只报告计划更新，不写入
+- 其他规则文件若与新版本不同，生成 `<文件>.new`，由用户人工合并
 - `.copilot-state.json` 是机器维护状态，非 dry-run 同步时允许自动刷新
 - 项目级规则优先级最高，永不被全局更新静默覆盖
 

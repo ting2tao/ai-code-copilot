@@ -338,7 +338,7 @@ bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project .
 
 Codex/Claude 中说“初始化项目”时，也会优先走这个脚本。它会自动检测 Java/Go/Python/Frontend pack，复制 core rules、命中的 pack rules 和 `changes/templates/`，并生成项目级 `project-context.md`。
 
-框架后续升级后，**不会静默覆盖存量项目**。需要同步新模板或新规则时显式执行：
+框架后续升级后，**不会自动触碰业务项目**。需要同步新模板或新规则时显式执行：
 
 ```bash
 bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project . --sync
@@ -354,8 +354,9 @@ bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project . --upgrade --dr
 
 - 缺失文件会直接补齐
 - 已存在且内容相同的文件跳过
-- 已存在但内容不同的规则/模板文件写成 `<文件名>.new`
-- 项目团队人工比较 `.new` 后决定是否合并
+- `rules/project-context.md` 和 `rules/domain-rules.md` 是项目主权文件，已存在时保留项目内容，不生成 `.new`
+- `changes/templates/*.md` 是框架托管流程模板，已存在但内容不同则自动更新到新版
+- 其他规则文件已存在但内容不同会写成 `<文件名>.new`，项目团队人工比较后决定是否合并
 - `.ai_code_copilot/.copilot-state.json` 是机器维护的状态文件，会在非 dry-run 同步时刷新框架 commit、命中的 packs、初始化和同步时间
 
 框架开发者可运行：
