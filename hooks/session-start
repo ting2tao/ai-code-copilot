@@ -25,7 +25,7 @@ Quick 档：必须先生成 quick-card.md（目标/文件/非目标/验收/风�
 - 涉及状态流转必须检查状态机合法性
 - 涉及权限变更必须显式校验操作人权限
 
-可用命令：init / brainstorm / propose / apply / fix / fix-ci / review / test / archive
+可用命令：init / brainstorm / propose / apply / fix / fix-ci / review / finish / test / archive
 如需完整框架能力，请说"帮我实现..."或直接调用命令名触发 ai-code-copilot skill。
 </ai-code-copilot-safety-rules>'
 

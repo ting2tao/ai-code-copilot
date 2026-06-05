@@ -91,3 +91,20 @@
 **结论**：READY / NEEDS_INFO
 **缺失字段**：
 - {Issue / PR body / Test Evidence / CI / CodeQL / Risk / AI Collaboration / PR size 等缺失项}
+
+---
+
+## /finish 记录
+
+> `/finish` 用于 GitHub 收尾：验证、push、创建 PR，并用 `Closes #ID` 关联 Issue。
+
+| 字段 | 内容 |
+|------|------|
+| finish 模式 | ask / manual / auto-pr |
+| Issue | {Issue ID/URL} |
+| 分支 | {branch} |
+| 远端 | origin |
+| PR | {PR URL 或"未创建"} |
+| Base branch | main |
+| 验证命令 | `{command}` |
+| 验证结果 | {实际输出摘要} |

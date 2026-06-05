@@ -16,6 +16,7 @@ Initializes or synchronizes .ai_code_copilot/ in a business project.
 
 Default behavior:
   - Creates .ai_code_copilot/ if missing.
+  - Creates .ai_code_copilot/config.json if missing.
   - Copies core rules and detected tech-pack rules.
   - Project-owned files are preserved: rules/project-context.md and rules/domain-rules.md.
   - Managed templates in changes/templates/ are updated to the framework version.
@@ -82,6 +83,7 @@ rules_target = target / "rules"
 changes_target = target / "changes"
 knowledge_target = target / "knowledge"
 state_path = target / ".copilot-state.json"
+config_path = target / "config.json"
 
 excluded_dirs = {
     ".git",
@@ -352,6 +354,12 @@ for pack_dir, manifest in read_manifests():
         )
 
 events = []
+
+config_status, config_dest = write_project_owned(
+    config_path,
+    (copilot_home / "config" / "project-config.json").read_text(encoding="utf-8"),
+)
+events.append((config_status, config_dest))
 
 for src in sorted((copilot_home / "rules").glob("*.md")):
     if src.name == "project-context.md":

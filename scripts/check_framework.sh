@@ -23,6 +23,7 @@ need_file skill/SKILL.md
 need_file agents/copilot-prompt.md
 need_file agents/spec-reviewer.md
 need_file agents/code-quality-reviewer.md
+need_file config/project-config.json
 need_file hooks/session-start
 need_dir rules
 need_dir packs
@@ -85,6 +86,22 @@ if prompt_commands != hook_commands:
     )
 if "fix-ci" not in prompt_commands:
     raise SystemExit("command menus must include fix-ci")
+if "finish" not in prompt_commands:
+    raise SystemExit("command menus must include finish")
+
+project_config = json.loads((root / "config" / "project-config.json").read_text(encoding="utf-8"))
+github_workflow = project_config.get("githubWorkflow", {})
+expected_config = {
+    "finishMode": "ask",
+    "issueWhenMissing": "ask",
+    "createPrAfterReviewPass": False,
+    "defaultBaseBranch": "main",
+    "pushRemote": "origin",
+    "prDraft": False,
+}
+for key, value in expected_config.items():
+    if github_workflow.get(key) != value:
+        raise SystemExit(f"project config githubWorkflow.{key} must default to {value!r}")
 
 expected = {"java-spring", "go", "python", "frontend-react"}
 actual = {p.name for p in pack_root.iterdir() if p.is_dir()}
@@ -144,6 +161,9 @@ if [ -d tests/fixtures ]; then
     cp -R "$fixture"/. "$tmpdir"/
     AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" >/tmp/ai-code-copilot-fixture.out
     test -f "$tmpdir/.ai_code_copilot/.copilot-state.json" || fail "fixture missing state: $fixture"
+    test -f "$tmpdir/.ai_code_copilot/config.json" || fail "fixture missing project config: $fixture"
+    grep -q '"finishMode": "ask"' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing finishMode ask: $fixture"
+    grep -q '"issueWhenMissing": "ask"' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing issueWhenMissing ask: $fixture"
     test -f "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "fixture missing project context: $fixture"
     test -f "$tmpdir/.ai_code_copilot/rules/commit-convention.md" || fail "fixture missing commit convention: $fixture"
     test -f "$tmpdir/.ai_code_copilot/rules/github-metrics.md" || fail "fixture missing github metrics rule: $fixture"
@@ -179,12 +199,15 @@ if [ -d tests/fixtures ]; then
     fi
     printf 'custom project context\n' > "$tmpdir/.ai_code_copilot/rules/project-context.md"
     printf 'custom domain rules\n' > "$tmpdir/.ai_code_copilot/rules/domain-rules.md"
+    printf '{"githubWorkflow":{"finishMode":"manual"}}\n' > "$tmpdir/.ai_code_copilot/config.json"
     printf 'old test template\n' > "$tmpdir/.ai_code_copilot/changes/templates/test-spec.md"
     AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >/tmp/ai-code-copilot-fixture-sync.out
     grep -q 'custom project context' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "sync overwrote project-owned project-context: $fixture"
     grep -q 'custom domain rules' "$tmpdir/.ai_code_copilot/rules/domain-rules.md" || fail "sync overwrote project-owned domain-rules: $fixture"
+    grep -q '"finishMode":"manual"' "$tmpdir/.ai_code_copilot/config.json" || fail "sync overwrote project-owned config: $fixture"
     test ! -f "$tmpdir/.ai_code_copilot/rules/project-context.md.new" || fail "sync generated project-context.md.new for project-owned rule: $fixture"
     test ! -f "$tmpdir/.ai_code_copilot/rules/domain-rules.md.new" || fail "sync generated domain-rules.md.new for project-owned rule: $fixture"
+    test ! -f "$tmpdir/.ai_code_copilot/config.json.new" || fail "sync generated config.json.new for project-owned config: $fixture"
     cmp -s "$ROOT/changes/templates/test-spec.md" "$tmpdir/.ai_code_copilot/changes/templates/test-spec.md" || fail "sync did not update managed test-spec template: $fixture"
     test ! -f "$tmpdir/.ai_code_copilot/changes/templates/test-spec.md.new" || fail "sync generated test-spec.md.new instead of updating managed template: $fixture"
     rm -rf "$tmpdir"
