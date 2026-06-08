@@ -4,7 +4,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## 项目简介
 
-ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架（Codex skill，兼容 Claude Code）。它不是一个可运行的应用，而是一套部署到 `~/.codex/ai_code_copilot/`（Codex）或 `~/.claude/ai_code_copilot/`（Claude Code）的提示词、规则、Agent 和安装脚本。核心理念：**Context First, Code Follows.** AI 让代码更容易生成，ai-code-copilot 通过 Spec 驱动的流程（brainstorm → propose → apply → review → archive）让上下文变得明确、可审查、可复用，确保 AI 在正确的上下文里做正确的事。
+ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架（Codex skill，兼容 Claude Code）。它不是一个可运行的应用，而是一套部署到 `~/.codex/ai_code_copilot/`（Codex）或 `~/.claude/ai_code_copilot/`（Claude Code）的提示词、规则、Agent 和安装脚本。核心理念：**Context First, Harness Enables, Code Follows.** AI 让代码更容易生成，ai-code-copilot 通过 Spec 驱动的流程（brainstorm → propose → apply → review → archive）和 Harness 反馈循环，让上下文变得明确、可审查、可复用，确保 AI 在正确的上下文里做正确的事。
 
 ## 架构：两层结构
 
@@ -19,6 +19,7 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 - `tests/fixtures/` — Java/Go/Python/Frontend/Monorepo 的初始化检测样例
 - `rules/` — 跨语言通用规则（协作、安全、领域、项目上下文占位）
 - `knowledge/` — 知识库（由 `/archive` 沉淀积累）
+- `docs/harness-engineering.md` — Harness Engineering 方法论在本框架中的定义
 - `changes/templates/` — 变更文档模板（spec、tasks、test-spec、log、design-brief、quick-card、roadmap）
 - `packs/` — 技术栈规则包，`/init` 时自动检测加载；Java/Go/Python/Frontend 规则都放在各自 pack 中
 
@@ -51,6 +52,7 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 - **No Spec/Quick Card, No Code** — Standard/Complex 没有 spec 不准写代码；Quick 没有 quick-card 不准写代码
 - **渐进式复杂度** — Quick（≤1天，<5文件）/ Standard / Complex（>5天，跨3+模块）
 - **Evidence Before Claims** — 每个 task 完成必须展示可验证的命令输出
+- **Harness Enables** — 规格、测试、日志、review、规则和知识沉淀共同构成 Agent 可见反馈循环
 - **双阶段审查** — Spec Compliance（是否按 spec 实现）+ Code Quality（代码质量）
 - **知识飞轮** — `/archive` 将经验沉淀到 `knowledge/`，下次自动加载
 - **安全红线** — 硬编码密钥、日志打印敏感信息、资金/权限变更必须人工确认

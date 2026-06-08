@@ -1,12 +1,12 @@
 # ai-code-copilot
 
-> **Context First, Code Follows.** — 面向多技术栈软件项目的 AI 编码协作框架
+> **Context First, Harness Enables, Code Follows.** — 面向多技术栈软件项目的 AI 编码协作框架
 >
-> AI 让代码更容易生成，ai-code-copilot 让上下文变得明确、可审查、可复用。
+> AI 让代码更容易生成，ai-code-copilot 让上下文和反馈循环变得明确、可审查、可复用。
 
 ## 它是什么
 
-ai-code-copilot 是一个兼容 **Codex** 与 **Claude Code** 的 AI 编码协作框架。它不直接写代码，而是帮你建立一套 **人机协作规范**：先搞清楚需求，再写规格说明，最后按规格编码、审查、归档。整个过程有文档沉淀、有质量门禁、有知识积累。
+ai-code-copilot 是一个兼容 **Codex** 与 **Claude Code** 的 AI 编码协作框架。它不直接写代码，而是帮你建立一套 **人机协作 Harness**：先搞清楚需求，再写规格说明，明确 Agent 能看见的测试、日志、规则和反馈入口，最后按规格编码、审查、归档。整个过程有文档沉淀、有质量门禁、有知识积累。
 
 ## 它解决了什么问题
 
@@ -20,12 +20,15 @@ ai-code-copilot 是一个兼容 **Codex** 与 **Claude Code** 的 AI 编码协�
 ## 核心特点
 
 - **Spec 驱动** — Standard/Complex 没有 spec 不准写代码；Quick 没有 quick-card 不准写代码
+- **Harness Engineering** — 用测试、日志、规则、review 和 knowledge 设计 Agent 可见反馈循环
 - **渐进式复杂度** — 自动判断 Quick / Standard / Complex 三档
 - **规则分层** — core 只管 AI 协作流程，技术栈细节放在 Java/Go/Python/Frontend pack
 - **双阶段审查** — 先查有没有按 spec 实现，再查代码质量
 - **知识飞轮** — 每个项目的经验沉淀成知识库，AI 自动加载
 - **全程可审计** — 每次变更都有 log.md，记录决策、踩坑、review 结论
 - **安全红线** — 资金/权限/状态变更必须人工确认
+
+Harness Engineering 的框架内定义见 [`docs/harness-engineering.md`](docs/harness-engineering.md)。
 
 ## 规则分层
 

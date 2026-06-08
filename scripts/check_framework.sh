@@ -24,6 +24,7 @@ need_file agents/copilot-prompt.md
 need_file agents/spec-reviewer.md
 need_file agents/code-quality-reviewer.md
 need_file config/project-config.json
+need_file docs/harness-engineering.md
 need_file hooks/session-start
 need_dir rules
 need_dir packs
@@ -53,6 +54,15 @@ pack_root = root / "packs"
 prompt_text = (root / "agents" / "copilot-prompt.md").read_text(encoding="utf-8")
 hook_text = (root / "hooks" / "session-start").read_text(encoding="utf-8")
 skill_text = (root / "skill" / "SKILL.md").read_text(encoding="utf-8")
+agents_text = (root / "AGENTS.md").read_text(encoding="utf-8")
+agents_lines = agents_text.splitlines()
+if len(agents_lines) > 120:
+    raise SystemExit(f"AGENTS.md must stay a short index; found {len(agents_lines)} lines")
+if "docs/harness-engineering.md" not in agents_text:
+    raise SystemExit("AGENTS.md must point to docs/harness-engineering.md")
+if "Context First, Harness Enables, Code Follows" not in agents_text:
+    raise SystemExit("AGENTS.md must use the Harness-enabled core slogan")
+
 frontmatter = skill_text.split("---", 2)[1]
 description_lines = []
 capture_description = False
@@ -143,6 +153,22 @@ for rel in [
 ]:
     if not (root / rel).exists():
         raise SystemExit(f"missing template: {rel}")
+
+required_harness_markers = {
+    "agents/copilot-prompt.md": ["Harness", "Agent 可见"],
+    "agents/spec-reviewer.md": ["Harness", "Agent 可验证"],
+    "agents/code-quality-reviewer.md": ["Harness", "Agent 可读"],
+    "changes/templates/spec.md": ["Agent Harness", "Agent 可见证据"],
+    "changes/templates/quick-card.md": ["Agent Harness", "Agent 可见证据"],
+    "changes/templates/test-spec.md": ["Agent Harness", "可观测信号"],
+}
+for rel, markers in required_harness_markers.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    missing_markers = [marker for marker in markers if marker not in text]
+    if missing_markers:
+        raise SystemExit(
+            f"{rel} missing Harness markers: " + ", ".join(missing_markers)
+        )
 
 test_spec = (root / "changes" / "templates" / "test-spec.md").read_text(encoding="utf-8")
 java_only_terms = ["Mockito", "MockMvc", "mvn test", "jacoco", "XxxServiceImpl", "XxxMapper"]
