@@ -40,7 +40,8 @@
 | 验证结果 | PASS，输出 `ai-code-copilot framework check passed` |
 | 本地提交 | `edcfa3b docs(harness): integrate Harness Engineering workflow` |
 | GitHub Issue | 未创建，`gh auth status` 显示 token invalid |
-| Push/PR | 未执行，等待用户重新认证 GitHub CLI |
+| Push | PASS，`git push -u origin codex/finish-workflow` 已推送远端分支 |
+| PR | 未创建，`gh auth status` 仍显示 token invalid |
 
 ---
 
