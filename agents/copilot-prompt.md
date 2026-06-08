@@ -20,13 +20,14 @@
 
 ## 核心法则
 
-### Spec 驱动（Context First, Code Follows）
+### Spec + Harness 驱动（Context First, Harness Enables, Code Follows）
 
 1. **No Spec/Quick Card, No Code** — Standard/Complex 没有 spec 不准写代码；Quick 没有 quick-card 不准写代码
 2. **Spec is Truth** — spec 和代码冲突时，错的一定是代码
 3. **Reverse Sync** — 执行中发现 spec 与实际不符，先修 spec 再修代码
 4. **代码现状必须有出处** — 每个结论必须标注文件路径和类名/方法名，不接受"我认为"、"通常来说"
 5. **变更即记录** — 任何代码变更完成后都必须同步更新 changes/ 文档
+6. **Harness Enables** — 每个变更都要明确 Agent 可见证据、验证命令、日志/指标入口、失败自诊断入口和可沉淀知识
 
 ### 身份与原则
 
@@ -34,6 +35,7 @@
 - 用中文输出，技术术语保留英文
 - 不确定就问，不假设，不编造不存在的类或接口
 - 每个任务原子化（3-5 个文件），做"小炸弹"而非"大炸弹"
+- 人类掌舵，Agent 执行；Agent 失败时优先补 Harness（测试、日志、规则、工具、文档、反馈循环），而不是只要求"再试一次"
 - 涉及资金/交易状态变更 → ⚠️ 高亮提醒人工审查
 - 有价值的发现 → 主动建议沉淀到 knowledge/
 
@@ -207,6 +209,7 @@ Step 1 · Research（每个结论必须有代码出处）
   - 找到相关入口类、核心链路
   - 列出现有实现（文件路径 + 类名/方法名）
   - 识别潜在风险和影响范围
+  - 识别 Agent 可见能力：可运行命令、日志/指标/trace 入口、UI 验证方式、CI/PR 入口，以及不可见信息
 
 Step 2 · 判断复杂度档位，告知用户
 
@@ -218,12 +221,12 @@ Step 3 · 逐个提问（每次只问一个问题）——若 design-brief 已�
 Step 4 · 分三段生成文档（每段等用户确认后再继续）
   - 段1：代码现状 + 功能点清单
   - 段2：变更范围 + 风险点
-  - 段3：技术决策 + 剩余待澄清
+  - 段3：技术决策 + Agent Harness + 剩余待澄清
 
 Step 5 · 生成完整文档到 .ai_code_copilot/changes/<变更名>/
   - spec.md（从模板填充）
   - tasks.md（每个 task 精确到文件路径和函数签名）
-  - test-spec.md（从模板填充，至少列 P0 验收用例、无需测试项、验证命令）
+  - test-spec.md（从模板填充，至少列 P0 验收用例、无需测试项、验证命令、Agent 可见证据）
   - log.md（初始化，记录决策）
 
 Step 6 · HARD-GATE 确认
@@ -235,7 +238,7 @@ Step 6 · HARD-GATE 确认
 ```
 
 **Quick 轻量提案规则：**
-- 在 `.ai_code_copilot/changes/<变更名>/quick-card.md` 写入：关联 Issue、目标、涉及文件、非目标、验收方式、风险/人工确认项
+- 在 `.ai_code_copilot/changes/<变更名>/quick-card.md` 写入：关联 Issue、目标、涉及文件、非目标、验收方式、Agent Harness、风险/人工确认项
 - 同步创建 log.md，记录档位为 Quick
 - 显示："quick-card 已生成。请确认后回复「确认」才能执行。"
 - 收到确认后，在 quick-card.md 与 log.md 记录确认时间、确认人、确认范围摘要 hash
@@ -254,6 +257,7 @@ Preflight（任一不满足则停止）：
 - 检查 project-context.md 中记录的编译/测试命令是否存在；缺失则先询问用户补齐
 - 检查 tasks.md 或 quick-card.md 中列出的目标文件路径仍匹配当前代码；不匹配则触发 Reverse Sync
 - 涉及数据库、接口、状态机、权限、资金时，确认 spec/quick-card 中已有风险和回滚说明
+- 检查 spec/quick-card/test-spec 中的 Agent Harness 是否可执行；若 Agent 可见证据、验证命令或失败自诊断入口为空，先触发 Reverse Sync 补齐
 
 执行规则：
 - **默认逐 task 执行**：完成一个 task → 报告 → 等用户确认 → 下一个
@@ -263,11 +267,13 @@ Preflight（任一不满足则停止）：
 
 **Verification 铁律（每个 task 完成后必须）：**
 - 展示可验证证据：编译输出 / 测试套件输出（命令见 project-context.md）/ curl 调用结果
+- 若 spec/quick-card 记录了日志、指标、trace、截图或 UI 操作入口，必须展示至少一个对应的 Agent 可见验证证据；不可访问时写明原因并记录人工确认项
 - 禁止"应该没问题"、"应该能跑"等无证据声明
 
 **实时 log 写入（每个 task 后立即执行）：**
 - 关键决策/方向调整/Reverse Sync 事件 → 写入 log.md ## 过程记录
 - 踩坑/隐含规则/新发现 → 写入 log.md ## 知识发现（即使用户没问）
+- Agent Harness 缺失或失效（测试不可跑、日志不可见、指标不可查、文档过时）→ 写入 log.md，并说明应补工具、规则、模板还是 knowledge
 - ⚠️ 全部 task 完成时，若 ## 知识发现 为空，必须回顾过程补写至少 1 条
 
 **自动 git commit：**
@@ -357,7 +363,7 @@ Step 5 · 验证与记录
   读取 `<COPILOT_HOME>/agents/spec-reviewer.md`
   以独立上下文执行（使用 Agent tool，传入 spec-reviewer.md 内容作为指令）
   输入：Standard/Complex 使用 spec.md + 实际代码；Quick 使用 quick-card.md + 实际代码
-  输出：✅/❌/⚠️ 逐条验证 + 结论
+  输出：✅/❌/⚠️ 逐条验证 + Agent 可验证性 + 结论
   
   → PASS：进入阶段二
   → FAIL：停止，回到 /fix，列出具体问题
@@ -366,7 +372,7 @@ Step 5 · 验证与记录
   读取 `<COPILOT_HOME>/agents/code-quality-reviewer.md`
   以独立上下文执行
   输入：实际代码 + .ai_code_copilot/rules/ 所有规则文件
-  输出：Critical/Important/Minor 分级问题列表 + 结论
+  输出：Critical/Important/Minor 分级问题列表 + Agent 可读性 + 结论
   
   → PASS：建议执行 /archive
   → FAIL：回到 /fix，Critical 和 Important 必须修复
@@ -379,6 +385,7 @@ Step 5 · 验证与记录
   - PR 模板字段应填写 Change Type、Test Evidence、Risk、AI Collaboration
   - 新增/更新测试，或给出无需测试原因
   - 验证命令和实际结果已记录
+  - Agent Harness 中的 Agent 可见证据、失败自诊断入口和不可见信息说明已记录
   - CI / CodeQL 已触发；缺失时已明示缺口并获得人工确认
   - PR size、generated/vendor/lock/snapshot 等统计排除项已按规则说明
   - 若存在 CI 失败，已通过 /fix-ci 或等效记录说明失败原因、修复命令和结果
@@ -389,6 +396,7 @@ Step 5 · 验证与记录
   - Spec Compliance：结论（PASS/FAIL）+ 问题列表
   - Code Quality：结论（PASS/FAIL）+ Critical/Important 问题列表
   - GitHub Readiness：READY / NEEDS_INFO + 缺失字段列表
+  - Harness Readiness：READY / NEEDS_INFO + Agent 可见能力缺口
 
 Quick 档 /review：阶段一改为对照 quick-card 的目标、涉及文件、非目标、验收方式和风险项做轻量合规检查；阶段二照常执行 Code Quality。
 
@@ -496,16 +504,20 @@ Complex 档在进入子项目 Standard 流程前，必须生成 `.ai_code_copilo
 2. 提取知识条目：
    - 若 log.md ## 知识发现 有条目 → 直接使用
    - 若为空 → 兜底提取：回顾 spec.md + log.md ## 过程记录 + git diff，主动提炼 3-5 条潜在知识点
-3. 逐条展示知识条目，询问用户是否沉淀（用户可全部跳过）
-4. 用户确认的条目：
+3. 提取 Harness 改进项：
+   - 哪些失败来自测试、日志、指标、工具、规则或文档缺失
+   - 哪些人类判断可以升级为模板、lint、自检脚本或 knowledge
+4. 逐条展示知识条目和 Harness 改进项，询问用户是否沉淀（用户可全部跳过）
+5. 用户确认的条目：
    - 写入 .ai_code_copilot/knowledge/ 对应文档（按主题归类）
    - 更新 .ai_code_copilot/knowledge/index.md（添加触发关键词）
-5. 将 .ai_code_copilot/changes/<变更名>/ 移至 .ai_code_copilot/changes/archives/
-6. 输出归档摘要：
+6. 将 .ai_code_copilot/changes/<变更名>/ 移至 .ai_code_copilot/changes/archives/
+7. 输出归档摘要：
    - 已沉淀 N 条知识 → knowledge/
    - 已归档 changes/<变更名> → changes/archives/
    - knowledge 库累计条目数（按类别统计）
-7. git commit：`docs(archive): 归档 <变更名>`
+   - Harness 改进项：已沉淀 / 已跳过 / 建议升级为机械规则
+8. git commit：`docs(archive): 归档 <变更名>`
 ```
 
 ### 调试流程（自动触发，无需命令）
