@@ -1,81 +1,85 @@
 # ai-code-copilot
 
-> **Context First, Harness Enables, Code Follows.** — 面向多技术栈软件项目的 AI 编码协作框架
+[中文说明](README-CN.md)
+
+> **Context First, Harness Enables, Code Follows.** An AI coding collaboration framework for multi-stack software projects.
 >
-> AI 让代码更容易生成，ai-code-copilot 让上下文和反馈循环变得明确、可审查、可复用。
+> AI makes code easier to generate. ai-code-copilot makes context and feedback loops explicit, reviewable, and reusable.
 
-## 它是什么
+## What It Is
 
-ai-code-copilot 是一个兼容 **Codex** 与 **Claude Code** 的 AI 编码协作框架。它不直接写代码，而是帮你建立一套 **人机协作 Harness**：先搞清楚需求，再写规格说明，明确 Agent 能看见的测试、日志、规则和反馈入口，最后按规格编码、审查、归档。整个过程有文档沉淀、有质量门禁、有知识积累。
+ai-code-copilot is an AI coding collaboration framework for **Codex** and **Claude Code**. It is not a runtime application. It installs prompts, rules, agents, hooks, templates, and scripts into `~/.codex/ai_code_copilot/` or `~/.claude/ai_code_copilot/`.
 
-## 它解决了什么问题
+The framework helps you build a human-agent engineering harness: clarify the goal first, write a spec, define the tests/logs/rules/feedback that the agent can see, then implement, review, finish, and archive the change with evidence.
 
-| 传统 AI 辅助 | ai-code-copilot |
-|-------------|----------------|
-| 直接让 AI 写代码，改了什么不清楚 | 先写 spec 再编码，变更全程可追溯 |
-| AI 写完就完了，下次同样的坑再踩 | 知识自动沉淀，下次自动加载 |
-| 审查靠人眼看，标准不统一 | 双阶段审查：需求合规 + 代码质量 |
-| 改了一堆文件，不知道风险在哪 | 渐进式复杂度，小任务快跑，大任务拆解 |
+## Problems It Solves
 
-## 核心特点
+| Common AI coding flow | ai-code-copilot |
+|----------------------|-----------------|
+| Ask AI to code directly; the scope is unclear | Write a spec first; every change is traceable |
+| The same mistakes happen again later | Archive knowledge so future work can load it |
+| Reviews depend on ad-hoc human judgment | Two-stage review: spec compliance and code quality |
+| A large patch lands with unclear risk | Progressive complexity: small changes move fast, larger changes are split |
 
-- **Spec 驱动** — Standard/Complex 没有 spec 不准写代码；Quick 没有 quick-card 不准写代码
-- **Harness Engineering** — 用测试、日志、规则、review 和 knowledge 设计 Agent 可见反馈循环
-- **渐进式复杂度** — 自动判断 Quick / Standard / Complex 三档
-- **规则分层** — core 只管 AI 协作流程，技术栈细节放在 Java/Go/Python/Frontend pack
-- **双阶段审查** — 先查有没有按 spec 实现，再查代码质量
-- **知识飞轮** — 每个项目的经验沉淀成知识库，AI 自动加载
-- **全程可审计** — 每次变更都有 log.md，记录决策、踩坑、review 结论
-- **安全红线** — 资金/权限/状态变更必须人工确认
+## Core Features
 
-Harness Engineering 的框架内定义见 [`docs/harness-engineering.md`](docs/harness-engineering.md)。
+- **Spec-driven work**: Standard/Complex changes require `spec.md`; Quick changes require `quick-card.md`.
+- **Harness Engineering**: tests, logs, rules, reviews, and knowledge form an agent-visible feedback loop.
+- **Progressive complexity**: Quick / Standard / Complex workflows based on change size and risk.
+- **Layered rules**: core collaboration rules stay in `rules/`; stack-specific practices live in Java/Go/Python/Frontend packs.
+- **Two-stage review**: first check implementation against the spec, then review code quality.
+- **Knowledge flywheel**: project experience is archived into knowledge files and reused later.
+- **Audit trail**: each change keeps `log.md` for decisions, issues, review results, and evidence.
+- **Safety rails**: money, permission, and state-transition changes require human confirmation.
 
-## 规则分层
+The framework definition of Harness Engineering is in [`docs/harness-engineering.md`](docs/harness-engineering.md).
 
-ai-code-copilot 不把所有语言规则揉成一套。通用流程和安全红线保留在 `rules/`，技术栈写法放进 `packs/`：
+## Rule Layers
 
-| 层级 | 负责什么 | 示例 |
-|------|----------|------|
-| Core rules | AI 怎么协作、如何验证、通用安全、GitHub 指标和领域边界 | `rules/coding-style.md`、`rules/security.md`、`rules/commit-convention.md`、`rules/github-metrics.md` |
-| Tech pack | 这个技术栈怎么写代码、怎么测试、怎么分层 | `packs/java-spring/`、`packs/go/`、`packs/python/`、`packs/frontend-react/` |
-| Project rules | 业务项目自己的架构、命令、领域规则 | `<project>/.ai_code_copilot/rules/` |
+ai-code-copilot does not merge every language rule into one generic prompt. Common collaboration and safety rules live in `rules/`; stack-specific guidance lives in `packs/`.
 
-`/init` 会自动检测技术栈，复制 core rules 和命中的 pack rules 到项目级 `.ai_code_copilot/rules/`。
+| Layer | Responsibility | Examples |
+|-------|----------------|----------|
+| Core rules | Collaboration workflow, verification, common safety, GitHub metrics, domain boundaries | `rules/coding-style.md`, `rules/security.md`, `rules/commit-convention.md`, `rules/github-metrics.md` |
+| Tech pack | How to code, test, and structure a specific stack | `packs/java-spring/`, `packs/go/`, `packs/python/`, `packs/frontend-react/` |
+| Project rules | A business project's own architecture, commands, and domain rules | `<project>/.ai_code_copilot/rules/` |
 
-## 全景图
+`/init` detects the project stack and copies core rules plus matching pack rules into `.ai_code_copilot/rules/`.
+
+## Workflow Map
 
 ```mermaid
 flowchart LR
-    subgraph Init ["  初始化（首次）"]
+    subgraph Init ["  Init"]
         direction TB
-        I1["自动检测技术栈<br/>Java / Go / Python / Frontend"]
-        I2["扫描项目结构<br/>识别模块与分层"]
-        I3["创建配置目录<br/>.ai_code_copilot/"]
+        I1["Detect stack<br/>Java / Go / Python / Frontend"]
+        I2["Scan project structure<br/>modules and layers"]
+        I3["Create config dir<br/>.ai_code_copilot/"]
         I1 --> I2 --> I3
     end
 
-    subgraph Gears ["  核心齿轮"]
+    subgraph Gears ["  Core workflow"]
         direction TB
-        Brain["/brainstorm<br/>设计探索"]
-        Spec["/propose<br/>变更提案"]
-        Code["/apply<br/>执行编码"]
-        Check["/review<br/>双阶段审查"]
-        Finish["/finish<br/>GitHub 收尾"]
+        Brain["/brainstorm<br/>design exploration"]
+        Spec["/propose<br/>change proposal"]
+        Code["/apply<br/>implementation"]
+        Check["/review<br/>two-stage review"]
+        Finish["/finish<br/>GitHub handoff"]
         Brain --> Spec --> Code --> Check
         Check --> Finish
     end
 
-    subgraph Side ["  辅助能力"]
+    subgraph Side ["  Supporting commands"]
         direction TB
-        Fix["/fix<br/>增量修正"]
-        FixCI["/fix-ci<br/>CI 修复闭环"]
-        Test["/test<br/>TDD 测试"]
-        Debug["调试<br/>四阶段自动触发"]
+        Fix["/fix<br/>incremental fixes"]
+        FixCI["/fix-ci<br/>CI repair loop"]
+        Test["/test<br/>TDD testing"]
+        Debug["debugging<br/>four-phase workflow"]
     end
 
-    subgraph Final ["  收尾"]
+    subgraph Final ["  Archive"]
         direction TB
-        Archive["/archive<br/>知识沉淀"]
+        Archive["/archive<br/>knowledge capture"]
         Knowledge["knowledge/"]
         Archives["changes/archives/"]
         Archive --> Knowledge
@@ -100,295 +104,284 @@ flowchart LR
     class I1,I2,I3 init
 ```
 
-## 渐进式复杂度
+## Progressive Complexity
 
-任务进来后，先判断规模，自动匹配流程：
+Every request is classified before work begins:
 
-| 档位 | 适用场景 | 流程 |
-|------|----------|------|
-| **Quick** | ≤1天，<5文件，不跨模块 | 说明范围 → quick-card → 确认 → 执行 → /review → /finish |
-| **Standard** | 1-5天，或明确要求 | /brainstorm → /propose → /apply → /review → /finish |
-| **Complex** | >5天，或跨 3+ 模块 | /brainstorm → roadmap → 拆子项目 → 每个走 Standard |
+| Level | When to use | Flow |
+|-------|-------------|------|
+| **Quick** | Less than one day, fewer than five files, no cross-module work | scope note -> quick-card -> confirmation -> implementation -> `/review` -> `/finish` |
+| **Standard** | One to five days, or when explicitly requested | `/brainstorm` -> `/propose` -> `/apply` -> `/review` -> `/finish` |
+| **Complex** | More than five days, or across three or more modules | `/brainstorm` -> roadmap -> split into Standard subprojects |
 
-不确定时默认 Standard。
+When uncertain, the framework defaults to Standard.
 
----
+## Standard Workflow
 
-## Standard 流程详解
+The Standard flow is the common path for feature work. Example: "Add an order cancellation API."
 
-日常开发中最常用的流程。以"新增订单取消接口"为例：
+### 1. `/brainstorm` - Design Exploration
 
-### 1. /brainstorm — 设计探索
+Goal: clarify before implementation.
 
-**目的：先聊清楚再动手。**
-
-```
-你：我想加一个订单取消接口
-AI：这个需求涉及哪些模块？是消费者取消还是管理员取消？
-你：消费者取消
-AI：取消需要检查订单状态吗？比如已发货的能取消吗？
-你：只有待支付和已支付未发货可以
-AI：好的，我来提两个方案...
+```text
+You: I want to add an order cancellation API.
+AI: Which actor cancels the order: customer or admin?
+You: Customer.
+AI: Should cancellation depend on order status, such as shipped or unpaid?
+You: Only unpaid and paid-but-not-shipped orders can be cancelled.
+AI: Good. I will compare two implementation options...
 ```
 
-- 每次只问一个问题，不连发多问
-- 优先给选择题（2-3 选项 + 推荐 + 理由）
-- 自动读取相关代码，找出现有实现
-- 输出 `design-brief.md`（设计简报）
+- Ask one question at a time.
+- Prefer multiple-choice questions with a recommendation and reason.
+- Read the relevant code and identify current behavior.
+- Produce `design-brief.md`.
 
-**硬性门控：design-brief 未确认，不准进入下一步。**
+Hard gate: no confirmed `design-brief.md`, no `/propose`.
 
-### 2. /propose — 变更提案
+### 2. `/propose` - Change Proposal
 
-**目的：写规格说明书，明确改什么、怎么改。**
+Goal: write the contract for what will change and how.
 
-- 加载 design-brief 作为输入
-- Research 相关代码链路（必须标注文件路径 + 类名/方法名）
-- 分三段生成文档，每段等你确认：
-  - 代码现状 + 功能点清单
-  - 变更范围 + 风险点
-  - 技术决策 + 待澄清项
-- 输出四个文件：
-  - `spec.md` — 需求合同（要做什么）
-  - `tasks.md` — 执行计划（精确到文件路径和函数签名）
-  - `test-spec.md` — 测试策略草案（P0/P1/P2 + 验证命令）
-  - `log.md` — 过程记录
+- Load `design-brief.md` as input.
+- Research the relevant code path with file/class/method references.
+- Generate the proposal in three confirmation sections:
+  - current code and feature list
+  - change scope and risks
+  - technical decisions and open questions
+- Produce:
+  - `spec.md`: requirement contract
+  - `tasks.md`: implementation plan with file paths and function signatures
+  - `test-spec.md`: P0/P1/P2 test strategy and verification commands
+  - `log.md`: decision and evidence log
 
-**硬性门控：spec 和 tasks 未确认，不准开始编码。**
+Hard gate: no confirmed spec and tasks, no implementation.
 
-### 3. /apply — 执行编码
+### 3. `/apply` - Implementation
 
-**目的：按 spec 逐个 task 写代码，每步有证据验证。**
+Goal: implement task by task, with evidence after each step.
 
-- 严禁无票开发：spec/quick-card 必须记录关联 Issue ID 或 URL
-- 逐 task 执行（也可说"批量跑"）
-- 每个 task 完成后必须展示：编译输出 / 测试输出 / curl 结果
-- 禁止"应该没问题"等无证据声明
-- 实时写入 log.md（决策、踩坑、知识发现）
-- 自动 git commit：`feat(scope): 中文简述` / `fix(scope): 中文简述`
+- No ticketless development: `spec.md` or `quick-card.md` must record an Issue ID or URL.
+- Execute tasks one by one, or in a controlled batch when requested.
+- After each task, show verifiable evidence such as build output, test output, or curl results.
+- Avoid evidence-free claims such as "should be fine".
+- Keep `log.md` updated with decisions, issues, and knowledge discoveries.
+- Create commits such as `feat(scope): concise description` or `fix(scope): concise description`.
 
-**commit message 规范：** 使用 Conventional Commits：`<type>[optional scope]: <description>`。Issue 信息不要放在前缀，推荐 `fix(org-search): 支持按组织名称查询服务范围 (#7)` 或在正文/PR 中写 `Refs #7`、`Closes #7`。
+Commit messages use Conventional Commits: `<type>[optional scope]: <description>`. Put Issue references in the body or PR, for example `Refs #7` or `Closes #7`.
 
-**PR 规范：** PR 必须使用 `Closes #ID` 关联 Issue，并触发 CodeQL 静态审查与 CI 编译自动化审查。PR 信息按 `.github/PULL_REQUEST_TEMPLATE.md` 填写，便于 GitHub 统计 issue、测试、CI 和风险数据。
+PRs must use `Closes #ID` to link the Issue, trigger CodeQL and CI, and follow `.github/PULL_REQUEST_TEMPLATE.md` so GitHub can collect issue, test, CI, and risk data.
 
-### 4. /review — 双阶段审查 + GitHub Readiness
+### 4. `/review` - Two-Stage Review and GitHub Readiness
 
-**阶段一：Spec Compliance** — 逐条对比 spec.md 和实际代码
-**阶段二：Code Quality** — 审查代码质量（Critical / Important / Minor）
-**阶段三：GitHub Readiness** — 检查 Issue、PR body、测试证据、CI/CodeQL 和指标口径是否可被 GitHub 干净统计
+Stage 1: **Spec Compliance** checks the implementation against `spec.md`.
 
-Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再审。GitHub Readiness 若为 NEEDS_INFO → 补齐 PR/CI/测试证据后再审。审查通过后可执行 `/finish` 做 GitHub 收尾。
+Stage 2: **Code Quality** reviews safety, maintainability, readability, and test quality.
 
-### 5. /fix-ci — CI 失败修复闭环
+Stage 3: **GitHub Readiness** checks Issue linkage, PR body, test evidence, CI/CodeQL, and metric-friendly metadata.
 
-当 GitHub Actions、CodeQL、lint、类型检查、单测或编译失败时，粘贴完整日志或提供 workflow run URL。AI 会先识别失败命令，尽量本地复现，再做最小修复，重新运行失败命令，并把根因、验证输出和 commit 写入 log.md。
+If Spec Compliance or Code Quality fails, return to `/fix`, then review again. If GitHub Readiness is `NEEDS_INFO`, fill in PR/CI/test evidence before finishing.
 
-### 6. /finish — GitHub 收尾
+### 5. `/fix-ci` - CI Repair Loop
 
-**目的：验证、push、创建 PR，并用 `Closes #ID` 关闭关联 Issue。**
+When GitHub Actions, CodeQL, lint, type checks, tests, or builds fail, paste the full log or provide a workflow run URL. The agent identifies the failed command, reproduces locally where possible, makes the smallest fix, reruns the failing command, and records root cause, verification output, and commit details in `log.md`.
 
-- 默认读取 `.ai_code_copilot/config.json` 的 `githubWorkflow`
-- 缺配置时首次触发会询问并写入配置
-- `finishMode=ask` 每次执行前确认，`auto-pr` 自动 push + PR，`manual` 只输出命令和 PR body
-- PR body 自动包含 Summary、Test Evidence、Risk、AI Collaboration 和 `Closes #ID`
-- 收尾结果写入 log.md 的 `/finish 记录`
+### 6. `/finish` - GitHub Handoff
 
-### 7. /archive — 知识沉淀
+Goal: verify, push, create a PR, and close the linked Issue with `Closes #ID`.
 
-- 从 log.md 提取知识条目
-- 逐条确认是否沉淀到 `knowledge/`
-- 变更目录移至 `changes/archives/`
-- 下次新需求，相关知识自动加载
+- Read `.ai_code_copilot/config.json` for `githubWorkflow`.
+- Ask and write config on first use when missing.
+- `finishMode=ask`: confirm each time.
+- `finishMode=auto-pr`: push and create PR automatically.
+- `finishMode=manual`: output commands and PR body only.
+- PR body includes Summary, Test Evidence, Risk, AI Collaboration, and `Closes #ID`.
+- Record finish results in `log.md`.
 
----
+### 7. `/archive` - Knowledge Capture
 
-## 命令速查
+- Extract knowledge entries from `log.md`.
+- Confirm each entry before writing it to `knowledge/`.
+- Move the change directory to `changes/archives/`.
+- Load relevant knowledge automatically in future proposals.
 
-| 命令 | 自然语言触发 | 一句话 | 产出 |
-|------|-------------|--------|------|
-| `/init` | 初始化项目、分析工程结构、setup | 自动识别你的项目，配置协作环境 | `.ai_code_copilot/` 目录 |
-| `/brainstorm` | 先讨论一下、帮我分析方案、设计探索、方案对比 | 先聊清楚再动手，避免写错方向 | `design-brief.md` |
-| `/propose` | 帮我实现、加功能、加接口、优化、重构 | 写规格说明书，明确改什么、怎么改 | `spec.md` + `tasks.md` |
-| `/apply` | 开始写代码、继续执行 | 按 spec 逐个 task 编码，每个都有证据验证 | 代码 + `log.md` |
-| `/review` | 帮我看看代码、review 一下 | 先查有没有按 spec 实现，再查代码质量 | 审查报告 |
-| `/fix` | 修 bug、改一下 xxx、排查问题 | review 发现问题就修，修完再审 | 修复代码 |
-| `/fix-ci` | CI 报错、Actions 失败、流水线失败、修 CI | 基于 CI 日志做最小修复，并验证失败命令重新通过 | 修复代码 + `log.md` |
-| `/finish` | 完成收尾、开 PR、发 PR | 验证、push、创建 PR，并用 `Closes #ID` 关闭 Issue | PR + `log.md` |
-| `/test` | 写测试、补单测、跑测试、测覆盖率 | Red/Green 循环，覆盖率 ≥ 80% | 测试用例 |
-| `/archive` | 归档、沉淀知识、整理变更 | 把踩过的坑沉淀成知识，下次自动加载 | `knowledge/` |
+## Command Reference
 
----
+| Command | Natural-language triggers | Purpose | Output |
+|---------|---------------------------|---------|--------|
+| `/init` | initialize project, analyze structure, setup | Detect the project and configure collaboration context | `.ai_code_copilot/` |
+| `/brainstorm` | discuss first, analyze options, design exploration | Clarify direction before writing specs | `design-brief.md` |
+| `/propose` | implement this, add feature, add API, optimize, refactor | Define what changes and how | `spec.md` + `tasks.md` |
+| `/apply` | start coding, continue implementation | Implement task by task with verification evidence | code + `log.md` |
+| `/review` | review this, check code | Check spec compliance and code quality | review report |
+| `/fix` | fix bug, change this, investigate issue | Fix review findings or bugs, then review again | code fix |
+| `/fix-ci` | CI failed, Actions failed, fix CI | Repair CI failures with local reproduction where possible | code fix + `log.md` |
+| `/finish` | finish, open PR, create PR | Verify, push, open PR, and close the Issue | PR + `log.md` |
+| `/test` | write tests, add unit tests, run coverage | Red/Green testing with coverage gate | tests |
+| `/archive` | archive, capture knowledge | Save lessons and archive the change | `knowledge/` |
 
-## 设计原则
+## Design Principles
 
-1. **头脑风暴先行**：复杂需求先用 /brainstorm 对齐方向，再写 spec，避免方向跑偏
-2. **规格锁定**：编码前生成并确认 spec.md，需求不明确不动手
-3. **硬性门控**：spec 未确认拒绝编码；/review 未检测到 /apply 提交拒绝执行
-4. **渐进式复杂度**：按任务规模自动匹配 Quick / Standard / Complex 三档
-5. **两阶段评审**：spec-reviewer 审需求合规，code-quality-reviewer 审代码质量，职责隔离
-6. **完成即验证**：/fix、/apply 完成后必须展示编译和测试输出，禁止无证据声明"好了"
-7. **GitHub 可统计**：/finish、PR 模板和 github-metrics 规则让 Issue、测试、CI、风险信息可被 GitHub/API/Actions 采集
-8. **全程记录**：log.md 自动维护过程记录、知识发现、review 结论、遗留问题
-9. **知识飞轮**：/archive 将项目经验沉淀到知识库，下次 /propose 自动加载
+1. **Brainstorm first**: complex work starts with `/brainstorm` so the direction is aligned before specs.
+2. **Spec lock**: generate and confirm `spec.md` before implementation.
+3. **Hard gates**: no confirmed spec, no coding; no `/apply` evidence, no `/review` pass.
+4. **Progressive complexity**: match Quick / Standard / Complex to the change.
+5. **Two-stage review**: spec reviewer checks requirement compliance; code-quality reviewer checks implementation quality.
+6. **Evidence before claims**: `/fix` and `/apply` must show build/test output before claiming success.
+7. **GitHub-measurable work**: `/finish`, PR templates, and GitHub metrics rules make issues, tests, CI, and risk data collectible.
+8. **Continuous log**: `log.md` tracks decisions, discoveries, review results, and open issues.
+9. **Knowledge flywheel**: `/archive` turns project experience into reusable knowledge.
 
----
-
-## 快速开始
+## Quick Start
 
 ```bash
-# 自动安装（自动识别 Codex/Claude Code，注册 skill + hook）
+# Auto install; detects Codex or Claude Code and registers skill + hook.
 curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.sh | bash
 
-# 指定安装到 Codex
+# Install for Codex.
 curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.sh | bash -s -- --codex
 
-# 指定安装到 Claude Code
+# Install for Claude Code.
 curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.sh | bash -s -- --claude
 ```
 
-安装完成后，在任意业务项目中打开 Codex 或 Claude Code，说：
+After installation, open Codex or Claude Code in any business project and say:
 
-```
+```text
 初始化项目
 ```
 
-> **更新：** 再次执行上面的 `curl ... | bash` 即可，脚本会自动 `git pull`。
->
-> **手动安装：**
-> ```bash
-> git clone https://github.com/ting2tao/ai-code-copilot.git ~/.codex/ai_code_copilot
-> bash ~/.codex/ai_code_copilot/install.sh --codex
-> ```
+Update by running the same `curl ... | bash` command again. The installer will run `git pull`.
 
-### Windows 用户
+Manual install:
 
-在 **PowerShell** 中执行（需已安装 [Git for Windows](https://git-scm.com)）：
+```bash
+git clone https://github.com/ting2tao/ai-code-copilot.git ~/.codex/ai_code_copilot
+bash ~/.codex/ai_code_copilot/install.sh --codex
+```
+
+### Windows
+
+Run in **PowerShell** with [Git for Windows](https://git-scm.com) installed:
 
 ```powershell
 irm https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/install.ps1 | iex
 ```
 
-> 脚本使用目录 Junction 替代 symlink，无需开发者模式，也无需管理员权限。
+The Windows script uses a directory Junction instead of a symlink, so it does not require Developer Mode or administrator privileges.
 
-**更新 / 卸载：**
+Update or uninstall:
 
 ```powershell
-# 更新
+# Update
 powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\ai_code_copilot\install.ps1" -Codex
 
-# 卸载
+# Uninstall
 powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.codex\ai_code_copilot\install.ps1" -Codex -Uninstall
 ```
 
----
+## Directory Structure
 
-## 目录结构
+Global layer, installed by default at `~/.codex/ai_code_copilot/` for Codex or `~/.claude/ai_code_copilot/` for Claude Code:
 
-**全局层**（Codex 默认 `~/.codex/ai_code_copilot/`；Claude Code 默认 `~/.claude/ai_code_copilot/`）
-
-```
+```text
 ai_code_copilot/
 ├── install.sh              # macOS / Linux
-├── install.ps1             # Windows (PowerShell)
+├── install.ps1             # Windows PowerShell
 ├── agents/
-│   ├── copilot-prompt.md       # 主提示词（skill 入口读取）
-│   ├── spec-reviewer.md        # Spec 合规审查 Sub-Agent
+│   ├── copilot-prompt.md       # main prompt read by the skill entry
+│   ├── spec-reviewer.md        # spec compliance reviewer sub-agent
 │   └── code-quality-reviewer.md
 ├── hooks/
-│   ├── hooks.json              # SessionStart hook 配置
-│   └── session-start           # 每次会话自动注入安全规则
+│   ├── hooks.json              # SessionStart hook config
+│   └── session-start           # injects safety rules each session
 ├── scripts/
-│   ├── init_project.sh         # 脚本化 /init、--sync、--upgrade、--dry-run
-│   └── check_framework.sh      # 框架自检
+│   ├── init_project.sh         # scripted /init, --sync, --upgrade, --dry-run
+│   └── check_framework.sh      # framework self-check
 ├── skill/
-│   └── SKILL.md                # Codex/Claude Code skill 注册文件
+│   └── SKILL.md                # Codex/Claude Code skill registration
 ├── packs/
-│   ├── java-spring/            # Java/Spring 规则包
-│   ├── go/                     # Go 规则包
-│   ├── python/                 # Python 规则包
-│   └── frontend-react/         # React/前端规则包
-├── rules/                      # 跨语言通用规则（项目级可覆盖）
-├── knowledge/                  # 全局知识库（/archive 写入）
-└── changes/templates/          # 变更文档模板
+│   ├── java-spring/            # Java/Spring rules
+│   ├── go/                     # Go rules
+│   ├── python/                 # Python rules
+│   └── frontend-react/         # React/frontend rules
+├── rules/                      # cross-language common rules
+├── knowledge/                  # global knowledge base written by /archive
+└── changes/templates/          # change document templates
 ```
 
-**项目层**（`<project>/.ai_code_copilot/`）
+Project layer, created at `<project>/.ai_code_copilot/`:
 
-```
+```text
 .ai_code_copilot/
-├── .copilot-state.json         # 框架版本、命中 pack、同步时间
-├── config.json                 # 项目级工作流配置（如 /finish 策略）
+├── .copilot-state.json         # framework version, matched packs, sync time
+├── config.json                 # project workflow config, such as /finish policy
 ├── rules/
-│   ├── project-context.md      # 工程上下文（/init 生成）
-│   ├── coding-style.md         # 项目编码规范（覆盖全局）
-│   ├── commit-convention.md    # Issue / commit / PR 规范
-│   ├── github-metrics.md       # GitHub 指标统计口径
-│   └── domain-rules.md         # 业务约束（手动填写）
+│   ├── project-context.md      # project context generated by /init
+│   ├── coding-style.md         # project coding style, overrides global
+│   ├── commit-convention.md    # Issue / commit / PR rules
+│   ├── github-metrics.md       # GitHub metric definitions
+│   └── domain-rules.md         # domain constraints, filled manually
 ├── knowledge/
-│   └── index.md                # 知识索引（/archive 维护）
+│   └── index.md                # knowledge index maintained by /archive
 └── changes/
-    └── <变更名>/
-        ├── design-brief.md     # /brainstorm 产出
-        ├── spec.md             # 需求合同
-        ├── tasks.md            # 执行计划
-        └── log.md              # 过程记录 + 知识发现 + review 结论
+    └── <change-name>/
+        ├── design-brief.md     # produced by /brainstorm
+        ├── spec.md             # requirement contract
+        ├── tasks.md            # implementation plan
+        └── log.md              # process log, knowledge, review results
 ```
 
----
+## Hooks
 
-## Hooks 机制
+The installer registers a SessionStart hook in the matching platform `settings.json`. Each Codex or Claude Code session receives safety rules automatically without manually invoking the skill:
 
-安装时自动向对应平台的 `settings.json` 注册 SessionStart Hook。每次打开 Codex/Claude Code 会话，安全规则自动注入，无需手动触发 skill：
+- Standard/Complex: no coding before confirmed spec.
+- Money, state-transition, or permission changes require explicit human confirmation.
+- No hardcoded secrets; no sensitive data in logs.
 
-- Standard/Complex 档：spec 未确认前禁止编码
-- 涉及资金 / 状态流转 / 权限变更：强制高亮提醒
-- 禁止硬编码密钥；禁止日志打印敏感信息
+## Initialization and Sync
 
----
-
-## 初始化与同步
-
-新项目或存量项目首次接入时，在业务项目根目录执行：
+For a new or existing business project, run from the project root:
 
 ```bash
 bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project .
 ```
 
-Codex/Claude 中说“初始化项目”时，也会优先走这个脚本。它会自动检测 Java/Go/Python/Frontend pack，复制 core rules、命中的 pack rules 和 `changes/templates/`，并生成项目级 `project-context.md` 与 `.ai_code_copilot/config.json`。
+When you say "初始化项目" in Codex or Claude Code, the framework also prefers this script. It detects Java/Go/Python/Frontend packs, copies core rules, matched pack rules, and `changes/templates/`, then generates project-level `project-context.md` and `.ai_code_copilot/config.json`.
 
-框架后续升级后，**不会自动触碰业务项目**。需要同步新模板或新规则时显式执行：
+Framework upgrades do **not** automatically modify business projects. To sync new templates or rules into an already initialized project, run:
 
 ```bash
 bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project . --sync
 ```
 
-想先预览升级影响而不写文件：
+Preview upgrade impact without writing files:
 
 ```bash
 bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project . --upgrade --dry-run
 ```
 
-同步策略：
+Sync policy:
 
-- 缺失文件会直接补齐
-- 已存在且内容相同的文件跳过
-- `config.json` 是项目主权配置文件，已存在时保留项目内容，不生成 `.new`
-- `rules/project-context.md` 和 `rules/domain-rules.md` 是项目主权文件，已存在时保留项目内容，不生成 `.new`
-- `changes/templates/*.md` 是框架托管流程模板，已存在但内容不同则自动更新到新版
-- 其他规则文件已存在但内容不同会写成 `<文件名>.new`，项目团队人工比较后决定是否合并
-- `.ai_code_copilot/.copilot-state.json` 是机器维护的状态文件，会在非 dry-run 同步时刷新框架 commit、命中的 packs、初始化和同步时间
+- Missing files are created.
+- Existing identical files are skipped.
+- `config.json` is project-owned; existing content is preserved and no `.new` file is generated.
+- `rules/project-context.md` and `rules/domain-rules.md` are project-owned; existing content is preserved and no `.new` file is generated.
+- `changes/templates/*.md` are framework-managed; different existing files are updated to the new version.
+- Other rule files with different content are written as `<filename>.new` for project teams to compare and merge manually.
+- `.ai_code_copilot/.copilot-state.json` is machine-maintained and refreshed on non-dry-run sync.
 
-框架开发者可运行：
+Framework developers can run:
 
 ```bash
 bash scripts/check_framework.sh
 ```
 
-它会检查 pack manifest、规则文件引用、模板、安装脚本语法，并用 `tests/fixtures/` 验证 Java/Go/Python/Frontend/Monorepo 的 pack 检测。
+It checks pack manifests, rule references, templates, installer syntax, and pack detection against `tests/fixtures/` for Java/Go/Python/Frontend/Monorepo projects.
 
----
-
-## 卸载
+## Uninstall
 
 ```bash
 bash ~/.codex/ai_code_copilot/install.sh --codex --uninstall
