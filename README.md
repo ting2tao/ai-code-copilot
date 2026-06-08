@@ -14,16 +14,17 @@ The framework helps you build a human-agent engineering harness: clarify the goa
 
 ## Problems It Solves
 
-| Common AI coding flow | ai-code-copilot |
+| Typical AI assistance | ai-code-copilot |
 |----------------------|-----------------|
-| Ask AI to code directly; the scope is unclear | Write a spec first; every change is traceable |
-| The same mistakes happen again later | Archive knowledge so future work can load it |
-| Reviews depend on ad-hoc human judgment | Two-stage review: spec compliance and code quality |
-| A large patch lands with unclear risk | Progressive complexity: small changes move fast, larger changes are split |
+| Ask AI to change code; requirements, boundaries, and acceptance stay scattered in chat | Quick Cards and Specs capture goals, scope, acceptance, and risks before code changes |
+| Each session has to rediscover project commands, architecture, and domain rules | `/init` records stack detection, build/test commands, architecture, and domain rules as project context |
+| A fix ends with "should work"; reviewers lack evidence to trust it | Each change leaves test commands, log entry points, PR evidence, and verification output |
+| Lessons stay in the session; similar work starts from zero again | `/archive` turns decisions and pitfalls into knowledge; repeated lessons can become rules, templates, or packs |
 
 ## Core Features
 
 - **Spec-driven work**: Standard/Complex changes require `spec.md`; Quick changes require `quick-card.md`.
+- **Project-local context**: `/init` captures stack, commands, architecture, and domain rules in `.ai_code_copilot/`.
 - **Harness Engineering**: tests, logs, rules, reviews, and knowledge form an agent-visible feedback loop.
 - **Progressive complexity**: Quick / Standard / Complex workflows based on change size and risk.
 - **Layered rules**: core collaboration rules stay in `rules/`; stack-specific practices live in Java/Go/Python/Frontend packs.
@@ -249,7 +250,8 @@ curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/insta
 After installation, open Codex or Claude Code in any business project and say:
 
 ```text
-初始化项目
+/init
+# or say "初始化项目"
 ```
 
 Update by running the same `curl ... | bash` command again. The installer will run `git pull`.
@@ -349,7 +351,7 @@ For a new or existing business project, run from the project root:
 bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project .
 ```
 
-When you say "初始化项目" in Codex or Claude Code, the framework also prefers this script. It detects Java/Go/Python/Frontend packs, copies core rules, matched pack rules, and `changes/templates/`, then generates project-level `project-context.md` and `.ai_code_copilot/config.json`.
+When you say `/init` or "初始化项目" in Codex or Claude Code, the framework also prefers this script. It detects Java/Go/Python/Frontend packs, copies core rules, matched pack rules, and `changes/templates/`, then generates project-level `project-context.md` and `.ai_code_copilot/config.json`.
 
 Framework upgrades do **not** automatically modify business projects. To sync new templates or rules into an already initialized project, run:
 
