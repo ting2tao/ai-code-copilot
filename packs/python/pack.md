@@ -9,6 +9,13 @@
 - `poetry.lock`
 - `uv.lock`
 
+命中后继续识别细分信号：
+- `pyproject.toml` / `requirements.txt`
+- Poetry / uv
+- `src/` layout
+- pytest
+- ruff
+
 ## 项目扫描命令
 
 ```bash
@@ -21,6 +28,7 @@ find . -name "*.py" -not -path "./.venv/*" -not -path "./venv/*" -not -path "./.
 
 - `packs/python/rules/coding-style.md`
 - `packs/python/rules/project-structure.md`
+- `packs/python/rules/verification.md`
 
 ## 常见架构
 
@@ -42,6 +50,16 @@ pyproject.toml        ← 依赖、工具、构建配置
 | 格式化/Lint | `ruff check .` / `ruff format .` |
 
 > `/init` 应根据项目实际工具链选择命令；没有对应工具时询问用户补齐。
+
+## 变更验证矩阵
+
+| 改动场景 | 建议验证 |
+|----------|----------|
+| 公开函数签名、schema、typed model | 类型检查（mypy/pyright）+ `pytest` |
+| 业务逻辑或数据转换 | 目标测试文件 + `pytest` |
+| async、重试、外部 IO | 针对性 async/error-path 测试 + `pytest` |
+| CLI、脚本、运维入口 | 用安全 fixture 运行变更命令 + `pytest` |
+| 格式化或 lint 敏感改动 | `ruff check .`；配置时执行 `ruff format .` |
 
 ## 依赖读取命令
 

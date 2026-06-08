@@ -120,6 +120,28 @@ def package_json_has_any(path, names):
     return any(name in deps for name in names)
 
 
+def package_json_dependency_names(path):
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return set()
+    deps = set()
+    for key in ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]:
+        value = data.get(key)
+        if isinstance(value, dict):
+            deps.update(value.keys())
+    return deps
+
+
+def package_json_script_names(path):
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return set()
+    scripts = data.get("scripts")
+    return set(scripts.keys()) if isinstance(scripts, dict) else set()
+
+
 def detect_pack(pack_dir, manifest):
     detect = manifest.get("detect", {})
     files = detect.get("files", [])
@@ -132,6 +154,31 @@ def detect_pack(pack_dir, manifest):
         else:
             matches.append(path)
     return matches
+
+
+def detect_signals(manifest, matches):
+    signals = []
+    for signal in manifest.get("signals", []):
+        label = signal.get("label") or signal.get("id")
+        if not label:
+            continue
+        package_deps = set(signal.get("packageJsonDependenciesAny", []))
+        package_scripts = set(signal.get("packageJsonScriptsAny", []))
+        files_any = signal.get("filesAny", [])
+        matched = False
+        for match in matches:
+            module_dir = match.parent
+            if package_deps and match.name == "package.json":
+                matched = matched or bool(package_json_dependency_names(match) & package_deps)
+            if package_scripts and match.name == "package.json":
+                matched = matched or bool(package_json_script_names(match) & package_scripts)
+            if files_any:
+                matched = matched or any((module_dir / rel).exists() for rel in files_any)
+            if matched:
+                break
+        if matched:
+            signals.append(label)
+    return signals
 
 
 def read_manifests():
@@ -273,7 +320,21 @@ def project_context(detected):
 
     lines.extend([
         "",
-        "## 5. 构建与测试命令",
+        "## 5. 技术栈信号",
+        "",
+        "| 规则包 | 自动识别信号 |",
+        "|--------|--------------|",
+    ])
+    if detected:
+        for item in detected:
+            signals = "、".join(item.get("signals", [])) or "未配置细分信号"
+            lines.append(f"| `{item['id']}` | {signals} |")
+    else:
+        lines.append("| （待补充） | （待补充） |")
+
+    lines.extend([
+        "",
+        "## 6. 构建与测试命令",
         "",
         "| 规则包 | 依赖安装 | 编译/类型检查 | 全量测试 | 单模块/单文件测试 | Lint/格式化 |",
         "|--------|----------|----------------|----------|------------------|-------------|",
@@ -293,6 +354,24 @@ def project_context(detected):
             )
     else:
         lines.append("| （待补充） | （待补充） | （待补充） | （待补充） | （待补充） | （待补充） |")
+
+    lines.extend([
+        "",
+        "## 7. 变更验证矩阵",
+        "",
+        "| 规则包 | 改动场景 | 建议验证 |",
+        "|--------|----------|----------|",
+    ])
+    has_matrix = False
+    for item in detected:
+        for row in item["manifest"].get("verificationMatrix", []):
+            change = row.get("change", "（待补充）")
+            commands = row.get("commands", [])
+            command_text = "；".join(commands) if commands else "参考项目现有验证命令"
+            lines.append(f"| `{item['id']}` | {change} | `{command_text}` |")
+            has_matrix = True
+    if not has_matrix:
+        lines.append("| （待补充） | （待补充） | （待补充） |")
     lines.append("")
     return "\n".join(lines)
 
@@ -350,6 +429,7 @@ for pack_dir, manifest in read_manifests():
                 "manifest": manifest,
                 "pack_dir": pack_dir,
                 "matches": matches,
+                "signals": detect_signals(manifest, matches),
             }
         )
 

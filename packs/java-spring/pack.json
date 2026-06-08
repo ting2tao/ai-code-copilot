@@ -16,7 +16,62 @@
     "rules/spring-boot-config-files.md",
     "rules/http-interface-spec.md",
     "rules/custom-component-priority-principle.md",
-    "rules/project-struct.md"
+    "rules/project-struct.md",
+    "rules/verification.md"
+  ],
+  "signals": [
+    {
+      "id": "maven",
+      "label": "Maven",
+      "filesAny": ["pom.xml"]
+    },
+    {
+      "id": "gradle",
+      "label": "Gradle",
+      "filesAny": ["build.gradle", "build.gradle.kts"]
+    },
+    {
+      "id": "spring-boot",
+      "label": "Spring Boot",
+      "filesAny": ["src/main/resources/application.yml", "src/main/resources/application.yaml", "src/main/resources/application.properties"]
+    },
+    {
+      "id": "java-src-layout",
+      "label": "src/main/java layout",
+      "filesAny": ["src/main/java"]
+    },
+    {
+      "id": "java-test-layout",
+      "label": "src/test/java tests",
+      "filesAny": ["src/test/java"]
+    },
+    {
+      "id": "mybatis",
+      "label": "MyBatis mapper layout",
+      "filesAny": ["src/main/resources/mapper", "src/main/java/mapper"]
+    }
+  ],
+  "verificationMatrix": [
+    {
+      "change": "Controller endpoints, request/response DTOs, or validation",
+      "commands": ["mvn test -Dtest=<ControllerTest> or ./gradlew test", "API contract regression when configured"]
+    },
+    {
+      "change": "Service business logic or transaction boundaries",
+      "commands": ["mvn test -Dtest=<ServiceTest>", "mvn test"]
+    },
+    {
+      "change": "DAO/mapper queries or persistence models",
+      "commands": ["mapper/repository integration test", "mvn test"]
+    },
+    {
+      "change": "Configuration, profiles, or application startup",
+      "commands": ["mvn compile -q", "startup smoke test when app context is available"]
+    },
+    {
+      "change": "Permissions, status transitions, funds, or destructive operations",
+      "commands": ["positive and negative authorization tests", "explicit human review for sensitive flows"]
+    }
   ],
   "commands": {
     "dependencyInstall": "",

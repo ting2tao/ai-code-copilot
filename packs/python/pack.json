@@ -10,7 +10,67 @@
   },
   "rules": [
     "rules/coding-style.md",
-    "rules/project-structure.md"
+    "rules/project-structure.md",
+    "rules/verification.md"
+  ],
+  "signals": [
+    {
+      "id": "pyproject",
+      "label": "pyproject.toml",
+      "filesAny": ["pyproject.toml"]
+    },
+    {
+      "id": "requirements",
+      "label": "requirements.txt",
+      "filesAny": ["requirements.txt"]
+    },
+    {
+      "id": "poetry",
+      "label": "Poetry",
+      "filesAny": ["poetry.lock"]
+    },
+    {
+      "id": "uv",
+      "label": "uv",
+      "filesAny": ["uv.lock"]
+    },
+    {
+      "id": "src-layout",
+      "label": "src/ layout",
+      "filesAny": ["src"]
+    },
+    {
+      "id": "pytest",
+      "label": "pytest",
+      "filesAny": ["pytest.ini", "tests"]
+    },
+    {
+      "id": "ruff",
+      "label": "ruff",
+      "filesAny": ["ruff.toml", ".ruff.toml"]
+    }
+  ],
+  "verificationMatrix": [
+    {
+      "change": "Public function signatures, schemas, or typed models",
+      "commands": ["mypy . or pyright when configured", "pytest"]
+    },
+    {
+      "change": "Business logic or data transformations",
+      "commands": ["pytest path/to/test_file.py", "pytest"]
+    },
+    {
+      "change": "Async code, retries, or external IO",
+      "commands": ["targeted async/error-path tests", "pytest"]
+    },
+    {
+      "change": "CLI, scripts, or operational entrypoints",
+      "commands": ["run the changed CLI command with a safe fixture", "pytest"]
+    },
+    {
+      "change": "Formatting or lint-sensitive edits",
+      "commands": ["ruff check .", "ruff format . when configured"]
+    }
   ],
   "commands": {
     "dependencyInstall": "uv sync or pip install -r requirements.txt",
