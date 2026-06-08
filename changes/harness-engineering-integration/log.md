@@ -13,7 +13,7 @@
 | 开始时间 | 2026-06-08 |
 | 完成时间 | 2026-06-08 |
 | 关联 Issue | 本线程用户确认，待补 GitHub Issue |
-| commit 列表 | `241c41d docs(harness): integrate Harness Engineering workflow` |
+| commit 列表 | `edcfa3b docs(harness): integrate Harness Engineering workflow` |
 
 ---
 
@@ -27,7 +27,7 @@
 - 2026-06-08：复跑 `bash scripts/check_framework.sh`，输出 `ai-code-copilot framework check passed`。
 - 2026-06-08：目标达成审计发现 `AGENTS.md` 仍有旧口号，补充修正；同时给 `check_framework.sh` 增加 `AGENTS.md` 行数上限、Harness 文档索引和核心口号检查。
 - 2026-06-08：再次运行 `bash scripts/check_framework.sh`，输出 `ai-code-copilot framework check passed`。
-- 2026-06-08：本地提交 `241c41d docs(harness): integrate Harness Engineering workflow`。
+- 2026-06-08：本地提交 `edcfa3b docs(harness): integrate Harness Engineering workflow`。
 
 ---
 
@@ -38,7 +38,7 @@
 | 本地分支 | `codex/finish-workflow` |
 | 验证命令 | `bash scripts/check_framework.sh` |
 | 验证结果 | PASS，输出 `ai-code-copilot framework check passed` |
-| 本地提交 | `241c41d docs(harness): integrate Harness Engineering workflow` |
+| 本地提交 | `edcfa3b docs(harness): integrate Harness Engineering workflow` |
 | GitHub Issue | 未创建，`gh auth status` 显示 token invalid |
 | Push/PR | 未执行，等待用户重新认证 GitHub CLI |
 
