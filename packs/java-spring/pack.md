@@ -7,6 +7,12 @@
 - `build.gradle`
 - `build.gradle.kts`
 
+命中后继续识别细分信号：
+- Maven / Gradle
+- Spring Boot 配置文件
+- `src/main/java` / `src/test/java` 标准布局
+- MyBatis mapper 布局
+
 ## 项目扫描命令
 
 ```bash
@@ -25,6 +31,7 @@ find src/main/java -name "*.java" -type f | head -100
 - `packs/java-spring/rules/http-interface-spec.md`
 - `packs/java-spring/rules/custom-component-priority-principle.md`
 - `packs/java-spring/rules/project-struct.md`
+- `packs/java-spring/rules/verification.md`
 
 ## 分层架构
 
@@ -48,6 +55,16 @@ DAO (dao/ 或 mapper/)               ← 纯数据访问
 
 > `/init` 检测到本包时，优先用 Maven；若无 pom.xml 只有 build.gradle 则用 Gradle。
 > 填充 project-context.md 时记录实际使用的命令。
+
+## 变更验证矩阵
+
+| 改动场景 | 建议验证 |
+|----------|----------|
+| Controller、DTO、参数校验、接口响应 | Controller 测试或接口契约回归 |
+| Service 业务逻辑、事务边界 | Service 单测 + 全量测试 |
+| DAO/mapper、持久化模型 | mapper/repository 集成测试 + 全量测试 |
+| 配置、profile、启动链路 | 编译检查 + 可用时启动 smoke test |
+| 权限、状态流转、资金、破坏性操作 | 正反权限用例 + 人工审查 |
 
 ## 依赖读取命令
 

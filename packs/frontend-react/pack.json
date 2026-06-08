@@ -11,7 +11,80 @@
   },
   "rules": [
     "rules/coding-style.md",
-    "rules/project-structure.md"
+    "rules/project-structure.md",
+    "rules/verification.md"
+  ],
+  "signals": [
+    {
+      "id": "next",
+      "label": "Next.js",
+      "packageJsonDependenciesAny": ["next"]
+    },
+    {
+      "id": "vite",
+      "label": "Vite",
+      "packageJsonDependenciesAny": ["vite", "@vitejs/plugin-react"]
+    },
+    {
+      "id": "remix",
+      "label": "Remix",
+      "packageJsonDependenciesAny": ["@remix-run/react", "@remix-run/node", "@remix-run/dev"]
+    },
+    {
+      "id": "typescript",
+      "label": "TypeScript",
+      "packageJsonDependenciesAny": ["typescript"],
+      "filesAny": ["tsconfig.json"]
+    },
+    {
+      "id": "vitest",
+      "label": "Vitest",
+      "packageJsonDependenciesAny": ["vitest"]
+    },
+    {
+      "id": "playwright",
+      "label": "Playwright",
+      "packageJsonDependenciesAny": ["@playwright/test"],
+      "filesAny": ["playwright.config.ts", "playwright.config.js"]
+    },
+    {
+      "id": "tailwind",
+      "label": "Tailwind CSS",
+      "packageJsonDependenciesAny": ["tailwindcss"],
+      "filesAny": ["tailwind.config.ts", "tailwind.config.js", "tailwind.config.cjs"]
+    },
+    {
+      "id": "tanstack-query",
+      "label": "TanStack Query",
+      "packageJsonDependenciesAny": ["@tanstack/react-query", "react-query"]
+    },
+    {
+      "id": "state-store",
+      "label": "Client state store",
+      "packageJsonDependenciesAny": ["zustand", "@reduxjs/toolkit", "redux", "jotai", "recoil"]
+    }
+  ],
+  "verificationMatrix": [
+    {
+      "change": "TypeScript types or shared contracts",
+      "commands": ["npm run typecheck", "npm run build"]
+    },
+    {
+      "change": "UI component behavior",
+      "commands": ["npm test -- <component-or-feature>", "browser/screenshot verification when visual output changes"]
+    },
+    {
+      "change": "Routing, layouts, or framework data loading",
+      "commands": ["npm run build", "manual route visit or Playwright smoke test"]
+    },
+    {
+      "change": "API client, cache, or async state",
+      "commands": ["npm test -- <api-or-feature>", "verify loading/error/empty/success states"]
+    },
+    {
+      "change": "Permissions, auth gates, or destructive user actions",
+      "commands": ["positive and negative permission checks", "explicit human review for sensitive flows"]
+    }
   ],
   "commands": {
     "dependencyInstall": "npm install / pnpm install / yarn install",

@@ -10,7 +10,62 @@
   },
   "rules": [
     "rules/coding-style.md",
-    "rules/project-structure.md"
+    "rules/project-structure.md",
+    "rules/verification.md"
+  ],
+  "signals": [
+    {
+      "id": "go-module",
+      "label": "Go module",
+      "filesAny": ["go.mod"]
+    },
+    {
+      "id": "go-workspace",
+      "label": "Go workspace",
+      "filesAny": ["go.work"]
+    },
+    {
+      "id": "internal-layout",
+      "label": "internal/ layout",
+      "filesAny": ["internal"]
+    },
+    {
+      "id": "cmd-layout",
+      "label": "cmd/ entrypoints",
+      "filesAny": ["cmd"]
+    },
+    {
+      "id": "api-contracts",
+      "label": "API contracts",
+      "filesAny": ["api", "proto", "openapi.yaml", "openapi.yml"]
+    },
+    {
+      "id": "golangci-lint",
+      "label": "golangci-lint",
+      "filesAny": [".golangci.yml", ".golangci.yaml"]
+    }
+  ],
+  "verificationMatrix": [
+    {
+      "change": "Package API, exported types, or interfaces",
+      "commands": ["go test ./...", "go vet ./... when configured"]
+    },
+    {
+      "change": "Business logic or error handling",
+      "commands": ["go test ./path/to/pkg", "go test ./..."]
+    },
+    {
+      "change": "Concurrency, context, or cancellation behavior",
+      "commands": ["go test -race ./path/to/pkg", "targeted timeout/cancellation test"]
+    },
+    {
+      "change": "Persistence, external IO, or generated contracts",
+      "commands": ["go test ./...", "regenerate contracts when generator is configured"]
+    },
+    {
+      "change": "Formatting or lint-sensitive edits",
+      "commands": ["gofmt -w <files>", "golangci-lint run when configured"]
+    }
   ],
   "commands": {
     "dependencyInstall": "go mod tidy",

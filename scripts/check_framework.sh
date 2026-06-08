@@ -141,6 +141,17 @@ for pack_dir in sorted(p for p in pack_root.iterdir() if p.is_dir()):
     for key in ["build", "test", "testSingle", "lint"]:
         if key not in commands:
             raise SystemExit(f"manifest missing commands.{key}: {manifest_path}")
+    signals = manifest.get("signals") or []
+    verification_matrix = manifest.get("verificationMatrix") or []
+    if not signals:
+        raise SystemExit(f"pack manifest must define signals: {manifest_path}")
+    if len(verification_matrix) < 4:
+        raise SystemExit(f"pack manifest must define a verification matrix: {manifest_path}")
+    if pack_id == "frontend-react":
+        signal_ids = {signal.get("id") for signal in signals}
+        for required_signal in ["vite", "next", "typescript", "playwright"]:
+            if required_signal not in signal_ids:
+                raise SystemExit(f"frontend-react manifest missing signal {required_signal!r}")
 
 for rel in [
     "changes/templates/spec.md",
@@ -196,23 +207,37 @@ if [ -d tests/fixtures ]; then
     case "$(basename "$fixture")" in
       java-spring)
         test -f "$tmpdir/.ai_code_copilot/rules/java-spring-coding-style.md" || fail "java fixture did not load java-spring pack"
+        test -f "$tmpdir/.ai_code_copilot/rules/java-spring-verification.md" || fail "java fixture did not load java-spring verification rule"
         grep -q '| `java-spring` |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "java fixture context missing java-spring command row"
+        grep -q '| `java-spring` | Maven' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "java fixture context missing java-spring signal row"
+        grep -q '| `java-spring` | Controller endpoints, request/response DTOs, or validation |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "java fixture context missing java-spring verification matrix"
         ;;
       go)
         test -f "$tmpdir/.ai_code_copilot/rules/go-coding-style.md" || fail "go fixture did not load go pack"
+        test -f "$tmpdir/.ai_code_copilot/rules/go-verification.md" || fail "go fixture did not load go verification rule"
         grep -q '| `go` |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "go fixture context missing go command row"
+        grep -q '| `go` | Go module' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "go fixture context missing go signal row"
+        grep -q '| `go` | Package API, exported types, or interfaces |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "go fixture context missing go verification matrix"
         ;;
       python)
         test -f "$tmpdir/.ai_code_copilot/rules/python-coding-style.md" || fail "python fixture did not load python pack"
+        test -f "$tmpdir/.ai_code_copilot/rules/python-verification.md" || fail "python fixture did not load python verification rule"
         grep -q '| `python` |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "python fixture context missing python command row"
+        grep -q '| `python` | pyproject.toml' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "python fixture context missing python signal row"
+        grep -q '| `python` | Public function signatures, schemas, or typed models |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "python fixture context missing python verification matrix"
         ;;
       frontend-react)
         test -f "$tmpdir/.ai_code_copilot/rules/frontend-react-coding-style.md" || fail "frontend fixture did not load frontend-react pack"
+        test -f "$tmpdir/.ai_code_copilot/rules/frontend-react-verification.md" || fail "frontend fixture did not load frontend-react verification rule"
         grep -q '| `frontend-react` |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "frontend fixture context missing frontend-react command row"
+        grep -q '| `frontend-react` | Vite' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "frontend fixture context missing frontend-react signal row"
+        grep -q '| `frontend-react` | TypeScript types or shared contracts |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "frontend fixture context missing frontend-react verification matrix"
         ;;
       monorepo)
         test -f "$tmpdir/.ai_code_copilot/rules/go-coding-style.md" || fail "monorepo fixture did not load go pack"
+        test -f "$tmpdir/.ai_code_copilot/rules/go-verification.md" || fail "monorepo fixture did not load go verification rule"
         test -f "$tmpdir/.ai_code_copilot/rules/frontend-react-coding-style.md" || fail "monorepo fixture did not load frontend-react pack"
+        test -f "$tmpdir/.ai_code_copilot/rules/frontend-react-verification.md" || fail "monorepo fixture did not load frontend-react verification rule"
         grep -q '| `go` |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "monorepo fixture context missing go command row"
         grep -q '| `frontend-react` |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "monorepo fixture context missing frontend-react command row"
         grep -q '| `services/api` | `go` | `services/api/go.mod` |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "monorepo fixture context missing go module row"

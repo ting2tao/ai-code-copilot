@@ -7,5 +7,7 @@
     "react": "latest",
     "vite": "latest"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "vitest": "latest"
+  }
 }
