@@ -14,14 +14,15 @@ ai-code-copilot 是一个兼容 **Codex** 与 **Claude Code** 的 AI 编码协�
 
 | 传统 AI 辅助 | ai-code-copilot |
 |-------------|----------------|
-| 直接让 AI 写代码，改了什么不清楚 | 先写 spec 再编码，变更全程可追溯 |
-| AI 写完就完了，下次同样的坑再踩 | 知识自动沉淀，下次自动加载 |
-| 审查靠人眼看，标准不统一 | 双阶段审查：需求合规 + 代码质量 |
-| 改了一堆文件，不知道风险在哪 | 渐进式复杂度，小任务快跑，大任务拆解 |
+| 直接让 AI 改代码，需求、边界和验收散在聊天里 | Quick Card / Spec 先沉淀目标、范围、验收和风险，再动代码 |
+| 每次会话都要重新摸索项目命令、架构和业务规则 | `/init` 将技术栈、构建/测试命令、架构和领域规则落到项目上下文 |
+| 修完只剩一句“应该好了”，review 缺少可信证据 | 每个变更留下测试命令、日志入口、PR 证据和验证输出 |
+| 踩坑只存在当次对话，类似需求下次还要从零开始 | `/archive` 将决策和坑沉淀为 knowledge；反复出现的经验升级成 rules、templates 或 packs |
 
 ## 核心特点
 
 - **Spec 驱动** — Standard/Complex 没有 spec 不准写代码；Quick 没有 quick-card 不准写代码
+- **项目级上下文** — `/init` 将技术栈、命令、架构和领域规则沉淀到 `.ai_code_copilot/`
 - **Harness Engineering** — 用测试、日志、规则、review 和 knowledge 设计 Agent 可见反馈循环
 - **渐进式复杂度** — 自动判断 Quick / Standard / Complex 三档
 - **规则分层** — core 只管 AI 协作流程，技术栈细节放在 Java/Go/Python/Frontend pack
@@ -251,7 +252,8 @@ curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/insta
 安装完成后，在任意业务项目中打开 Codex 或 Claude Code，说：
 
 ```
-初始化项目
+/init
+# 或“初始化项目”
 ```
 
 > **更新：** 再次执行上面的 `curl ... | bash` 即可，脚本会自动 `git pull`。
@@ -356,7 +358,7 @@ ai_code_copilot/
 bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project .
 ```
 
-Codex/Claude 中说“初始化项目”时，也会优先走这个脚本。它会自动检测 Java/Go/Python/Frontend pack，复制 core rules、命中的 pack rules 和 `changes/templates/`，并生成项目级 `project-context.md` 与 `.ai_code_copilot/config.json`。
+Codex/Claude 中说 `/init` 或“初始化项目”时，也会优先走这个脚本。它会自动检测 Java/Go/Python/Frontend pack，复制 core rules、命中的 pack rules 和 `changes/templates/`，并生成项目级 `project-context.md` 与 `.ai_code_copilot/config.json`。
 
 框架后续升级后，**不会自动触碰业务项目**。需要同步新模板或新规则时显式执行：
 
