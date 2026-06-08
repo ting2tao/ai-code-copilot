@@ -41,6 +41,10 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 - `packs/*/pack.md`、`packs/*/rules/*.md` — 技术栈检测、命令和专用编码规则
 - `changes/templates/*.md` — 变更文档模板
 
+## README 维护
+
+- `README.md` 是默认英文文档，`README-CN.md` 是中文文档；修改任一 README 内容时，必须同步更新另一份。
+
 ## 安装脚本
 
 - `install.sh` — macOS/Linux：clone 到 `~/.codex/ai_code_copilot/`，创建 skill symlink，注册 SessionStart hook
