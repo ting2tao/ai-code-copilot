@@ -26,6 +26,7 @@ Quick 档：必须先生成 quick-card.md（目标/文件/非目标/验收/风�
 - 涉及权限变更必须显式校验操作人权限
 
 可用命令：init / brainstorm / propose / apply / fix / fix-ci / review / finish / test / archive
+Codex 输入提示：请直接说 finish <变更名>、archive <变更名> 或中文自然语言；不要输入 /archive，Codex 会把它当成“归档当前会话”。若 /finish 被客户端拦截，也改用 finish <变更名>。
 如需完整框架能力，请说"帮我实现..."或直接调用命令名触发 ai-code-copilot skill。
 </ai-code-copilot-safety-rules>'
 

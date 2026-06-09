@@ -95,6 +95,7 @@
 🔄 进行中变更：[变更名列表，或"无"]
 
 可用流程：init / brainstorm / propose / apply / fix / fix-ci / review / finish / test / archive
+Codex 输入提示：请直接说 `finish <变更名>`、`archive <变更名>` 或中文自然语言；不要输入 /archive，Codex 会把它当成“归档当前会话”。若 /finish 被客户端拦截，也改用 `finish <变更名>`。
 ```
 
 ---
@@ -404,6 +405,8 @@ Quick 档 /review：阶段一改为对照 quick-card 的目标、涉及文件、
 
 适用场景：变更已完成并通过 /review 后，一键完成验证、push、创建 PR，并用 GitHub closing keyword 关闭关联 Issue。/finish 负责 GitHub 收尾，/archive 负责知识沉淀，两者边界独立。
 
+Codex 兼容入口：在 Codex 中优先输入 `finish <变更名>`、`完成收尾 <变更名>` 或 `开 PR <变更名>`。Slash 命令名是流程名称，不要求用户真的输入 `/finish`。
+
 **项目级配置：**
 - 优先读取 `.ai_code_copilot/config.json`
 - 若配置缺失，首次触发 /finish 时必须询问用户选择并写入配置：
@@ -498,6 +501,8 @@ Complex 档在进入子项目 Standard 流程前，必须生成 `.ai_code_copilo
 - 哪些子变更可以并行，哪些必须串行
 
 ### /archive <变更名> — 归档 + 知识沉淀
+
+Codex 兼容入口：在 Codex 中输入 `archive <变更名>`、`归档 <变更名>` 或 `沉淀知识 <变更名>`；不要输入 /archive，因为 Codex 客户端会优先把 `/archive` 解释为归档当前会话，导致 ai-code-copilot 收不到这条消息。
 
 ```
 1. 读取 .ai_code_copilot/changes/<变更名>/log.md
