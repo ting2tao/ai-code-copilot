@@ -75,3 +75,5 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 | `/review` | 双阶段审查：Standard/Complex 做完整 Spec Compliance + Code Quality；Quick 做轻量合规检查（对照 quick-card）+ Code Quality |
 | `/test` | TDD Red/Green 循环，覆盖率门禁 ≥80% |
 | `/archive` | 知识沉淀 + 变更归档 |
+
+Codex 输入注意：在 Codex 中请说 `finish <变更名>`、`archive <变更名>` 或中文自然语言来触发流程；不要输入 `/archive`，它会被 Codex 客户端解释为“归档当前会话”。如果 `/finish` 无法触发，也改用 `finish <变更名>`。

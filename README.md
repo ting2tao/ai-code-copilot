@@ -47,6 +47,8 @@ ai-code-copilot does not merge every language rule into one generic prompt. Comm
 
 `/init` detects the project stack and copies core rules plus matching pack rules into `.ai_code_copilot/rules/`.
 
+**Codex input note:** type command names without a leading slash, such as `finish <change>` or `archive <change>`. 不要输入 /archive in Codex: the client treats it as "archive this session" before ai-code-copilot can handle it. If `/finish` is intercepted or ignored, use `finish <change>` instead.
+
 ## Workflow Map
 
 ```mermaid
@@ -192,6 +194,7 @@ When GitHub Actions, CodeQL, lint, type checks, tests, or builds fail, paste the
 
 Goal: verify, push, create a PR, and close the linked Issue with `Closes #ID`.
 
+- In Codex, trigger this flow with `finish <change>`, `open PR <change>`, or natural language instead of relying on `/finish`.
 - Read `.ai_code_copilot/config.json` for `githubWorkflow`.
 - Ask and write config on first use when missing.
 - `finishMode=ask`: confirm each time.
@@ -202,6 +205,7 @@ Goal: verify, push, create a PR, and close the linked Issue with `Closes #ID`.
 
 ### 7. `/archive` - Knowledge Capture
 
+- In Codex, trigger this flow with `archive <change>` or natural language. 不要输入 /archive because Codex uses that slash command to archive the current session.
 - Extract knowledge entries from `log.md`.
 - Confirm each entry before writing it to `knowledge/`.
 - Move the change directory to `changes/archives/`.

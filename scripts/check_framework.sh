@@ -98,6 +98,10 @@ if "fix-ci" not in prompt_commands:
     raise SystemExit("command menus must include fix-ci")
 if "finish" not in prompt_commands:
     raise SystemExit("command menus must include finish")
+for rel in ["agents/copilot-prompt.md", "hooks/session-start", "README.md", "README-CN.md"]:
+    text = (root / rel).read_text(encoding="utf-8")
+    if "/archive" in text and "不要输入 /archive" not in text:
+        raise SystemExit(f"{rel} must warn Codex users not to type /archive")
 
 project_config = json.loads((root / "config" / "project-config.json").read_text(encoding="utf-8"))
 github_workflow = project_config.get("githubWorkflow", {})

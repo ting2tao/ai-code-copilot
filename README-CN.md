@@ -45,6 +45,8 @@ ai-code-copilot 不把所有语言规则揉成一套。通用流程和安全红�
 
 `/init` 会自动检测技术栈，复制 core rules 和命中的 pack rules 到项目级 `.ai_code_copilot/rules/`。
 
+**Codex 输入提示：** 在 Codex 里请用不带斜杠的命令名，例如 `finish <变更名>`、`archive <变更名>`，也可以直接说中文自然语言。不要输入 /archive，因为 Codex 客户端会先把它当成“归档当前会话”，ai-code-copilot 收不到这条消息；如果 `/finish` 被拦截或无效，也请改用 `finish <变更名>`。
+
 ## 全景图
 
 ```mermaid
@@ -190,6 +192,7 @@ Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再
 
 **目的：验证、push、创建 PR，并用 `Closes #ID` 关闭关联 Issue。**
 
+- 在 Codex 中请用 `finish <变更名>`、`开 PR <变更名>` 或自然语言触发，不依赖 `/finish` slash 命令
 - 默认读取 `.ai_code_copilot/config.json` 的 `githubWorkflow`
 - 缺配置时首次触发会询问并写入配置
 - `finishMode=ask` 每次执行前确认，`auto-pr` 自动 push + PR，`manual` 只输出命令和 PR body
@@ -198,6 +201,7 @@ Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再
 
 ### 7. /archive — 知识沉淀
 
+- 在 Codex 中请用 `archive <变更名>`、`归档 <变更名>` 或自然语言触发；不要输入 /archive，它是 Codex 客户端的“归档当前会话”命令
 - 从 log.md 提取知识条目
 - 逐条确认是否沉淀到 `knowledge/`
 - 变更目录移至 `changes/archives/`
