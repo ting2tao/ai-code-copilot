@@ -106,6 +106,7 @@ for rel in ["agents/copilot-prompt.md", "hooks/session-start", "README.md", "REA
 project_config = json.loads((root / "config" / "project-config.json").read_text(encoding="utf-8"))
 github_workflow = project_config.get("githubWorkflow", {})
 expected_config = {
+    "projectContextStaleAfterDays": 30,
     "finishMode": "ask",
     "issueWhenMissing": "ask",
     "createPrAfterReviewPass": False,
@@ -114,8 +115,17 @@ expected_config = {
     "prDraft": False,
 }
 for key, value in expected_config.items():
+    if key == "projectContextStaleAfterDays":
+        if project_config.get(key) != value:
+            raise SystemExit(f"project config {key} must default to {value!r}")
+        continue
     if github_workflow.get(key) != value:
         raise SystemExit(f"project config githubWorkflow.{key} must default to {value!r}")
+log_compression = project_config.get("logCompression", {})
+if log_compression.get("reviewThresholdLines") != 150:
+    raise SystemExit("project config logCompression.reviewThresholdLines must default to 150")
+if log_compression.get("fixThresholdLines") != 200:
+    raise SystemExit("project config logCompression.fixThresholdLines must default to 200")
 
 expected = {"java-spring", "go", "python", "frontend-react"}
 actual = {p.name for p in pack_root.iterdir() if p.is_dir()}
@@ -162,12 +172,34 @@ for rel in [
     "changes/templates/tasks.md",
     "changes/templates/test-spec.md",
     "changes/templates/log.md",
+    "changes/templates/log-summary.md",
     "changes/templates/design-brief.md",
     "changes/templates/quick-card.md",
     "changes/templates/roadmap.md",
+    "changes/templates/summary.md",
 ]:
     if not (root / rel).exists():
         raise SystemExit(f"missing template: {rel}")
+
+summary_template = (root / "changes" / "templates" / "summary.md").read_text(encoding="utf-8")
+for marker in ["change:", "status:", "spec-hash:", "goal:", "scope:", "open-risks:", "loaded-knowledge:"]:
+    if marker not in summary_template:
+        raise SystemExit(f"summary.md template missing required field: {marker}")
+roadmap_template = (root / "changes" / "templates" / "roadmap.md").read_text(encoding="utf-8")
+if "Owner reviewed the upstream `log.summary.md`" not in roadmap_template:
+    raise SystemExit("roadmap.md must require owner review of upstream log.summary.md")
+log_summary_template = (root / "changes" / "templates" / "log-summary.md").read_text(encoding="utf-8")
+if "Generated during `/finish`" not in log_summary_template:
+    raise SystemExit("log-summary.md must be generated during /finish, not only /archive")
+if "status: finished" not in prompt_text:
+    raise SystemExit("prompt must mark finished summary.md changes as non-active")
+if "Knowledge candidates" not in (root / "changes" / "templates" / "log.md").read_text(encoding="utf-8"):
+    raise SystemExit("log.md template must include Knowledge candidates for /finish and /archive")
+
+knowledge_index = (root / "knowledge" / "index.md").read_text(encoding="utf-8")
+for marker in ["| ID | Summary | Tags | Scope | Applies-To | Risk | Last-Verified | File |", "Last-Verified"]:
+    if marker not in knowledge_index:
+        raise SystemExit(f"knowledge/index.md missing schema marker: {marker}")
 
 required_harness_markers = {
     "agents/copilot-prompt.md": ["Harness", "Agent 可见"],
@@ -202,9 +234,15 @@ if [ -d tests/fixtures ]; then
     cp -R "$fixture"/. "$tmpdir"/
     AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" >/tmp/ai-code-copilot-fixture.out
     test -f "$tmpdir/.ai_code_copilot/.copilot-state.json" || fail "fixture missing state: $fixture"
+    grep -q '"projectContextSyncedAt":' "$tmpdir/.ai_code_copilot/.copilot-state.json" || fail "fixture state missing projectContextSyncedAt: $fixture"
+    grep -q '"projectContextStaleAfterDays": 30' "$tmpdir/.ai_code_copilot/.copilot-state.json" || fail "fixture state missing projectContextStaleAfterDays: $fixture"
     test -f "$tmpdir/.ai_code_copilot/config.json" || fail "fixture missing project config: $fixture"
     grep -q '"finishMode": "ask"' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing finishMode ask: $fixture"
     grep -q '"issueWhenMissing": "ask"' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing issueWhenMissing ask: $fixture"
+    grep -q '"projectContextStaleAfterDays": 30' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing projectContextStaleAfterDays: $fixture"
+    grep -q '"reviewThresholdLines": 150' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing reviewThresholdLines: $fixture"
+    grep -q '"fixThresholdLines": 200' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing fixThresholdLines: $fixture"
+    grep -q '| ID | Summary | Tags | Scope | Applies-To | Risk | Last-Verified | File |' "$tmpdir/.ai_code_copilot/knowledge/index.md" || fail "fixture knowledge index missing schema: $fixture"
     test -f "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "fixture missing project context: $fixture"
     test -f "$tmpdir/.ai_code_copilot/rules/commit-convention.md" || fail "fixture missing commit convention: $fixture"
     test -f "$tmpdir/.ai_code_copilot/rules/github-metrics.md" || fail "fixture missing github metrics rule: $fixture"

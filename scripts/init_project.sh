@@ -70,7 +70,7 @@ import os
 import subprocess
 import sys
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 copilot_home = Path(sys.argv[1]).resolve()
@@ -398,6 +398,7 @@ def load_existing_state():
 
 def state_content(detected):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     existing = load_existing_state()
     initialized_at = existing.get("initializedAt") or now
     data = OrderedDict()
@@ -405,6 +406,8 @@ def state_content(detected):
     data["mode"] = mode
     data["initializedAt"] = initialized_at
     data["lastSyncedAt"] = now
+    data["projectContextSyncedAt"] = now_utc
+    data["projectContextStaleAfterDays"] = int(existing.get("projectContextStaleAfterDays", 30))
     data["packs"] = [item["id"] for item in detected]
     data["packMatches"] = {
         item["id"]: [os.path.relpath(match, project_dir) for match in item["matches"]]
@@ -471,7 +474,11 @@ events.append((status, path))
 
 index_status, index_path = write_if_missing_or_new(
     knowledge_target / "index.md",
-    "# Knowledge Index\n\n> Project-specific knowledge discovered by `/archive`.\n",
+    "# Knowledge Index\n\n"
+    "> Project-specific knowledge discovered by `/archive`. Read this index first; load only relevant knowledge files.\n\n"
+    "| ID | Summary | Tags | Scope | Applies-To | Risk | Last-Verified | File |\n"
+    "|----|---------|------|-------|------------|------|---------------|------|\n"
+    "| K000 | 示例：删除本行后开始沉淀知识 | example | example | propose | low | 1970-01-01 | example.md |\n",
 )
 events.append((index_status, index_path))
 

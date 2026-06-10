@@ -1,4 +1,9 @@
 {
+  "projectContextStaleAfterDays": 30,
+  "logCompression": {
+    "reviewThresholdLines": 150,
+    "fixThresholdLines": 200
+  },
   "githubWorkflow": {
     "finishMode": "ask",
     "issueWhenMissing": "ask",

@@ -28,6 +28,7 @@ The framework helps you build a human-agent engineering harness: clarify the goa
 - **Harness Engineering**: tests, logs, rules, reviews, and knowledge form an agent-visible feedback loop.
 - **Progressive complexity**: Quick / Standard / Complex workflows based on change size and risk.
 - **Layered rules**: core collaboration rules stay in `rules/`; stack-specific practices live in Java/Go/Python/Frontend packs.
+- **Context-budget policy**: SessionStart injects only L0 safety and summaries; commands load rules, packs, and knowledge on demand.
 - **Two-stage review**: first check implementation against the spec, then review code quality.
 - **Knowledge flywheel**: project experience is archived into knowledge files and reused later.
 - **Audit trail**: each change keeps `log.md` for decisions, issues, review results, and evidence.
@@ -46,6 +47,19 @@ ai-code-copilot does not merge every language rule into one generic prompt. Comm
 | Project rules | A business project's own architecture, commands, and domain rules | `<project>/.ai_code_copilot/rules/` |
 
 `/init` detects the project stack and copies core rules plus matching pack rules into `.ai_code_copilot/rules/`.
+
+## Context Management
+
+The context-budget policy is split across four layers:
+
+| Layer | Files | Responsibility | Not responsible for |
+|-------|-------|----------------|---------------------|
+| Hook | `hooks/hooks.json`, `hooks/session-start` | Wake the framework, inject L0 safety, warn about stale context, show active-change summaries | Command-level routing or loading packs/knowledge |
+| Prompt | `agents/copilot-prompt.md` | Define what each command loads and when | Machine-maintained state |
+| Templates | `changes/templates/*.md` | Long-lived document structure and review gates | Runtime facts |
+| State | `.ai_code_copilot/.copilot-state.json` | Framework commit, matched packs, sync timestamps, context freshness | User workflow preferences |
+
+If `summary.md` is missing or malformed, SessionStart falls back to a warning and the command flow reads the full change documents later. Log compression thresholds are configurable in `.ai_code_copilot/config.json` under `logCompression`. Python 3 is recommended for the hook's JSON/date helpers; without it, the hook still injects L0 safety rules but skips freshness and active-change summaries.
 
 **Codex input note:** type command names without a leading slash, such as `finish <change>` or `archive <change>`. 不要输入 /archive in Codex: the client treats it as "archive this session" before ai-code-copilot can handle it. If `/finish` is intercepted or ignored, use `finish <change>` instead.
 
@@ -149,6 +163,7 @@ Goal: write the contract for what will change and how.
 
 - Load `design-brief.md` as input.
 - Research the relevant code path with file/class/method references.
+- Read `knowledge/index.md` first, score relevant entries, and load at most five matching knowledge files.
 - Generate the proposal in three confirmation sections:
   - current code and feature list
   - change scope and risks
@@ -158,6 +173,7 @@ Goal: write the contract for what will change and how.
   - `tasks.md`: implementation plan with file paths and function signatures
   - `test-spec.md`: P0/P1/P2 test strategy and verification commands
   - `log.md`: decision and evidence log
+  - `summary.md`: lightweight active-change summary for SessionStart and later command loading
 
 Hard gate: no confirmed spec and tasks, no implementation.
 
@@ -186,6 +202,8 @@ Stage 3: **GitHub Readiness** checks Issue linkage, PR body, test evidence, CI/C
 
 If Spec Compliance or Code Quality fails, return to `/fix`, then review again. If GitHub Readiness is `NEEDS_INFO`, fill in PR/CI/test evidence before finishing.
 
+When `log.md` grows past the compression threshold, `/review` or `/fix` can move process-only details to `log.archive.md` while keeping commit hashes, verification evidence, review failures, and accepted risks in the active log.
+
 ### 5. `/fix-ci` - CI Repair Loop
 
 When GitHub Actions, CodeQL, lint, type checks, tests, or builds fail, paste the full log or provide a workflow run URL. The agent identifies the failed command, reproduces locally where possible, makes the smallest fix, reruns the failing command, and records root cause, verification output, and commit details in `log.md`.
@@ -202,6 +220,9 @@ Goal: verify, push, create a PR, and close the linked Issue with `Closes #ID`.
 - `finishMode=manual`: output commands and PR body only.
 - PR body includes Summary, Test Evidence, Risk, AI Collaboration, and `Closes #ID`.
 - Record finish results in `log.md`.
+- Update `summary.md` to `status: finished`; finished changes are no longer injected as active changes by SessionStart.
+- If `Knowledge candidates` exist in `log.md`, ask whether to write them to `knowledge/` now, skip, or continue into archive.
+- For Complex sub-projects, generate `log.summary.md` during `/finish` so downstream sessions can start without waiting for `/archive`.
 
 ### 7. `/archive` - Knowledge Capture
 
@@ -210,6 +231,7 @@ Goal: verify, push, create a PR, and close the linked Issue with `Closes #ID`.
 - Confirm each entry before writing it to `knowledge/`.
 - Move the change directory to `changes/archives/`.
 - Load relevant knowledge automatically in future proposals.
+- `/archive` is the recommended cleanup and knowledge-flywheel path, but runtime dependencies such as `summary.md` and Complex `log.summary.md` are prepared before archive.
 
 ## Command Reference
 
@@ -236,7 +258,7 @@ Goal: verify, push, create a PR, and close the linked Issue with `Closes #ID`.
 6. **Evidence before claims**: `/fix` and `/apply` must show build/test output before claiming success.
 7. **GitHub-measurable work**: `/finish`, PR templates, and GitHub metrics rules make issues, tests, CI, and risk data collectible.
 8. **Continuous log**: `log.md` tracks decisions, discoveries, review results, and open issues.
-9. **Knowledge flywheel**: `/archive` turns project experience into reusable knowledge.
+9. **Knowledge flywheel**: `/finish` can capture knowledge candidates early; `/archive` remains the recommended cleanup and deeper knowledge path.
 
 ## Quick Start
 
@@ -321,7 +343,7 @@ Project layer, created at `<project>/.ai_code_copilot/`:
 
 ```text
 .ai_code_copilot/
-├── .copilot-state.json         # framework version, matched packs, sync time
+├── .copilot-state.json         # framework version, matched packs, sync time, project-context freshness
 ├── config.json                 # project workflow config, such as /finish policy
 ├── rules/
 │   ├── project-context.md      # project context generated by /init
@@ -336,16 +358,20 @@ Project layer, created at `<project>/.ai_code_copilot/`:
         ├── design-brief.md     # produced by /brainstorm
         ├── spec.md             # requirement contract
         ├── tasks.md            # implementation plan
-        └── log.md              # process log, knowledge, review results
+        ├── log.md              # active decisions, risks, verification, review results
+        ├── log.archive.md      # compressed process notes when needed
+        └── summary.md          # lightweight active-change summary
 ```
 
 ## Hooks
 
-The installer registers a SessionStart hook in the matching platform `settings.json`. Each Codex or Claude Code session receives safety rules automatically without manually invoking the skill:
+The installer registers a SessionStart hook in the matching platform `settings.json`. Each Codex or Claude Code session receives only L0 context automatically without manually invoking the skill:
 
 - Standard/Complex: no coding before confirmed spec.
 - Money, state-transition, or permission changes require explicit human confirmation.
 - No hardcoded secrets; no sensitive data in logs.
+- Optional project-context freshness warning when `.copilot-state.json` is older than the configured threshold.
+- Optional active-change summary when exactly one change is in progress; full specs, packs, and knowledge are loaded later by the command flow.
 
 ## Initialization and Sync
 
@@ -378,6 +404,8 @@ Sync policy:
 - `changes/templates/*.md` are framework-managed; different existing files are updated to the new version.
 - Other rule files with different content are written as `<filename>.new` for project teams to compare and merge manually.
 - `.ai_code_copilot/.copilot-state.json` is machine-maintained and refreshed on non-dry-run sync.
+- `.copilot-state.json` records `projectContextSyncedAt`; SessionStart warns when it is stale. Override the default 30-day threshold with `projectContextStaleAfterDays` in `.ai_code_copilot/config.json`.
+- `logCompression.reviewThresholdLines` and `logCompression.fixThresholdLines` control when `/review` or `/fix` should compress process notes into `log.archive.md`.
 
 Framework developers can run:
 
