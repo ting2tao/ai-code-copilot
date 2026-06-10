@@ -40,7 +40,7 @@
 
 **完成证据**：
 ```
-{任务完成后粘贴实际输出，例如编译输出或测试结果}
+见 log.md ## Verification log：{YYYY-MM-DD} - T1 {验证标题}
 ```
 
 **commit**：`{hash} <type>(<scope>): {中文简述}`
@@ -58,7 +58,7 @@
 
 **完成证据**：
 ```
-{实际输出}
+见 log.md ## Verification log：{YYYY-MM-DD} - T2 {验证标题}
 ```
 
 **commit**：`{hash} <type>(<scope>): {中文简述}`
@@ -68,6 +68,7 @@
 ## 变更完成检查
 
 - [ ] 所有 Task 均有完成证据（禁止"应该没问题"）
+- [ ] 每个 Task 均已在 `log.md ## Verification log` 写入 command、exit code、output 摘要
 - [ ] 无未解决的 TODO/FIXME
 - [ ] spec.md §6 待澄清事项已全部解决
 - [ ] 已触发 /review
