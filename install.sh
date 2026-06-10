@@ -215,6 +215,11 @@ info "注册 session-start hook..."
 HOOK_SCRIPT="$INSTALL_DIR/hooks/session-start"
 chmod +x "$HOOK_SCRIPT" 2>/dev/null || true
 
+if ! command -v python3 >/dev/null 2>&1; then
+  warn "未找到 python3；hook 仍会注入 L0 安全规则，但 context freshness 与 active change 摘要会被跳过。"
+  warn "建议安装 python3，以启用完整上下文管理能力。"
+fi
+
 if [ ! -f "$SETTINGS_FILE" ]; then
   mkdir -p "$(dirname "$SETTINGS_FILE")"
   echo '{}' > "$SETTINGS_FILE"
@@ -252,7 +257,7 @@ else
   if grep -q "$HOOK_SCRIPT" "$SETTINGS_FILE" 2>/dev/null; then
     ok "hook 已注册，跳过"
   else
-    warn "未找到 python3，请手动将以下 hook 配置添加到 $SETTINGS_FILE："
+    warn "未找到 python3，安装脚本无法自动编辑 settings.json；请手动将以下 hook 配置添加到 $SETTINGS_FILE："
     echo ""
     echo "  \"hooks\": {"
     echo "    \"SessionStart\": [{"

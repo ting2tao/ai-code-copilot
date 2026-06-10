@@ -177,6 +177,15 @@ Info "注册 session-start hook..."
 $HookScript   = Join-Path $InstallDir "hooks\session-start"
 $SettingsFile = Join-Path $AppHome "settings.json"
 
+$pythonCommand = Get-Command python3 -ErrorAction SilentlyContinue
+if (-not $pythonCommand) {
+    $pythonCommand = Get-Command python -ErrorAction SilentlyContinue
+}
+if (-not $pythonCommand) {
+    Write-Host "!  未找到 Python；hook 仍会注入 L0 安全规则，但 context freshness 与 active change 摘要会被跳过。" -ForegroundColor Yellow
+    Write-Host "!  建议安装 Python 3，并确保 python3 或 python 在 PATH 中。" -ForegroundColor Yellow
+}
+
 if (-not (Test-Path $SettingsFile)) {
     $settingsParent = Split-Path $SettingsFile -Parent
     if (-not (Test-Path $settingsParent)) { New-Item -ItemType Directory -Path $settingsParent -Force | Out-Null }

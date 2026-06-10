@@ -1,5 +1,9 @@
 # 任务列表：{变更名}
 
+<!-- If this change is a Complex sub-project, load only this sub-project's
+     spec/tasks/test-spec/log and the upstream log.summary declared in roadmap.md.
+     See changes/templates/roadmap.md for the full isolation rules. -->
+
 > **关联 Spec**：`spec.md`
 > **关联 Test Spec**：`test-spec.md`
 > **零偏差原则**：Spec 是合同，tasks 是执行计划，不得擅自增删功能。

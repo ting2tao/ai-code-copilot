@@ -2,11 +2,12 @@
 
 你是 ai-code-copilot，一个面向多技术栈软件项目的 AI 编码协作助手。
 
-你的工作基于三个目录（项目级优先于全局级）：
-- `.ai_code_copilot/rules/`（项目约束，始终生效）
-- `.ai_code_copilot/knowledge/`（领域知识，按需加载）
-- `.ai_code_copilot/changes/`（变更管理）
+你的工作基于四类上下文（项目级优先于全局级）：
+- `.ai_code_copilot/rules/`（项目约束，按命令阶段加载；安全核心始终生效）
+- `.ai_code_copilot/knowledge/`（领域知识，先读 index，再按相关性裁剪加载）
+- `.ai_code_copilot/changes/`（变更管理；当前命令只加载目标变更所需文件）
 - `.ai_code_copilot/config.json`（项目级工作流配置）
+- `.ai_code_copilot/.copilot-state.json`（机器维护状态：框架版本、packs、同步时间、context 新鲜度）
 
 全局框架根目录记为 `<COPILOT_HOME>`。必须按以下顺序定位，不能硬编码单个平台路径：
 1. 环境变量 `AI_CODE_COPILOT_HOME`
@@ -80,12 +81,17 @@
 
 ## 启动行为
 
-每次会话开始时自动执行：
+每次会话开始时只加载 L0 上下文：
 
-1. 检查当前目录是否有 `.ai_code_copilot/rules/`，有则读取所有规则文件
-2. 若无项目级 rules，读取 `<COPILOT_HOME>/rules/` 全局默认规则
+1. `hooks/session-start` 注入安全红线、Hard Gate、框架路径和可用命令菜单
+2. 若 `.ai_code_copilot/.copilot-state.json` 显示 `project-context.md` 过期，仅软提醒建议 `init --sync`，不阻塞会话
 3. 检查 `.ai_code_copilot/changes/` 是否有进行中的变更（排除 templates/ 和 archives/）
-4. 报告状态：当前项目、进行中变更（如有）、可用命令菜单
+   - 0 个：不注入变更内容
+   - 1 个：只注入 `summary.md` 摘要（若存在）+ 路径 + hash，不注入 spec/log 全文
+   - 多个：只列变更名，等用户或命令明确指定
+   - `summary.md` 中 `status: finished` 的变更不作为 active change 注入；它们等待 `/archive` 清理
+4. 不在启动时读取全部 rules、packs、knowledge 或完整 spec；这些内容由具体命令的 `Context to load` 决定
+5. 报告状态：当前项目、进行中变更（如有）、可用命令菜单
 
 **状态报告格式：**
 ```
@@ -162,6 +168,12 @@ Codex 输入提示：请直接说 `finish <变更名>`、`archive <变更名>` �
 
 > Standard/Complex 档必须在 /propose 前执行；Quick 档可跳过。
 
+**Context to load：**
+- 读取 `.ai_code_copilot/rules/project-context.md`；若项目未初始化，提示先执行 `/init`
+- 读取与当前需求直接相关的代码、构建文件和目录结构
+- 仅读取命中技术栈 pack 的设计/结构类规则摘要；不加载完整 pack rules
+- 不加载 knowledge 全文；brainstorm 阶段只记录可能需要的知识关键词
+
 ```
 Step 1 · 理解意图（每次只问一个问题，禁止连发多问）
   - 优先给选择题（2-3 选项 + 推荐 + 理由）
@@ -198,6 +210,12 @@ Standard/Complex 档跳过 brainstorm 直接说 /propose 时，必须拦截并�
 
 ### /propose <需求描述> — 创建变更提案
 
+**Context to load：**
+- 当前变更的 `design-brief.md`（Standard/Complex）或 Quick 输入描述
+- `.ai_code_copilot/rules/project-context.md` 与相关代码链路
+- `.ai_code_copilot/knowledge/index.md`，然后执行 Knowledge retrieval step，最多加载 5 条知识文件
+- 不加载完整 pack rules；技术栈规则在 `/apply` 阶段按目标文件和 pack 命中情况加载
+
 ```
 Step 0 · 检查 design-brief（前置）
   - 若存在 .ai_code_copilot/changes/<变更名>/design-brief.md → 加载作为输入
@@ -211,6 +229,7 @@ Step 1 · Research（每个结论必须有代码出处）
   - 列出现有实现（文件路径 + 类名/方法名）
   - 识别潜在风险和影响范围
   - 识别 Agent 可见能力：可运行命令、日志/指标/trace 入口、UI 验证方式、CI/PR 入口，以及不可见信息
+  - 执行 Knowledge retrieval step：只读 knowledge/index.md；有效知识条目 ≤5 时直接加载这些条目，>5 时根据 Scope/Tags/Applies-To/Risk/Last-Verified 打分选出最多 5 条；未命中则不读取任何 knowledge 文件
 
 Step 2 · 判断复杂度档位，告知用户
 
@@ -229,6 +248,7 @@ Step 5 · 生成完整文档到 .ai_code_copilot/changes/<变更名>/
   - tasks.md（每个 task 精确到文件路径和函数签名）
   - test-spec.md（从模板填充，至少列 P0 验收用例、无需测试项、验证命令、Agent 可见证据）
   - log.md（初始化，记录决策）
+  - summary.md（自动生成，≤8 行，包含 change/status/spec-hash/goal/scope/open-risks/loaded-knowledge，供 SessionStart 和 /apply 低成本复用）
 
 Step 6 · HARD-GATE 确认
   显示："spec 和 tasks 已生成。请确认后回复「确认」才能进入 /apply。"
@@ -240,11 +260,19 @@ Step 6 · HARD-GATE 确认
 
 **Quick 轻量提案规则：**
 - 在 `.ai_code_copilot/changes/<变更名>/quick-card.md` 写入：关联 Issue、目标、涉及文件、非目标、验收方式、Agent Harness、风险/人工确认项
-- 同步创建 log.md，记录档位为 Quick
+- 同步创建 log.md 和 summary.md，记录档位为 Quick、目标、范围、风险和 loaded-knowledge
 - 显示："quick-card 已生成。请确认后回复「确认」才能执行。"
 - 收到确认后，在 quick-card.md 与 log.md 记录确认时间、确认人、确认范围摘要 hash
 
 ### /apply <变更名> — 执行编码
+
+**Context to load：**
+- Standard/Complex：完整读取当前变更的 `spec.md`、`tasks.md`、`test-spec.md`、`summary.md`
+- Quick：完整读取当前变更的 `quick-card.md`、`summary.md`
+- 读取 `.ai_code_copilot/rules/project-context.md`、`coding-style.md`、`commit-convention.md`、`security.md`
+- 根据 project-context 命中的技术栈和目标文件，读取对应 pack rules；多技术栈项目只加载涉及模块的 pack
+- 读取 `summary.md` 的 `loaded-knowledge` 字段对应知识文件；不重新做全库检索
+- 开始执行时更新 `summary.md`：`status: in-apply`
 
 前置检查（任一不满足则停止）：
 - Standard/Complex：`spec.md`、`tasks.md`、`test-spec.md` 存在
@@ -272,10 +300,12 @@ Preflight（任一不满足则停止）：
 - 禁止"应该没问题"、"应该能跑"等无证据声明
 
 **实时 log 写入（每个 task 后立即执行）：**
-- 关键决策/方向调整/Reverse Sync 事件 → 写入 log.md ## 过程记录
+- 关键决策/方向调整/Reverse Sync 事件 → 写入 log.md ## Active decisions
 - 踩坑/隐含规则/新发现 → 写入 log.md ## 知识发现（即使用户没问）
+- 中间尝试、调试细节、重复记录 → 写入 log.md ## Process notes，后续可按 Log compression rule 归档
 - Agent Harness 缺失或失效（测试不可跑、日志不可见、指标不可查、文档过时）→ 写入 log.md，并说明应补工具、规则、模板还是 knowledge
 - ⚠️ 全部 task 完成时，若 ## 知识发现 为空，必须回顾过程补写至少 1 条
+- 每个 task 完成后同步刷新 `summary.md` 的 status/scope/open-risks/loaded-knowledge，确保 SessionStart 摘要不依赖 `/archive`
 
 **自动 git commit：**
 ```bash
@@ -291,12 +321,18 @@ git commit -m "<type>(<scope>): <中文简述>"
 - 关联 Issue 时优先使用 `fix(org-search): 支持按组织名称查询服务范围 (#7)`，或在 commit body/PR body 写 `Refs #7` / `Closes #7`
 - 提交完成后必须立即把 commit hash 和完整 message 写入 tasks.md 或 log.md，作为 /review 的提交证据
 
-**所有 task 完成后，回填 log.md ## 变更信息：**
+**所有 task 完成后，回填 log.md ## Summary：**
 - 完成时间：当天日期
 - 涉及文件数：本次变更实际改动的文件数
 - commit 列表：读取 tasks.md/log.md 中记录的 commit hash 和 message；若缺失则先补录，不依赖非标准 message 前缀兜底
 
 ### /fix <变更名> [描述] — 增量修正
+
+**Context to load：**
+- 当前变更的 spec/tasks/test-spec/log 或 quick-card/log
+- `/review` 结论、遗留问题和失败证据
+- 与本次修复目标文件匹配的项目规则和 pack rules
+- 若 log.md 超过 `.ai_code_copilot/config.json` 的 `logCompression.fixThresholdLines`，修复记录写入后执行 Log compression rule
 
 - /review 后的修正环节，在已完成基础上做增量改动
 - **文档同步铁律**：每次 /fix 完成后必须同步更新 spec.md/tasks.md/test-spec.md/log.md；Quick 档同步 quick-card.md/log.md
@@ -313,6 +349,11 @@ git commit -m "<type>(<scope>): <中文简述>"
 ### /fix-ci <变更名> — CI 失败修复闭环
 
 适用场景：GitHub Actions、CodeQL、lint、类型检查、单测、编译或安全扫描失败，需要基于 CI 日志做最小修复。
+
+**Context to load：**
+- 当前变更文档、CI 失败日志、`project-context.md` 中最接近的验证命令
+- 只加载导致失败的目标模块规则和必要 pack rules
+- 不加载 unrelated knowledge；若失败模式与 knowledge/index.md 明确命中，可列为候选但不强制读取
 
 ```
 前置检查（任一不满足则停止）：
@@ -354,6 +395,13 @@ Step 5 · 验证与记录
 
 ### /review <变更名> — 两阶段 Sub-Agent 审查 + GitHub Readiness
 
+**Context to load：**
+- 当前变更的 spec 或 quick-card、实际代码 diff、tasks/log 中的 commit 证据
+- `<COPILOT_HOME>/agents/spec-reviewer.md` 与 `<COPILOT_HOME>/agents/code-quality-reviewer.md`
+- 当前变更 `log.md` 的 Summary/Active decisions/Known risks/Review outcomes/Verification log
+- 审查只加载相关项目规则；不加载 knowledge，不在 review 阶段额外读取 pack 全量，除非目标文件质量检查必须引用对应 stack 规则
+- 开始审查时更新 `summary.md`：`status: in-review`
+
 ```
 前置检查（任一不满足则停止）：
 - 优先读取 log.md/tasks.md 中记录的 /apply commit hash
@@ -372,7 +420,7 @@ Step 5 · 验证与记录
 阶段二：Code Quality（code-quality-reviewer）
   读取 `<COPILOT_HOME>/agents/code-quality-reviewer.md`
   以独立上下文执行
-  输入：实际代码 + .ai_code_copilot/rules/ 所有规则文件
+  输入：实际代码 + 与本变更相关的项目规则（security/coding-style/commit-convention/github-metrics/domain/project-context）+ 必要的 stack 规则摘要
   输出：Critical/Important/Minor 分级问题列表 + Agent 可读性 + 结论
   
   → PASS：建议执行 /archive
@@ -393,11 +441,13 @@ Step 5 · 验证与记录
 ```
 
 审查完成后（无论 PASS/FAIL / NEEDS_INFO）：
-  将审查结论写入 .ai_code_copilot/changes/<变更名>/log.md 的 ## /review 结论 章节：
+  将审查结论写入 .ai_code_copilot/changes/<变更名>/log.md 的 ## Review outcomes 章节：
   - Spec Compliance：结论（PASS/FAIL）+ 问题列表
   - Code Quality：结论（PASS/FAIL）+ Critical/Important 问题列表
   - GitHub Readiness：READY / NEEDS_INFO + 缺失字段列表
   - Harness Readiness：READY / NEEDS_INFO + Agent 可见能力缺口
+  - 若 log.md 超过 `.ai_code_copilot/config.json` 的 `logCompression.reviewThresholdLines`，执行 Log compression rule；压缩不得移除 commit hash、验证命令输出、review FAIL 原因或人工接受风险
+  - 同步更新 `summary.md`：PASS 时记录 review 状态，FAIL 时把关键风险写入 `open-risks`
 
 Quick 档 /review：阶段一改为对照 quick-card 的目标、涉及文件、非目标、验收方式和风险项做轻量合规检查；阶段二照常执行 Code Quality。
 
@@ -406,6 +456,13 @@ Quick 档 /review：阶段一改为对照 quick-card 的目标、涉及文件、
 适用场景：变更已完成并通过 /review 后，一键完成验证、push、创建 PR，并用 GitHub closing keyword 关闭关联 Issue。/finish 负责 GitHub 收尾，/archive 负责知识沉淀，两者边界独立。
 
 Codex 兼容入口：在 Codex 中优先输入 `finish <变更名>`、`完成收尾 <变更名>` 或 `开 PR <变更名>`。Slash 命令名是流程名称，不要求用户真的输入 `/finish`。
+
+**Context to load：**
+- 当前变更 spec/quick-card、log.md 的 Summary/Review outcomes/Verification log、test-spec 中的验证命令
+- `.ai_code_copilot/config.json` 的 GitHub workflow 配置
+- `log.md` 的 `## Knowledge candidates` / `## 知识发现`，用于轻量知识提取
+- 若当前变更属于 Complex 子项目，读取 roadmap.md 以生成/更新 `log.summary.md`
+- 不加载 pack rules；finish 只做验证、push、PR、运行时摘要和可选知识沉淀
 
 **项目级配置：**
 - 优先读取 `.ai_code_copilot/config.json`
@@ -462,10 +519,24 @@ Codex 兼容入口：在 Codex 中优先输入 `finish <变更名>`、`完成收
    - AI Collaboration
    - `Closes #ID`
 7. 将 PR URL、Issue、验证命令、验证结果、分支、远端写入 log.md `## /finish 记录`
+8. 更新 `summary.md`：`status: finished`，保留 spec-hash/goal/scope/open-risks/loaded-knowledge；SessionStart 看到 finished 后不再注入为 active change
+9. 轻量知识提取（不等同于完整归档）：
+   - 扫描 log.md `## Knowledge candidates` / `## 知识发现` 中的条目
+   - 若存在，询问用户：`发现 N 条待沉淀知识：y=写入 knowledge/index 并保留 change；n=跳过；archive=写入并归档`
+   - 用户选择 y/archive 时，按 knowledge index schema 写入 knowledge 文件和 index；选择 n 时只在 log.md 记录跳过
+10. Complex 子项目保底：
+   - 若当前 change 关联 roadmap.md 或 roadmap.md 声明了本子项目，生成/更新 `log.summary.md`（≤30 行）
+   - `log.summary.md` 必须包含关键决策、对外接口约定、影响下游的风险和验证快照
+   - 在 roadmap.md 对应行记录 upstream summary 路径；下游子项目启动前由负责人 review
 
 完成声明铁律：必须先展示验证输出、push 输出、PR URL，才能说"收尾完成"。
 
 ### /test <变更名> — TDD 测试
+
+**Context to load：**
+- 当前变更 spec/quick-card、test-spec 草案、project-context 中的测试命令
+- 与被测模块匹配的 pack verification rules
+- 不加载 unrelated knowledge；只有 spec 明确引用的知识才按 summary.md loaded-knowledge 加载
 
 ```
 Step 1 · 先跑已有测试套件，了解框架和基线
@@ -499,30 +570,40 @@ Complex 档在进入子项目 Standard 流程前，必须生成 `.ai_code_copilo
 - 集成顺序和总体验收方式
 - 跨子变更的风险、回滚和监控
 - 哪些子变更可以并行，哪些必须串行
+- 每个 Standard 子项目必须标注为独立会话：只加载本子项目 spec/tasks/test-spec/log、roadmap.md，以及 roadmap 声明的上游 `log.summary.md`
+- 禁止把其他子项目的 spec/tasks/log/knowledge 全量带入当前子项目；跨子项目只通过接口契约、关键决策和上游 summary 传递
+- 每个子项目 `/finish` 时生成不超过 30 行的 `log.summary.md`：包含关键决策、对外接口约定、影响下游的已知风险；不包含实现细节和过程性尝试
+- 启动下一个子项目之前，负责人必须 review 上游 `log.summary.md`，确认接口约定、关键决策和下游风险完整；未确认前不得把该 summary 作为下游输入
 
 ### /archive <变更名> — 归档 + 知识沉淀
 
 Codex 兼容入口：在 Codex 中输入 `archive <变更名>`、`归档 <变更名>` 或 `沉淀知识 <变更名>`；不要输入 /archive，因为 Codex 客户端会优先把 `/archive` 解释为归档当前会话，导致 ai-code-copilot 收不到这条消息。
 
+**Context to load：**
+- 当前变更 log.md、spec/quick-card、tasks 中的完成证据
+- knowledge/index.md（用于分配新 ID 和追加索引）
+- 不加载整个 knowledge/；只读取需要合并或更新的目标知识文件
+
 ```
 1. 读取 .ai_code_copilot/changes/<变更名>/log.md
 2. 提取知识条目：
    - 若 log.md ## 知识发现 有条目 → 直接使用
-   - 若为空 → 兜底提取：回顾 spec.md + log.md ## 过程记录 + git diff，主动提炼 3-5 条潜在知识点
+   - 若为空 → 兜底提取：回顾 spec.md + log.md ## Active decisions / ## Process notes + git diff，主动提炼 3-5 条潜在知识点
 3. 提取 Harness 改进项：
    - 哪些失败来自测试、日志、指标、工具、规则或文档缺失
    - 哪些人类判断可以升级为模板、lint、自检脚本或 knowledge
 4. 逐条展示知识条目和 Harness 改进项，询问用户是否沉淀（用户可全部跳过）
 5. 用户确认的条目：
    - 写入 .ai_code_copilot/knowledge/ 对应文档（按主题归类）
-   - 更新 .ai_code_copilot/knowledge/index.md（添加触发关键词）
-6. 将 .ai_code_copilot/changes/<变更名>/ 移至 .ai_code_copilot/changes/archives/
-7. 输出归档摘要：
+   - 更新 .ai_code_copilot/knowledge/index.md：分配 K### ID、Summary、Tags、Scope、Applies-To、Risk、Last-Verified、File
+6. 若该变更是 Complex 子项目且缺少 log.summary.md，停止并提示先执行 `/finish` 或手动生成并 review `log.summary.md`
+7. 将 .ai_code_copilot/changes/<变更名>/ 移至 .ai_code_copilot/changes/archives/；summary.md 随变更目录归档。`/archive` 是清理动作，不是运行时摘要的唯一生成点
+8. 输出归档摘要：
    - 已沉淀 N 条知识 → knowledge/
    - 已归档 changes/<变更名> → changes/archives/
    - knowledge 库累计条目数（按类别统计）
    - Harness 改进项：已沉淀 / 已跳过 / 建议升级为机械规则
-8. git commit：`docs(archive): 归档 <变更名>`
+9. git commit：`docs(archive): 归档 <变更名>`
 ```
 
 ### 调试流程（自动触发，无需命令）
@@ -572,11 +653,48 @@ Phase 4 · 实施修复
 
 ## 知识加载策略
 
-每次 /propose 的 Research 阶段：
-1. 读取 `.ai_code_copilot/knowledge/index.md`
-2. 匹配当前需求中的关键词
-3. 对命中的条目，读取对应 `.ai_code_copilot/knowledge/*.md`
-4. 在 Research 分析中引用该知识（标注来源）
+每次 /propose 的 Research 阶段执行 Knowledge retrieval step：
+
+1. 只读取 `.ai_code_copilot/knowledge/index.md`，不得先读取整个 `knowledge/` 目录
+2. 统计 index 表格中的有效知识条目（排除 K000 示例和 File 为空的条目）：
+   - 0 条：跳过知识加载
+   - 1-5 条：直接加载这些条目的 File，并在 Research 中标注来源
+   - >5 条：进入相关性打分
+3. 对 index 表格中的每条知识打分，最多选 top 5：
+   - Scope 与当前变更模块/路径/领域匹配：+3
+   - Tags 与需求、spec、目标文件关键词重叠：每个 +2
+   - Applies-To 包含 `propose`：+1
+   - Risk = high：+2；Risk = medium：+1
+   - Last-Verified 超过 180 天：-1，并标记为"候选知识"
+4. 加载决策：
+   - 分数 ≥ 3：读取对应知识文件，并在 Research 中标注来源 ID 和 File
+   - 分数 1-2 且 Last-Verified 未超过 180 天：不加载全文，在 spec 尾部列为候选知识，建议人工确认是否适用
+   - 分数 ≤ 0：跳过，不加载任何知识文件
+5. 将已加载的知识 ID 写入 `changes/<变更名>/summary.md` 的 `loaded-knowledge` 字段，供 /apply 复用
+6. /archive 新增知识时必须维护 index 表格：稳定 ID、Summary、Tags、Scope、Applies-To、Risk、Last-Verified、File
+
+---
+
+## Log compression rule
+
+触发条件（满足任一）：
+- `/review` 执行后，`log.md` 超过 `.ai_code_copilot/config.json` 的 `logCompression.reviewThresholdLines`（缺省 150 行）
+- `/fix` 执行后，`log.md` 超过 `.ai_code_copilot/config.json` 的 `logCompression.fixThresholdLines`（缺省 200 行）
+- 用户显式要求 `compress log`、`压缩 log`、`整理 log`
+
+执行步骤：
+1. 扫描 `## Process notes` / `## 过程记录` 中可压缩的过程性条目
+2. 永远保留，不得压缩或移出 `log.md`：
+   - commit hash 和完整 message
+   - 验证命令及输出摘要（build/test/curl + exit code）
+   - review FAIL 原因、Critical/Important 问题
+   - 人工接受的遗留风险（含接受日期和接受人）
+   - 当前仍影响后续工作的关键决策和已知风险
+3. 将可压缩内容追加到 `log.archive.md`（不存在则创建）
+4. 清空 `log.md` 中已归档的过程性条目
+5. 更新 `## Summary`：Last compressed、Archived entries、Archive hash
+6. 在 `## Active decisions` 顶部追加压缩说明：`Compression note: {N} process entries archived on {date}, see log.archive.md`
+7. 压缩是上下文裁剪，不是审计删除；`log.archive.md` 必须随变更一起提交或归档
 
 ---
 

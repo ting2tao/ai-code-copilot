@@ -26,6 +26,7 @@ ai-code-copilot 是一个兼容 **Codex** 与 **Claude Code** 的 AI 编码协�
 - **Harness Engineering** — 用测试、日志、规则、review 和 knowledge 设计 Agent 可见反馈循环
 - **渐进式复杂度** — 自动判断 Quick / Standard / Complex 三档
 - **规则分层** — core 只管 AI 协作流程，技术栈细节放在 Java/Go/Python/Frontend pack
+- **上下文预算策略** — SessionStart 只注入 L0 安全和摘要；各命令按需加载 rules、packs 和 knowledge
 - **双阶段审查** — 先查有没有按 spec 实现，再查代码质量
 - **知识飞轮** — 每个项目的经验沉淀成知识库，AI 自动加载
 - **全程可审计** — 每次变更都有 log.md，记录决策、踩坑、review 结论
@@ -44,6 +45,19 @@ ai-code-copilot 不把所有语言规则揉成一套。通用流程和安全红�
 | Project rules | 业务项目自己的架构、命令、领域规则 | `<project>/.ai_code_copilot/rules/` |
 
 `/init` 会自动检测技术栈，复制 core rules 和命中的 pack rules 到项目级 `.ai_code_copilot/rules/`。
+
+## 上下文管理
+
+上下文预算策略拆成四层：
+
+| 层 | 文件 | 职责 | 不负责什么 |
+|----|------|------|------------|
+| Hook | `hooks/hooks.json`、`hooks/session-start` | 唤醒框架、注入 L0 安全、提示 context 过期、展示 active change 摘要 | 命令级路由或加载 packs/knowledge |
+| Prompt | `agents/copilot-prompt.md` | 定义每个命令什么时候加载什么上下文 | 维护机器状态 |
+| Templates | `changes/templates/*.md` | 长期文档结构和 review gate | 运行时事实 |
+| State | `.ai_code_copilot/.copilot-state.json` | 框架 commit、命中 packs、同步时间、context 新鲜度 | 用户工作流偏好 |
+
+如果 `summary.md` 缺失或字段不完整，SessionStart 会给出 fallback 提示，具体命令阶段再读取完整变更文档。Log 压缩阈值放在 `.ai_code_copilot/config.json` 的 `logCompression` 下。建议安装 Python 3；没有 Python 时 hook 仍会注入 L0 安全规则，但会跳过 context freshness 和 active change 摘要。
 
 **Codex 输入提示：** 在 Codex 里请用不带斜杠的命令名，例如 `finish <变更名>`、`archive <变更名>`，也可以直接说中文自然语言。不要输入 /archive，因为 Codex 客户端会先把它当成“归档当前会话”，ai-code-copilot 收不到这条消息；如果 `/finish` 被拦截或无效，也请改用 `finish <变更名>`。
 
@@ -149,6 +163,7 @@ AI：好的，我来提两个方案...
 
 - 加载 design-brief 作为输入
 - Research 相关代码链路（必须标注文件路径 + 类名/方法名）
+- 先读 `knowledge/index.md`，按相关性打分，最多加载 5 条命中的知识文件
 - 分三段生成文档，每段等你确认：
   - 代码现状 + 功能点清单
   - 变更范围 + 风险点
@@ -158,6 +173,7 @@ AI：好的，我来提两个方案...
   - `tasks.md` — 执行计划（精确到文件路径和函数签名）
   - `test-spec.md` — 测试策略草案（P0/P1/P2 + 验证命令）
   - `log.md` — 过程记录
+  - `summary.md` — 给 SessionStart 和后续命令使用的轻量变更摘要
 
 **硬性门控：spec 和 tasks 未确认，不准开始编码。**
 
@@ -184,6 +200,8 @@ AI：好的，我来提两个方案...
 
 Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再审。GitHub Readiness 若为 NEEDS_INFO → 补齐 PR/CI/测试证据后再审。审查通过后可执行 `/finish` 做 GitHub 收尾。
 
+当 `log.md` 超过压缩阈值时，`/review` 或 `/fix` 可将过程性细节移动到 `log.archive.md`，但 commit hash、验证证据、review FAIL 原因和人工接受风险必须保留在当前 log。
+
 ### 5. /fix-ci — CI 失败修复闭环
 
 当 GitHub Actions、CodeQL、lint、类型检查、单测或编译失败时，粘贴完整日志或提供 workflow run URL。AI 会先识别失败命令，尽量本地复现，再做最小修复，重新运行失败命令，并把根因、验证输出和 commit 写入 log.md。
@@ -198,6 +216,9 @@ Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再
 - `finishMode=ask` 每次执行前确认，`auto-pr` 自动 push + PR，`manual` 只输出命令和 PR body
 - PR body 自动包含 Summary、Test Evidence、Risk、AI Collaboration 和 `Closes #ID`
 - 收尾结果写入 log.md 的 `/finish 记录`
+- 将 `summary.md` 更新为 `status: finished`；SessionStart 不再把 finished 变更当作 active change 注入
+- 如果 `log.md` 中存在 `Knowledge candidates`，询问是否现在写入 `knowledge/`、跳过，或继续归档
+- Complex 子项目在 `/finish` 时生成 `log.summary.md`，下游会话不必等待 `/archive`
 
 ### 7. /archive — 知识沉淀
 
@@ -206,6 +227,7 @@ Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再
 - 逐条确认是否沉淀到 `knowledge/`
 - 变更目录移至 `changes/archives/`
 - 下次新需求，相关知识自动加载
+- `/archive` 是推荐的清理和知识飞轮路径，但 `summary.md`、Complex `log.summary.md` 这类运行时依赖会在归档前就绪
 
 ---
 
@@ -236,7 +258,7 @@ Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再
 6. **完成即验证**：/fix、/apply 完成后必须展示编译和测试输出，禁止无证据声明"好了"
 7. **GitHub 可统计**：/finish、PR 模板和 github-metrics 规则让 Issue、测试、CI、风险信息可被 GitHub/API/Actions 采集
 8. **全程记录**：log.md 自动维护过程记录、知识发现、review 结论、遗留问题
-9. **知识飞轮**：/archive 将项目经验沉淀到知识库，下次 /propose 自动加载
+9. **知识飞轮**：/finish 可提前捕获知识候选，/archive 仍是推荐的清理和深度沉淀路径
 
 ---
 
@@ -324,7 +346,7 @@ ai_code_copilot/
 
 ```
 .ai_code_copilot/
-├── .copilot-state.json         # 框架版本、命中 pack、同步时间
+├── .copilot-state.json         # 框架版本、命中 pack、同步时间、project-context 新鲜度
 ├── config.json                 # 项目级工作流配置（如 /finish 策略）
 ├── rules/
 │   ├── project-context.md      # 工程上下文（/init 生成）
@@ -339,18 +361,22 @@ ai_code_copilot/
         ├── design-brief.md     # /brainstorm 产出
         ├── spec.md             # 需求合同
         ├── tasks.md            # 执行计划
-        └── log.md              # 过程记录 + 知识发现 + review 结论
+        ├── log.md              # 当前决策、风险、验证和 review 结论
+        ├── log.archive.md      # 压缩后的过程性记录（按需）
+        └── summary.md          # 轻量活跃变更摘要
 ```
 
 ---
 
 ## Hooks 机制
 
-安装时自动向对应平台的 `settings.json` 注册 SessionStart Hook。每次打开 Codex/Claude Code 会话，安全规则自动注入，无需手动触发 skill：
+安装时自动向对应平台的 `settings.json` 注册 SessionStart Hook。每次打开 Codex/Claude Code 会话，只自动注入 L0 上下文，无需手动触发 skill：
 
 - Standard/Complex 档：spec 未确认前禁止编码
 - 涉及资金 / 状态流转 / 权限变更：强制高亮提醒
 - 禁止硬编码密钥；禁止日志打印敏感信息
+- 当 `.copilot-state.json` 显示 `project-context.md` 过期时软提醒执行同步
+- 若只有一个进行中变更，只注入 `summary.md` 摘要；完整 spec、pack rules 和 knowledge 由命令阶段按需加载
 
 ---
 
@@ -385,6 +411,8 @@ bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project . --upgrade --dr
 - `changes/templates/*.md` 是框架托管流程模板，已存在但内容不同则自动更新到新版
 - 其他规则文件已存在但内容不同会写成 `<文件名>.new`，项目团队人工比较后决定是否合并
 - `.ai_code_copilot/.copilot-state.json` 是机器维护的状态文件，会在非 dry-run 同步时刷新框架 commit、命中的 packs、初始化和同步时间
+- `.copilot-state.json` 会记录 `projectContextSyncedAt`；SessionStart 会在过期时软提醒。默认阈值 30 天，可在 `.ai_code_copilot/config.json` 中用 `projectContextStaleAfterDays` 覆盖。
+- `logCompression.reviewThresholdLines` 和 `logCompression.fixThresholdLines` 控制 `/review` 或 `/fix` 何时把过程记录压缩到 `log.archive.md`。
 
 框架开发者可运行：
 

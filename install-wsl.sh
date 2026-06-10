@@ -146,7 +146,7 @@ if ! command -v git >/dev/null 2>&1; then
 fi
 
 if ! command -v python3 >/dev/null 2>&1; then
-  warn "未找到 python3，settings.json 需手动配置 hook"
+  warn "未找到 python3，settings.json 需手动配置 hook；context freshness 与 active change 摘要会被跳过"
   warn "建议安装: sudo apt install python3"
 fi
 
