@@ -18,12 +18,12 @@
 
 | Task | 描述 | 状态 | commit hash |
 |------|------|------|--------|
-| T1 | 定义 Loop Engineering 文档入口 | ✅ | 未提交 |
-| T2 | 将 Goal Contract 嵌入 prompt、模板和 reviewer | ✅ | 未提交 |
-| T3 | 更新 README/AGENTS 和自检脚本 | ✅ | 未提交 |
-| T4 | 运行自检并回填证据 | ✅ | 未提交 |
-| T5 | 读取用户下载的文章并校准定义/证据 | ✅ | 未提交 |
-| T6 | 加入 DDD-lite Domain Check | ✅ | 未提交 |
+| T1 | 定义 Loop Engineering 文档入口 | ✅ | 4521474 |
+| T2 | 将 Goal Contract 嵌入 prompt、模板和 reviewer | ✅ | 4521474 |
+| T3 | 更新 README/AGENTS 和自检脚本 | ✅ | 4521474 |
+| T4 | 运行自检并回填证据 | ✅ | 4521474 |
+| T5 | 读取用户下载的文章并校准定义/证据 | ✅ | 4521474 |
+| T6 | 加入 DDD-lite Domain Check | ✅ | 4521474 |
 
 ---
 
@@ -47,7 +47,7 @@ rg -n "Loop Engineering|Goal Contract|Loop Evidence" docs README.md README-CN.md
 输出覆盖 docs/loop-engineering.md、docs/harness-engineering.md、README.md、README-CN.md、AGENTS.md、agents/copilot-prompt.md、reviewer、changes/templates 和 scripts/check_framework.sh。
 ```
 
-**commit**：未提交
+**commit**：4521474 `feat(loop): integrate loop engineering framework`
 
 ---
 
@@ -81,7 +81,7 @@ rg marker 输出显示：
 - changes/templates/spec.md、quick-card.md、test-spec.md、log.md 包含 Goal Contract / Loop Evidence
 ```
 
-**commit**：未提交
+**commit**：4521474 `feat(loop): integrate loop engineering framework`
 
 ---
 
@@ -108,7 +108,7 @@ wc -l AGENTS.md
 81 AGENTS.md
 ```
 
-**commit**：未提交
+**commit**：4521474 `feat(loop): integrate loop engineering framework`
 
 ---
 
@@ -134,7 +134,7 @@ git status --short
 显示本次修改集中在 AGENTS/README/agents/templates/docs/scripts 和 changes/loop-engineering-integration。
 ```
 
-**commit**：未提交
+**commit**：4521474 `feat(loop): integrate loop engineering framework`
 
 ---
 
@@ -166,7 +166,7 @@ bash scripts/check_framework.sh
 ai-code-copilot framework check passed
 ```
 
-**commit**：未提交
+**commit**：4521474 `feat(loop): integrate loop engineering framework`
 
 ---
 
@@ -201,7 +201,7 @@ bash scripts/check_framework.sh
 GREEN: ai-code-copilot framework check passed
 ```
 
-**commit**：未提交
+**commit**：4521474 `feat(loop): integrate loop engineering framework`
 
 ---
 
