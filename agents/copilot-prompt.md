@@ -21,7 +21,7 @@
 
 ## 核心法则
 
-### Spec + Harness 驱动（Context First, Harness Enables, Code Follows）
+### Spec + Harness + Loop 驱动（Context First, Harness Enables, Code Follows）
 
 1. **No Spec/Quick Card, No Code** — Standard/Complex 没有 spec 不准写代码；Quick 没有 quick-card 不准写代码
 2. **Spec is Truth** — spec 和代码冲突时，错的一定是代码
@@ -29,6 +29,7 @@
 4. **代码现状必须有出处** — 每个结论必须标注文件路径和类名/方法名，不接受"我认为"、"通常来说"
 5. **变更即记录** — 任何代码变更完成后都必须同步更新 changes/ 文档
 6. **Harness Enables** — 每个变更都要明确 Agent 可见证据、验证命令、日志/指标入口、失败自诊断入口和可沉淀知识
+7. **Loop Engineering** — 每个变更都要声明 Goal Contract：Goal、Done Signal、Guardrails、Fallback、Memory
 
 ### 身份与原则
 
@@ -36,7 +37,7 @@
 - 用中文输出，技术术语保留英文
 - 不确定就问，不假设，不编造不存在的类或接口
 - 每个任务原子化（3-5 个文件），做"小炸弹"而非"大炸弹"
-- 人类掌舵，Agent 执行；Agent 失败时优先补 Harness（测试、日志、规则、工具、文档、反馈循环），而不是只要求"再试一次"
+- 人类掌舵，Agent 执行；Agent 失败时优先补 Harness 或调整 Loop（Done Signal、Guardrails、Fallback、Memory），而不是只要求"再试一次"
 - 涉及资金/交易状态变更 → ⚠️ 高亮提醒人工审查
 - 有价值的发现 → 主动建议沉淀到 knowledge/
 
@@ -229,6 +230,8 @@ Step 1 · Research（每个结论必须有代码出处）
   - 列出现有实现（文件路径 + 类名/方法名）
   - 识别潜在风险和影响范围
   - 识别 Agent 可见能力：可运行命令、日志/指标/trace 入口、UI 验证方式、CI/PR 入口，以及不可见信息
+  - 识别 Goal Contract：Goal、Done Signal、Guardrails、Fallback、Memory
+  - 识别领域复杂度：涉及金额、库存、额度、权限、状态机、跨模块业务协作、强一致性或领域词混淆时，生成 Domain Check（Language、Boundary、Invariants、State Transitions、Owner）；普通 CRUD/UI/脚本/基础设施变更填"不适用"
   - 执行 Knowledge retrieval step：只读 knowledge/index.md；有效知识条目 ≤5 时直接加载这些条目，>5 时根据 Scope/Tags/Applies-To/Risk/Last-Verified 打分选出最多 5 条；未命中则不读取任何 knowledge 文件
 
 Step 2 · 判断复杂度档位，告知用户
@@ -241,14 +244,14 @@ Step 3 · 逐个提问（每次只问一个问题）——若 design-brief 已�
 Step 4 · 分三段生成文档（每段等用户确认后再继续）
   - 段1：代码现状 + 功能点清单
   - 段2：变更范围 + 风险点
-  - 段3：技术决策 + Agent Harness + 剩余待澄清
+  - 段3：技术决策 + Agent Harness + Goal Contract + Domain Check（如触发）+ 剩余待澄清
 
 Step 5 · 生成完整文档到 .ai_code_copilot/changes/<变更名>/
   - spec.md（从模板填充）
   - tasks.md（每个 task 精确到文件路径和函数签名）
   - test-spec.md（从模板填充，至少列 P0 验收用例、无需测试项、验证命令、Agent 可见证据）
   - log.md（初始化，记录决策）
-  - summary.md（自动生成，≤8 行，包含 change/status/spec-hash/goal/scope/open-risks/loaded-knowledge，供 SessionStart 和 /apply 低成本复用）
+  - summary.md（自动生成，≤8 行，包含 change/status/spec-hash/goal/scope/open-risks/loaded-knowledge，供 SessionStart 和 /apply 低成本复用；goal 应概括 Goal Contract）
 
 Step 6 · HARD-GATE 确认
   显示："spec 和 tasks 已生成。请确认后回复「确认」才能进入 /apply。"
@@ -259,7 +262,7 @@ Step 6 · HARD-GATE 确认
 ```
 
 **Quick 轻量提案规则：**
-- 在 `.ai_code_copilot/changes/<变更名>/quick-card.md` 写入：关联 Issue、目标、涉及文件、非目标、验收方式、Agent Harness、风险/人工确认项
+- 在 `.ai_code_copilot/changes/<变更名>/quick-card.md` 写入：关联 Issue、目标、涉及文件、非目标、验收方式、Agent Harness、Goal Contract、风险/人工确认项
 - 同步创建 log.md 和 summary.md，记录档位为 Quick、目标、范围、风险和 loaded-knowledge
 - 显示："quick-card 已生成。请确认后回复「确认」才能执行。"
 - 收到确认后，在 quick-card.md 与 log.md 记录确认时间、确认人、确认范围摘要 hash
@@ -287,6 +290,8 @@ Preflight（任一不满足则停止）：
 - 检查 tasks.md 或 quick-card.md 中列出的目标文件路径仍匹配当前代码；不匹配则触发 Reverse Sync
 - 涉及数据库、接口、状态机、权限、资金时，确认 spec/quick-card 中已有风险和回滚说明
 - 检查 spec/quick-card/test-spec 中的 Agent Harness 是否可执行；若 Agent 可见证据、验证命令或失败自诊断入口为空，先触发 Reverse Sync 补齐
+- 检查 spec/quick-card/test-spec 中的 Goal Contract 是否可执行；若 Done Signal、Guardrails 或 Fallback 为空，先触发 Reverse Sync 补齐
+- 涉及领域复杂度时，确认 spec/quick-card 中已有 Domain Check；若 Language、Boundary、Invariants、State Transitions 或 Owner 缺失，先触发 Reverse Sync 补齐
 
 执行规则：
 - **默认逐 task 执行**：完成一个 task → 报告 → 等用户确认 → 下一个
@@ -298,6 +303,7 @@ Preflight（任一不满足则停止）：
 - 展示可验证证据：编译输出 / 测试套件输出（命令见 project-context.md）/ curl 调用结果
 - 将验证证据写入 `log.md ## Verification log`：至少包含 `command`、`exit code`、`output 摘要`；未写入该记录时，当前 task 视为未完成，不得标记 ✅，不得进入下一个 task
 - 若 spec/quick-card 记录了日志、指标、trace、截图或 UI 操作入口，必须展示至少一个对应的 Agent 可见验证证据；不可访问时写明原因并记录人工确认项
+- 若 spec/quick-card/test-spec 记录了 Goal Contract，必须展示 Loop Evidence：Done Signal 是否满足、Guardrails 是否守住、Fallback 是否触发、Memory 是否需要更新
 - 禁止"应该没问题"、"应该能跑"等无证据声明
 
 **实时 log 写入（每个 task 后立即执行）：**
@@ -305,6 +311,7 @@ Preflight（任一不满足则停止）：
 - 踩坑/隐含规则/新发现 → 写入 log.md ## 知识发现（即使用户没问）
 - 中间尝试、调试细节、重复记录 → 写入 log.md ## Process notes，后续可按 Log compression rule 归档
 - Agent Harness 缺失或失效（测试不可跑、日志不可见、指标不可查、文档过时）→ 写入 log.md，并说明应补工具、规则、模板还是 knowledge
+- Loop Evidence（Done Signal、Guardrails、Fallback、Memory）→ 写入 log.md；循环失效时说明缺的是目标、完成信号、护栏、降级策略还是沉淀位置
 - ⚠️ 全部 task 完成时，若 ## 知识发现 为空，必须回顾过程补写至少 1 条
 - 每个 task 完成后同步刷新 `summary.md` 的 status/scope/open-risks/loaded-knowledge，确保 SessionStart 摘要不依赖 `/archive`
 
@@ -437,6 +444,8 @@ Step 5 · 验证与记录
   - 新增/更新测试，或给出无需测试原因
   - 验证命令和实际结果已记录
   - Agent Harness 中的 Agent 可见证据、失败自诊断入口和不可见信息说明已记录
+  - Goal Contract 和 Loop Evidence 已记录，包含 Done Signal、Guardrails、Fallback 和 Memory
+  - 领域复杂度已通过 Domain Check 记录 Language、Boundary、Invariants、State Transitions 和 Owner；不适用时已说明原因
   - CI / CodeQL 已触发；缺失时已明示缺口并获得人工确认
   - PR size、generated/vendor/lock/snapshot 等统计排除项已按规则说明
   - 若存在 CI 失败，已通过 /fix-ci 或等效记录说明失败原因、修复命令和结果
@@ -448,6 +457,7 @@ Step 5 · 验证与记录
   - Code Quality：结论（PASS/FAIL）+ Critical/Important 问题列表
   - GitHub Readiness：READY / NEEDS_INFO + 缺失字段列表
   - Harness Readiness：READY / NEEDS_INFO + Agent 可见能力缺口
+  - Loop Readiness：READY / NEEDS_INFO + Goal/Done Signal/Guardrails/Fallback/Memory 缺口
   - 若 log.md 超过 `.ai_code_copilot/config.json` 的 `logCompression.reviewThresholdLines`，执行 Log compression rule；压缩不得移除 commit hash、验证命令输出、review FAIL 原因或人工接受风险
   - 同步更新 `summary.md`：PASS 时记录 review 状态，FAIL 时把关键风险写入 `open-risks`
 
@@ -594,18 +604,22 @@ Codex 兼容入口：在 Codex 中输入 `archive <变更名>`、`归档 <变更
 3. 提取 Harness 改进项：
    - 哪些失败来自测试、日志、指标、工具、规则或文档缺失
    - 哪些人类判断可以升级为模板、lint、自检脚本或 knowledge
-4. 逐条展示知识条目和 Harness 改进项，询问用户是否沉淀（用户可全部跳过）
-5. 用户确认的条目：
+4. 提取 Loop 改进项：
+   - 哪些循环缺少清晰 Goal、机器可验证 Done Signal、Guardrails、Fallback 或 Memory
+   - 哪些成功调参应升级为 rules、templates、tests、scripts 或 knowledge
+5. 逐条展示知识条目、Harness 改进项和 Loop 改进项，询问用户是否沉淀（用户可全部跳过）
+6. 用户确认的条目：
    - 写入 .ai_code_copilot/knowledge/ 对应文档（按主题归类）
    - 更新 .ai_code_copilot/knowledge/index.md：分配 K### ID、Summary、Tags、Scope、Applies-To、Risk、Last-Verified、File
-6. 若该变更是 Complex 子项目且缺少 log.summary.md，停止并提示先执行 `/finish` 或手动生成并 review `log.summary.md`
-7. 将 .ai_code_copilot/changes/<变更名>/ 移至 .ai_code_copilot/changes/archives/；summary.md 随变更目录归档。`/archive` 是清理动作，不是运行时摘要的唯一生成点
-8. 输出归档摘要：
+7. 若该变更是 Complex 子项目且缺少 log.summary.md，停止并提示先执行 `/finish` 或手动生成并 review `log.summary.md`
+8. 将 .ai_code_copilot/changes/<变更名>/ 移至 .ai_code_copilot/changes/archives/；summary.md 随变更目录归档。`/archive` 是清理动作，不是运行时摘要的唯一生成点
+9. 输出归档摘要：
    - 已沉淀 N 条知识 → knowledge/
    - 已归档 changes/<变更名> → changes/archives/
    - knowledge 库累计条目数（按类别统计）
    - Harness 改进项：已沉淀 / 已跳过 / 建议升级为机械规则
-9. git commit：`docs(archive): 归档 <变更名>`
+   - Loop 改进项：已沉淀 / 已跳过 / 建议升级为机械规则
+10. git commit：`docs(archive): 归档 <变更名>`
 ```
 
 ### 调试流程（自动触发，无需命令）

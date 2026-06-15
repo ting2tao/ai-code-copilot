@@ -74,6 +74,12 @@
 **Agent 可见能力缺口**：
 - {测试/日志/指标/trace/截图/失败自诊断入口缺口}
 
+### Loop Readiness
+
+**结论**：READY / NEEDS_INFO
+**Loop 缺口**：
+- {缺少 Goal / Done Signal / Guardrails / Fallback / Memory；无则填"无"}
+
 ---
 
 ## Verification log
@@ -88,6 +94,21 @@ exit code: {0/non-zero}
 output:
 {实际输出摘要}
 ```
+
+---
+
+## Loop Evidence
+
+> 每轮执行后记录 Done Signal、Guardrails、Fallback 和 Memory。压缩时必须保留最终完成证据和任何人工接受风险。
+
+### {YYYY-MM-DD} - {loop 标题}
+
+| 项 | 内容 |
+|----|------|
+| Done Signal | {测试/日志/指标/review/截图/人工确认} |
+| Guardrails checked | {不得删除测试/降低断言/绕过校验/跳过检查等} |
+| Fallback | {未触发/已触发，说明降级、停机或人工确认} |
+| Memory | {knowledge/rules/templates/tests/scripts；无则填"无"} |
 
 ---
 

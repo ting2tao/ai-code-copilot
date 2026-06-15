@@ -6,6 +6,8 @@ Harness Engineering 是 ai-code-copilot 对 “Context First, Code Follows” �
 
 这里的 Harness 不是单个工具，而是一组让 Agent 能可靠工作的缰绳：规格、任务拆分、测试、日志、指标、review、规则、自检脚本和知识沉淀。工程师的价值不是被缩减为“写提示词”，而是设计一个 Agent 能看见、能验证、能自我修正的工作环境。
 
+Loop Engineering 是 Harness 之上的动态控制模型：Harness 回答 Agent 能看见什么，Loop 回答 Agent 如何基于这些信号循环执行、调整、停止和沉淀。框架内定义见 [`docs/loop-engineering.md`](loop-engineering.md)，核心产物是轻量的 Goal Contract。
+
 ## 核心原则
 
 1. **人类掌舵，Agent 执行**
@@ -39,6 +41,7 @@ Harness Engineering 是 ai-code-copilot 对 “Context First, Code Follows” �
 - 失败时 Agent 应先查哪里？
 - 关键日志、指标、trace、截图或 CI 入口在哪里？
 - 哪些信息不可见，需要人工补充？
+- 这个变更的 Goal Contract 是什么：Goal、Done Signal、Guardrails、Fallback、Memory？
 - 这次经验是否应写入 `knowledge/` 或升级为机械规则？
 
 ## 不照搬的部分
