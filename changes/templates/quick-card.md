@@ -36,7 +36,23 @@
 | 失败自诊断入口 | {失败时先看哪些命令、日志或文件} |
 | 不可见信息/人工确认 | {无则填"无"} |
 
-## 6. 风险与回滚
+## 6. Goal Contract
+
+| 项 | 内容 |
+|----|------|
+| Goal | {这次 Quick 循环要达成的目标} |
+| Done Signal | {判断完成的命令输出、日志、截图或人工确认} |
+| Guardrails | {不能用什么方式假完成；无则填"无"} |
+| Fallback | {失败时如何降级、停机或找人确认} |
+| Memory | {有经验沉淀时写入哪里；无则填"无"} |
+
+## 7. Domain Check（DDD-lite，可选）
+
+> 普通 Quick 变更填"不适用"；涉及金额、权限、状态机、跨模块业务规则时，至少写清 Language、Boundary、Invariants、State Transitions、Owner。
+
+{不适用 / Language: ...; Boundary: ...; Invariants: ...; State Transitions: ...; Owner: ...}
+
+## 8. 风险与回滚
 
 - 风险：{风险点；无则填"无明显风险"}
 - 人工确认项：{涉及资金/状态/权限/敏感信息则必须列出；无则填"无"}

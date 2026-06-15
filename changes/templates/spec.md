@@ -109,7 +109,47 @@ Response: {返回说明}
 
 ---
 
-## 7. 待澄清事项
+## 7. Goal Contract
+
+> 记录这个变更的 Agent 反馈循环。Loop 不是无限重试，必须有机器可验证的 Done Signal、边界 Guardrails 和失败 Fallback。
+
+| 项 | 内容 |
+|----|------|
+| Goal | {这轮到底要达成什么} |
+| Done Signal | {什么机器可验证信号代表完成，如测试/类型检查/lint/指标阈值} |
+| Guardrails | {不能用什么方式假完成，如不得删除测试、降低断言、绕过权限、跳过 lint} |
+| Fallback | {失败几轮后怎么降级、停机、Reverse Sync 或找人确认} |
+| Memory | {哪些经验要沉淀到 knowledge、rules、templates、tests 或脚本} |
+
+### 7.1 Loop Runtime（可选）
+
+> 仅自动化、批量修复、跨 PR/Issue、定时巡检等长运行场景填写；普通变更填"不启用"。
+
+| 能力 | 内容 |
+|------|------|
+| Automation | {定时/事件触发方式；不启用则填"不启用"} |
+| Worktree isolation | {是否需要独立 worktree/分支；不需要则说明原因} |
+| Skills / knowledge | {需要加载的 skill 或 knowledge；无则填"无"} |
+| Plugins / connectors | {GitHub/Linear/Slack/DB/MCP 等连接器；无则填"无"} |
+| Maker-checker subagents | {是否拆分执行者和检查者；无则说明原因} |
+
+---
+
+## 8. Domain Check（DDD-lite，仅复杂业务填写）
+
+> 仅金额、库存、额度、权限、状态机、跨模块业务协作、强一致性或领域词混淆时填写；普通 CRUD、UI、脚本、基础设施变更填"不适用"。
+
+| 字段 | 内容 |
+|------|------|
+| Language | {核心领域词及定义；不适用则填"不适用"} |
+| Boundary | {所属业务边界、不会跨越的边界；不适用则填"不适用"} |
+| Invariants | {必须永远成立的业务不变量；不适用则填"不适用"} |
+| State Transitions | {合法状态/流转/禁止流转/失败处理；不适用则填"不适用"} |
+| Owner | {领域规则负责人或需人工确认的角色；不适用则填"不适用"} |
+
+---
+
+## 9. 待澄清事项
 
 > /apply 前此列表必须清空
 
@@ -118,7 +158,7 @@ Response: {返回说明}
 
 ---
 
-## 8. 验收标准
+## 10. 验收标准
 
 > 对应 /test 的 P0 用例
 
@@ -127,7 +167,7 @@ Response: {返回说明}
 
 ---
 
-## 9. 测试策略
+## 11. 测试策略
 
 > /propose 阶段生成草案，/test 阶段细化为 test-spec.md。
 

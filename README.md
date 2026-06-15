@@ -4,13 +4,13 @@
 
 > **Context First, Harness Enables, Code Follows.** An AI coding collaboration framework for multi-stack software projects.
 >
-> AI makes code easier to generate. ai-code-copilot makes context and feedback loops explicit, reviewable, and reusable.
+> AI makes code easier to generate. ai-code-copilot makes context, harnesses, and feedback loops explicit, reviewable, and reusable.
 
 ## What It Is
 
 ai-code-copilot is an AI coding collaboration framework for **Codex** and **Claude Code**. It is not a runtime application. It installs prompts, rules, agents, hooks, templates, and scripts into `~/.codex/ai_code_copilot/` or `~/.claude/ai_code_copilot/`.
 
-The framework helps you build a human-agent engineering harness: clarify the goal first, write a spec, define the tests/logs/rules/feedback that the agent can see, then implement, review, finish, and archive the change with evidence.
+The framework helps you build a human-agent engineering loop: clarify the goal first, write a spec, define the tests/logs/rules/feedback that the agent can see, then let the agent execute, observe, tune, review, finish, and archive the change with evidence.
 
 ## Problems It Solves
 
@@ -26,6 +26,8 @@ The framework helps you build a human-agent engineering harness: clarify the goa
 - **Spec-driven work**: Standard/Complex changes require `spec.md`; Quick changes require `quick-card.md`.
 - **Project-local context**: `/init` captures stack, commands, architecture, and domain rules in `.ai_code_copilot/`.
 - **Harness Engineering**: tests, logs, rules, reviews, and knowledge form an agent-visible feedback loop.
+- **Loop Engineering**: each change declares a compact Goal Contract: Goal, Done Signal, Guardrails, Fallback, and Memory.
+- **DDD-lite Domain Check**: complex business changes record Language, Boundary, Invariants, State Transitions, and Owner without forcing a full DDD structure.
 - **Progressive complexity**: Quick / Standard / Complex workflows based on change size and risk.
 - **Layered rules**: core collaboration rules stay in `rules/`; stack-specific practices live in Java/Go/Python/Frontend packs.
 - **Context-budget policy**: SessionStart injects only L0 safety and summaries; commands load rules, packs, and knowledge on demand.
@@ -34,7 +36,7 @@ The framework helps you build a human-agent engineering harness: clarify the goa
 - **Audit trail**: each change keeps `log.md` for decisions, issues, review results, and evidence.
 - **Safety rails**: money, permission, and state-transition changes require human confirmation.
 
-The framework definition of Harness Engineering is in [`docs/harness-engineering.md`](docs/harness-engineering.md).
+The framework definitions are in [`docs/harness-engineering.md`](docs/harness-engineering.md) and [`docs/loop-engineering.md`](docs/loop-engineering.md).
 
 ## Rule Layers
 

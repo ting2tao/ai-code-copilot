@@ -20,6 +20,7 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 - `rules/` — 跨语言通用规则（协作、安全、领域、项目上下文占位）
 - `knowledge/` — 知识库（由 `/archive` 沉淀积累）
 - `docs/harness-engineering.md` — Harness Engineering 方法论在本框架中的定义
+- `docs/loop-engineering.md` — Loop Engineering 方法论在本框架中的定义
 - `changes/templates/` — 变更文档模板（spec、tasks、test-spec、log、design-brief、quick-card、roadmap）
 - `packs/` — 技术栈规则包，`/init` 时自动检测加载；Java/Go/Python/Frontend 规则都放在各自 pack 中
 
@@ -57,6 +58,8 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 - **渐进式复杂度** — Quick（≤1天，<5文件）/ Standard / Complex（>5天，跨3+模块）
 - **Evidence Before Claims** — 每个 task 完成必须展示可验证的命令输出
 - **Harness Enables** — 规格、测试、日志、review、规则和知识沉淀共同构成 Agent 可见反馈循环
+- **Loop Engineering** — 每个变更都要声明简洁的 Goal Contract：Goal、Done Signal、Guardrails、Fallback、Memory
+- **DDD-lite Domain Check** — 复杂业务才记录 Language、Boundary、Invariants、State Transitions、Owner，不强制完整 DDD 结构
 - **双阶段审查** — Spec Compliance（是否按 spec 实现）+ Code Quality（代码质量）
 - **知识飞轮** — `/archive` 将经验沉淀到 `knowledge/`，下次自动加载
 - **安全红线** — 硬编码密钥、日志打印敏感信息、资金/权限变更必须人工确认

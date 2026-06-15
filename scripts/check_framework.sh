@@ -25,6 +25,7 @@ need_file agents/spec-reviewer.md
 need_file agents/code-quality-reviewer.md
 need_file config/project-config.json
 need_file docs/harness-engineering.md
+need_file docs/loop-engineering.md
 need_file hooks/session-start
 need_dir rules
 need_dir packs
@@ -60,6 +61,8 @@ if len(agents_lines) > 120:
     raise SystemExit(f"AGENTS.md must stay a short index; found {len(agents_lines)} lines")
 if "docs/harness-engineering.md" not in agents_text:
     raise SystemExit("AGENTS.md must point to docs/harness-engineering.md")
+if "docs/loop-engineering.md" not in agents_text:
+    raise SystemExit("AGENTS.md must point to docs/loop-engineering.md")
 if "Context First, Harness Enables, Code Follows" not in agents_text:
     raise SystemExit("AGENTS.md must use the Harness-enabled core slogan")
 
@@ -215,6 +218,47 @@ for rel, markers in required_harness_markers.items():
     if missing_markers:
         raise SystemExit(
             f"{rel} missing Harness markers: " + ", ".join(missing_markers)
+        )
+
+required_loop_markers = {
+    "docs/loop-engineering.md": ["Loop Engineering", "Goal Contract", "Done Signal", "Guardrails", "Fallback", "Loop Runtime"],
+    "docs/harness-engineering.md": ["Loop Engineering", "Goal Contract"],
+    "README.md": ["Loop Engineering", "docs/loop-engineering.md"],
+    "README-CN.md": ["Loop Engineering", "docs/loop-engineering.md"],
+    "AGENTS.md": ["Loop Engineering", "docs/loop-engineering.md"],
+    "agents/copilot-prompt.md": ["Goal Contract", "Done Signal", "Guardrails", "Fallback", "Loop Evidence"],
+    "agents/spec-reviewer.md": ["Loop Readiness", "Goal Contract", "Goodhart"],
+    "agents/code-quality-reviewer.md": ["Loop 可观察性", "Guardrails", "Goodhart"],
+    "changes/templates/spec.md": ["Goal Contract", "Done Signal", "Guardrails", "Fallback", "Loop Runtime"],
+    "changes/templates/quick-card.md": ["Goal Contract", "Done Signal", "Guardrails", "Fallback"],
+    "changes/templates/test-spec.md": ["Loop Evidence", "Done Signal", "Guardrail checks"],
+    "changes/templates/log.md": ["Loop Evidence", "Loop Readiness", "Done Signal"],
+}
+for rel, markers in required_loop_markers.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    missing_markers = [marker for marker in markers if marker not in text]
+    if missing_markers:
+        raise SystemExit(
+            f"{rel} missing Loop markers: " + ", ".join(missing_markers)
+        )
+
+required_domain_markers = {
+    "rules/domain-rules.md": ["Domain Check", "Language", "Boundary", "Invariants", "State Transitions", "Owner"],
+    "README.md": ["DDD-lite Domain Check", "Language", "Boundary", "Invariants", "State Transitions", "Owner"],
+    "README-CN.md": ["DDD-lite Domain Check", "Language", "Boundary", "Invariants", "State Transitions", "Owner"],
+    "AGENTS.md": ["DDD-lite Domain Check", "Language", "Boundary", "Invariants", "State Transitions", "Owner"],
+    "changes/templates/spec.md": ["Domain Check", "Language", "Boundary", "Invariants", "State Transitions", "Owner"],
+    "changes/templates/quick-card.md": ["Domain Check", "Language", "Boundary", "Invariants", "State Transitions", "Owner"],
+    "agents/copilot-prompt.md": ["Domain Check", "领域复杂度", "Invariants", "State Transitions"],
+    "agents/spec-reviewer.md": ["Domain Check", "Invariants", "State Transitions"],
+    "agents/code-quality-reviewer.md": ["Domain Check", "业务不变量"],
+}
+for rel, markers in required_domain_markers.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    missing_markers = [marker for marker in markers if marker not in text]
+    if missing_markers:
+        raise SystemExit(
+            f"{rel} missing Domain Check markers: " + ", ".join(missing_markers)
         )
 
 test_spec = (root / "changes" / "templates" / "test-spec.md").read_text(encoding="utf-8")
