@@ -8,9 +8,9 @@
 | 档位 | Standard |
 | Issue | https://github.com/ting2tao/ai-code-copilot/issues/28 |
 | 开始时间 | 2026-06-15 |
-| 完成时间 | 待完成 |
+| 完成时间 | 2026-06-15 |
 | 涉及文件数 | 20 |
-| commit 列表 | 4521474 `feat(loop): integrate loop engineering framework` |
+| commit 列表 | 4521474 `feat(loop): integrate loop engineering framework`; dfe8e87 `docs(loop): record implementation commit evidence`; e4e0f6f `docs(prompt): preserve verification log requirement` |
 
 ---
 
@@ -67,6 +67,21 @@
 ## /review 结论
 
 待执行。
+
+---
+
+## /finish 记录
+
+| 项 | 内容 |
+|----|------|
+| Issue | https://github.com/ting2tao/ai-code-copilot/issues/28 |
+| PR | https://github.com/ting2tao/ai-code-copilot/pull/29 |
+| Branch | `codex/loop-engineering-integration` |
+| Remote | `origin` |
+| Closing keyword | `Closes #28` |
+| Push result | `git push -u origin codex/loop-engineering-integration` 成功 |
+| Local install | `bash install.sh --codex` 成功，同步到 `/Users/tsnowy/.codex/ai_code_copilot` |
+| Verification | `bash scripts/check_framework.sh` PASS；`git diff --check` PASS |
 
 ---
 
