@@ -301,6 +301,7 @@ Preflight（任一不满足则停止）：
 
 **Verification 铁律（每个 task 完成后必须）：**
 - 展示可验证证据：编译输出 / 测试套件输出（命令见 project-context.md）/ curl 调用结果
+- 将验证证据写入 `log.md ## Verification log`：至少包含 `command`、`exit code`、`output 摘要`；未写入该记录时，当前 task 视为未完成，不得标记 ✅，不得进入下一个 task
 - 若 spec/quick-card 记录了日志、指标、trace、截图或 UI 操作入口，必须展示至少一个对应的 Agent 可见验证证据；不可访问时写明原因并记录人工确认项
 - 若 spec/quick-card/test-spec 记录了 Goal Contract，必须展示 Loop Evidence：Done Signal 是否满足、Guardrails 是否守住、Fallback 是否触发、Memory 是否需要更新
 - 禁止"应该没问题"、"应该能跑"等无证据声明
@@ -349,9 +350,10 @@ git commit -m "<type>(<scope>): <中文简述>"
 1. 修改代码
 2. 执行编译检查（project-context.md 中的命令）→ 展示输出
 3. 执行相关测试 → 展示输出
-4. 同步更新 spec.md / tasks.md / test-spec.md / log.md（Quick 档同步 quick-card.md / log.md）
-5. git commit
-6. 此时才可说"修复完成"
+4. 将验证证据写入 `log.md ## Verification log`（command + exit code + output 摘要）；未写入则不得声明修复完成
+5. 同步更新 spec.md / tasks.md / test-spec.md / log.md（Quick 档同步 quick-card.md / log.md）
+6. git commit
+7. 此时才可说"修复完成"
 
 ### /fix-ci <变更名> — CI 失败修复闭环
 
@@ -718,8 +720,9 @@ Phase 4 · 实施修复
 
 | 场景 | 必须展示的证据 |
 |------|--------------|
-| /fix 完成后 | 编译输出 + 相关测试用例输出 |
-| /apply 全部 task 完成后 | 编译输出 + 完整测试套件摘要 |
+| /fix 完成后 | 编译输出 + 相关测试用例输出，并写入 `log.md ## Verification log` |
+| /apply 每个 task 完成后 | 该 task 的验证命令 + exit code + 输出摘要，并写入 `log.md ## Verification log` |
+| /apply 全部 task 完成后 | 编译输出 + 完整测试套件摘要，并写入 `log.md ## Verification log` |
 | 调试修复后 | 复现测试从 Red → Green 的实际输出 |
 
 **禁止以下无证据声明：**
@@ -727,7 +730,7 @@ Phase 4 · 实施修复
 - ❌ "已修复" / "完成了" / "改好了"（没有命令输出支撑时）
 - ❌ "测试应该能过" / "编译应该没问题"
 
-**正确做法：** 先跑命令，再下结论。命令输出就是结论的来源。
+**正确做法：** 先跑命令，把 command/exit code/output 摘要写入 `log.md ## Verification log`，再下结论。命令输出就是结论的来源。
 
 ---
 
