@@ -130,6 +130,37 @@ if log_compression.get("reviewThresholdLines") != 150:
 if log_compression.get("fixThresholdLines") != 200:
     raise SystemExit("project config logCompression.fixThresholdLines must default to 200")
 
+allowed_types = "feat|fix|docs|refactor|test|chore|perf|ci|build"
+branch_pattern = re.compile(rf"^({allowed_types})/[a-z0-9]+(?:-[a-z0-9]+)*$")
+commit_pattern = re.compile(rf"^({allowed_types})\([a-z0-9]+(?:-[a-z0-9]+)*\): .+$")
+
+for value in ["feat/issue-workflow", "docs/readme-sync"]:
+    if not branch_pattern.fullmatch(value):
+        raise SystemExit(f"valid branch rejected: {value}")
+for value in ["codex/issue-workflow", "feat/Issue_Workflow", "feat/issue/workflow"]:
+    if branch_pattern.fullmatch(value):
+        raise SystemExit(f"invalid branch accepted: {value}")
+
+for value in [
+    "feat(issue-workflow): create work issue",
+    "docs(readme-sync): 同步中英文说明",
+]:
+    if not commit_pattern.fullmatch(value):
+        raise SystemExit(f"valid commit rejected: {value}")
+for value in ["feat: missing scope", "[issue-7] fix: bad prefix", "feat(Issue): bad scope"]:
+    if commit_pattern.fullmatch(value):
+        raise SystemExit(f"invalid commit accepted: {value}")
+
+git_contract_files = {
+    "agents/copilot-prompt.md": ["type/scope", "type(scope): description"],
+    "rules/commit-convention.md": ["type/scope", "type(scope): description"],
+}
+for rel, markers in git_contract_files.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    missing = [marker for marker in markers if marker not in text]
+    if missing:
+        raise SystemExit(f"{rel} missing Git contract markers: {missing}")
+
 expected = {"java-spring", "go", "python", "frontend-react"}
 actual = {p.name for p in pack_root.iterdir() if p.is_dir()}
 missing = expected - actual

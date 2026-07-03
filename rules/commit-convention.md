@@ -16,7 +16,7 @@ GitHub 指标统计口径见 `github-metrics.md`；本文件只定义协作、co
 
 ### 社区通用规范
 
-- commit message 使用 Conventional Commits：`<type>[optional scope]: <description>`。
+- commit message 使用 Conventional Commits，但本项目强制 scope：`type(scope): description`。
 - 该格式利于 changelog、release note、语义化版本和自动化工具识别。
 
 ### 项目约定，不冒充 GitHub 官方标准
@@ -45,12 +45,19 @@ GitHub 指标统计口径见 `github-metrics.md`；本文件只定义协作、co
 ### 必须
 
 - 禁止在 `master` 或 `main` 分支直接开发或提交。
+- 分支名称必须使用 `type/scope`。
+- type 仅允许：`feat`、`fix`、`docs`、`refactor`、`test`、`chore`、`perf`、`ci`、`build`。
+- scope 必须是描述模块或能力的小写 kebab-case；Issue 编号不是 scope。
+- 分支冲突时停止并询问复用或人工处理，禁止静默添加时间戳。
 
 ## 3. Commit Message
 
 ### 必须
 
-- 使用 Conventional Commits：`<type>[optional scope]: <description>`。
+- commit subject 必须使用 `type(scope): description`，scope 不可省略。
+- type 仅允许：`feat`、`fix`、`docs`、`refactor`、`test`、`chore`、`perf`、`ci`、`build`。
+- scope 必须是描述模块或能力的小写 kebab-case；Issue 编号不是 scope。
+- description 必须说明实际变更，不添加 `[issue-123]` 等前缀。
 - 不要使用用户随手输入的非标准前缀，例如 `[issue-7-org-keyword-search] fix: ...`。
 - 不要把 Issue ID 当作 scope。
 - 每个 task/fix 原则上一 task 一 commit。
@@ -71,8 +78,9 @@ GitHub 指标统计口径见 `github-metrics.md`；本文件只定义协作、co
 
 ### scope
 
-- scope 使用模块、领域或能力名，例如 `search`、`org-search`、`coupon`、`workflow`、`git`。
+- scope 使用模块、领域或能力名，例如 `search`、`org-search`、`coupon`、`workflow`、`git-contract`。
 - scope 应保持短、稳定、可复用。
+- scope 必须是小写 kebab-case，只允许小写字母、数字和连字符。
 
 ### Issue 关联
 
@@ -92,6 +100,8 @@ GitHub 指标统计口径见 `github-metrics.md`；本文件只定义协作、co
 - `[issue-7-org-keyword-search] fix: 支持按组织名称查询服务范围`
 - `[add-coupon] 新增 issueCoupon 核心逻辑`
 - `fix: issue-7-org-keyword-search`
+- `feat: missing scope`
+- `feat(Issue): bad scope`
 
 ## 4. PR 与自动化审查
 
@@ -133,8 +143,8 @@ Closes #7
 ## 6. 快速检查清单
 
 - [ ] Issue ID/URL 已写入 `spec.md` 或 `quick-card.md`
-- [ ] 当前分支不是 `master`/`main`
-- [ ] commit message 符合 Conventional Commits
+- [ ] 当前分支不是 `master`/`main`，且符合 `type/scope`
+- [ ] commit message 符合 `type(scope): description`
 - [ ] commit hash 和 message 已写入 `tasks.md` 或 `log.md`
 - [ ] PR body 使用 GitHub closing keyword，例如 `Closes #ID`
 - [ ] PR 触发 CodeQL 和 CI；若缺失，PR 已明示缺口

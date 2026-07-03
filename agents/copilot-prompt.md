@@ -286,6 +286,7 @@ Step 6 · HARD-GATE 确认
 Preflight（任一不满足则停止）：
 - 执行 `git status --short`，识别用户已有改动；不得覆盖与当前 task 无关的未提交改动
 - 检查当前分支；在 master/main 分支立即停止
+- 检查当前分支必须匹配 `type/scope`：type 仅允许 `feat`、`fix`、`docs`、`refactor`、`test`、`chore`、`perf`、`ci`、`build`，scope 必须是小写 kebab-case；不匹配时阻塞任何文件编辑与 commit，先询问用户切换/重命名分支
 - 检查 project-context.md 中记录的编译/测试命令是否存在；缺失则先询问用户补齐
 - 检查 tasks.md 或 quick-card.md 中列出的目标文件路径仍匹配当前代码；不匹配则触发 Reverse Sync
 - 涉及数据库、接口、状态机、权限、资金时，确认 spec/quick-card 中已有风险和回滚说明
@@ -320,12 +321,12 @@ Preflight（任一不满足则停止）：
 git add <changed files>
 git commit -m "<type>(<scope>): <中文简述>"
 ```
-注意：禁止在 master/main 分支提交。提交前执行 project-context.md 中记录的编译检查命令确认可编译。
+注意：提交前必须确认当前分支符合 `type/scope`，且不是 master/main；分支不匹配时禁止编辑文件和提交。提交前执行 project-context.md 中记录的编译检查命令确认可编译。
 
 **commit message 规范（Conventional Commits）：**
-- 格式：`<type>[optional scope]: <description>`，例如 `feat(org-search): 支持按组织名称查询服务范围`
-- 常用 type：`feat`（新功能）、`fix`（修复）、`docs`（文档）、`refactor`（重构）、`test`（测试）、`chore`（杂项）、`perf`（性能）、`ci`（CI）、`build`（构建）
-- scope 使用模块或能力名，例如 `search`、`org-search`、`coupon`；不要把 `[issue-xxx]` 放在 commit message 前缀
+- 格式：`type(scope): description`，scope 不可省略，例如 `feat(org-search): 支持按组织名称查询服务范围`
+- type 仅允许：`feat`（新功能）、`fix`（修复）、`docs`（文档）、`refactor`（重构）、`test`（测试）、`chore`（杂项）、`perf`（性能）、`ci`（CI）、`build`（构建）
+- scope 使用模块或能力名的小写 kebab-case，例如 `search`、`org-search`、`coupon`、`git-contract`；Issue 编号不是 scope；不要把 `[issue-xxx]` 放在 commit message 前缀
 - 关联 Issue 时优先使用 `fix(org-search): 支持按组织名称查询服务范围 (#7)`，或在 commit body/PR body 写 `Refs #7` / `Closes #7`
 - 提交完成后必须立即把 commit hash 和完整 message 写入 tasks.md 或 log.md，作为 /review 的提交证据
 
@@ -655,9 +656,9 @@ Phase 4 · 实施修复
 完整规则见 `rules/commit-convention.md`。执行时必须遵守以下摘要：
 
 1. 严禁无票开发；Issue ID/URL 必须写入 `spec.md` 或 `quick-card.md`
-2. 禁止在 `master`/`main` 直接开发或提交
+2. 禁止在 `master`/`main` 直接开发或提交；分支名称必须匹配 `type/scope`
 3. 每个 task/fix 原则上一 task 一 commit
-4. commit message 使用 Conventional Commits：`<type>[optional scope]: <description>`
+4. commit message 必须使用强制 scope 的 Conventional Commits：`type(scope): description`
 5. commit 前执行 `project-context.md` 中记录的编译/测试/检查命令
 6. commit hash 和完整 message 必须写入 `tasks.md` 或 `log.md`
 7. 禁止自动 push — push 由用户主动触发
