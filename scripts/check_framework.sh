@@ -383,16 +383,25 @@ if found_java_terms:
     )
 PY
 
-compact_project="$(mktemp -d "${TMPDIR:-/tmp}/ai-code-copilot-compact.XXXXXX")"
-compact_output="$(mktemp "${TMPDIR:-/tmp}/ai-code-copilot-compact-output.XXXXXX")"
-cleanup_compact_fixture() {
-  rm -rf -- "$compact_project"
-  rm -f -- "$compact_output"
-}
-trap cleanup_compact_fixture EXIT
+(
+  compact_project="$(mktemp -d "${TMPDIR:-/tmp}/ai-code-copilot-compact.XXXXXX")"
+  compact_output=""
+  cleanup_compact_fixture() {
+    rm -rf -- "$compact_project"
+    if [ -n "$compact_output" ]; then
+      rm -f -- "$compact_output"
+    fi
+  }
+  trap cleanup_compact_fixture EXIT
+  compact_output="$(mktemp "${TMPDIR:-/tmp}/ai-code-copilot-compact-output.XXXXXX")"
+  compact_change="$compact_project/.ai_code_copilot/changes/tiny-doc-fix"
+  mkdir -p "$compact_change"
 
-mkdir -p "$compact_project/.ai_code_copilot/changes/tiny-doc-fix"
-cat > "$compact_project/.ai_code_copilot/changes/tiny-doc-fix/quick-card.md" <<'EOF'
+  run_compact_session() {
+    (cd "$compact_project" && "$ROOT/hooks/session-start") > "$compact_output"
+  }
+
+  cat > "$compact_change/quick-card.md" <<'EOF'
 ---
 change: tiny-doc-fix
 status: in-apply
@@ -404,32 +413,205 @@ issueRelationship: standalone
 closeTarget: workIssue
 branch: docs/tiny-doc-fix
 ---
+## Execution history
+status: finished
+branch: body/marker
 EOF
-(cd "$compact_project" && "$ROOT/hooks/session-start") > "$compact_output"
-if ! python3 - "$compact_output" <<'PY'
+  run_compact_session
+  if ! python3 - "$compact_output" <<'PY'
 import json
 import sys
 
-output = json.loads(open(sys.argv[1], encoding="utf-8").read())
-context = output["hookSpecificOutput"]["additionalContext"]
-raise SystemExit(0 if "recordMode: compact" in context else 1)
+context = json.loads(open(sys.argv[1], encoding="utf-8").read())["hookSpecificOutput"]["additionalContext"]
+expected = ['status: in-apply', 'branch: docs/tiny-doc-fix']
+forbidden = ['status: finished', 'branch: body/marker', 'Execution history']
+valid = all(item in context for item in expected) and all(item not in context for item in forbidden)
+raise SystemExit(0 if valid else 1)
 PY
-then
-  fail "SessionStart did not load compact Quick metadata"
-fi
-if ! python3 - "$compact_output" <<'PY'
+  then
+    fail "SessionStart trusted Quick body metadata"
+  fi
+
+  cat > "$compact_change/quick-card.md" <<'EOF'
+---
+change: tiny-doc-fix
+status: in-apply
+recordMode: compact
+## Body without a closing delimiter
+branch: body/marker
+EOF
+  run_compact_session
+  if ! python3 - "$compact_output" <<'PY'
 import json
 import sys
 
-output = json.loads(open(sys.argv[1], encoding="utf-8").read())
-context = output["hookSpecificOutput"]["additionalContext"]
-raise SystemExit(0 if 'workIssue: "#42"' in context else 1)
+context = json.loads(open(sys.argv[1], encoding="utf-8").read())["hookSpecificOutput"]["additionalContext"]
+active = context.split("<active-change-context>\n", 1)[1].split("\n</active-change-context>", 1)[0]
+allowed = {"change", "status", "recordMode", "specHash", "parentIssue", "workIssue", "issueRelationship", "branch"}
+metadata = [line for line in active.splitlines() if line.partition(":")[0] in allowed]
+raise SystemExit(0 if not metadata else 1)
 PY
-then
-  fail "SessionStart omitted compact workIssue"
-fi
-cleanup_compact_fixture
-trap - EXIT
+  then
+    fail "SessionStart accepted unclosed Quick front matter"
+  fi
+
+  cat > "$compact_change/quick-card.md" <<'EOF'
+---
+change: tiny-doc-fix
+status: "finished" # terminal
+recordMode: compact
+---
+EOF
+  run_compact_session
+  if ! python3 - "$compact_output" <<'PY'
+import json
+import sys
+
+context = json.loads(open(sys.argv[1], encoding="utf-8").read())["hookSpecificOutput"]["additionalContext"]
+raise SystemExit(0 if "<active-change-context>" not in context else 1)
+PY
+  then
+    fail "SessionStart did not normalize quoted finished status"
+  fi
+
+  cat > "$compact_change/summary.md" <<'EOF'
+change: authoritative-summary
+spec-hash: sha256:summary
+goal: preserve summary authority
+scope: hooks/session-start
+open-risks: none
+loaded-knowledge: none
+EOF
+  cat > "$compact_change/quick-card.md" <<'EOF'
+---
+change: tiny-doc-fix
+status: finished
+recordMode: compact
+---
+EOF
+  run_compact_session
+  if ! python3 - "$compact_output" <<'PY'
+import json
+import sys
+
+context = json.loads(open(sys.argv[1], encoding="utf-8").read())["hookSpecificOutput"]["additionalContext"]
+raise SystemExit(0 if "change: authoritative-summary" in context else 1)
+PY
+  then
+    fail "SessionStart hid authoritative summary using Quick status"
+  fi
+  rm -f -- "$compact_change/summary.md"
+
+  for invalid_case in duplicate empty invalid overlong control; do
+    case "$invalid_case" in
+      duplicate)
+        cat > "$compact_change/quick-card.md" <<'EOF'
+---
+change: tiny-doc-fix
+status: in-apply
+recordMode: compact
+branch: docs/first
+branch: docs/second
+---
+EOF
+        ;;
+      empty)
+        cat > "$compact_change/quick-card.md" <<'EOF'
+---
+change: tiny-doc-fix
+status: in-apply
+recordMode:
+branch: docs/tiny-doc-fix
+---
+EOF
+        ;;
+      invalid)
+        cat > "$compact_change/quick-card.md" <<'EOF'
+---
+change: tiny-doc-fix
+status: in-apply
+recordMode: compact
+branch: [docs, tiny-doc-fix]
+---
+EOF
+        ;;
+      overlong)
+        overlong_value="$(printf '%*s' 257 '' | tr ' ' a)"
+        cat > "$compact_change/quick-card.md" <<EOF
+---
+change: tiny-doc-fix
+status: in-apply
+recordMode: compact
+branch: $overlong_value
+---
+EOF
+        ;;
+      control)
+        printf '%s\n' \
+          '---' \
+          'change: tiny-doc-fix' \
+          'status: in-apply' \
+          'recordMode: compact' > "$compact_change/quick-card.md"
+        printf 'branch: docs/\001tiny-doc-fix\n---\n' >> "$compact_change/quick-card.md"
+        ;;
+    esac
+    run_compact_session
+    if ! python3 - "$compact_output" <<'PY'
+import json
+import sys
+
+context = json.loads(open(sys.argv[1], encoding="utf-8").read())["hookSpecificOutput"]["additionalContext"]
+active = context.split("<active-change-context>\n", 1)[1].split("\n</active-change-context>", 1)[0]
+allowed = {"change", "status", "recordMode", "specHash", "parentIssue", "workIssue", "issueRelationship", "branch"}
+metadata = [line for line in active.splitlines() if line.partition(":")[0] in allowed]
+raise SystemExit(0 if not metadata else 1)
+PY
+    then
+      fail "SessionStart accepted invalid Quick front matter: $invalid_case"
+    fi
+  done
+
+  cat > "$compact_change/quick-card.md" <<'EOF'
+---
+change: tiny-doc-fix
+status: in-apply
+recordMode: compact
+specHash: sha256:test
+parentIssue: none
+workIssue: "#42"
+issueRelationship: standalone
+closeTarget: workIssue
+branch: docs/tiny-doc-fix
+---
+## Execution history
+branch: body/marker
+EOF
+  run_compact_session
+  if ! python3 - "$compact_output" <<'PY'
+import json
+import sys
+
+context = json.loads(open(sys.argv[1], encoding="utf-8").read())["hookSpecificOutput"]["additionalContext"]
+active = context.split("<active-change-context>\n", 1)[1].split("\n</active-change-context>", 1)[0]
+allowed = ["change", "status", "recordMode", "specHash", "parentIssue", "workIssue", "issueRelationship", "branch"]
+metadata = [line for line in active.splitlines() if line.partition(":")[0] in allowed]
+expected = [
+    "change: tiny-doc-fix",
+    "status: in-apply",
+    "recordMode: compact",
+    "specHash: sha256:test",
+    "parentIssue: none",
+    'workIssue: "#42"',
+    "issueRelationship: standalone",
+    "branch: docs/tiny-doc-fix",
+]
+forbidden = ["closeTarget", "body/marker", "Execution history"]
+raise SystemExit(0 if metadata == expected and all(item not in context for item in forbidden) else 1)
+PY
+  then
+    fail "SessionStart compact metadata output is not exact"
+  fi
+)
 
 if [ -d tests/fixtures ]; then
   for fixture in tests/fixtures/*; do

@@ -55,6 +55,10 @@ PY
 )"
 
     ACTIVE_CHANGE_CONTEXT="$(python3 - <<'PY' 2>/dev/null || true
+import ast
+import json
+import re
+import unicodedata
 from pathlib import Path
 
 changes_dir = Path.cwd() / ".ai_code_copilot" / "changes"
@@ -67,32 +71,85 @@ def field_value(path, key):
     try:
         for line in path.read_text(encoding="utf-8").splitlines():
             if line.strip().startswith(f"{key}:"):
-                return line.split(":", 1)[1].strip().strip('"')
-    except Exception:
+                return line.split(":", 1)[1].strip()
+    except (OSError, UnicodeError):
         return None
     return None
 
-def change_status(change):
-    return field_value(change / "summary.md", "status") or field_value(change / "quick-card.md", "status")
+def has_control_characters(value):
+    return any(unicodedata.category(character).startswith("C") for character in value)
 
-def quick_front_matter(path, allowed_keys):
+def scalar_value(raw_value):
+    if not raw_value or len(raw_value) > 256 or has_control_characters(raw_value):
+        return None
+    if raw_value[0] in {'"', "'"}:
+        quote = raw_value[0]
+        escaped = False
+        closing = None
+        for index, character in enumerate(raw_value[1:], start=1):
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == quote:
+                closing = index
+                break
+        if closing is None:
+            return None
+        token = raw_value[:closing + 1]
+        suffix = raw_value[closing + 1:].strip()
+        if suffix and not suffix.startswith("#"):
+            return None
+        try:
+            value = json.loads(token) if quote == '"' else ast.literal_eval(token)
+        except (ValueError, SyntaxError):
+            return None
+        if not isinstance(value, str) or not value or len(value) > 256 or has_control_characters(value):
+            return None
+        return value
+    value = re.split(r"\s+#", raw_value, maxsplit=1)[0].strip()
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:/@+\-]*", value):
+        return None
+    return value
+
+def quick_front_matter(path):
     if not path.exists():
-        return []
+        return None
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
-    except Exception:
-        return []
+    except (OSError, UnicodeError):
+        return None
     if not lines or lines[0].strip() != "---":
-        return []
+        return None
     fields = {}
+    closed = False
     for line in lines[1:]:
         stripped = line.strip()
         if stripped == "---":
+            closed = True
             break
-        key, separator, _ = stripped.partition(":")
-        if separator and key in allowed_keys and key not in fields:
-            fields[key] = stripped
-    return [fields[key] for key in allowed_keys if key in fields]
+        if not stripped or stripped.startswith("#"):
+            continue
+        key, separator, raw_value = stripped.partition(":")
+        if (
+            not separator
+            or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,63}", key)
+            or key in fields
+        ):
+            return None
+        normalized = scalar_value(raw_value.strip())
+        if normalized is None:
+            return None
+        fields[key] = (stripped, normalized)
+    return fields if closed else None
+
+def change_status(change):
+    summary = change / "summary.md"
+    if summary.exists():
+        raw_status = field_value(summary, "status")
+        return scalar_value(raw_status) if raw_status is not None else None
+    fields = quick_front_matter(change / "quick-card.md")
+    return fields.get("status", (None, None))[1] if fields is not None else None
 
 all_changes = sorted(
     p for p in changes_dir.iterdir()
@@ -142,8 +199,11 @@ else:
         "issueRelationship",
         "branch",
     ]
-    for line in quick_front_matter(change / "quick-card.md", quick_fields):
-        print(line)
+    quick_metadata = quick_front_matter(change / "quick-card.md")
+    if quick_metadata is not None:
+        for key in quick_fields:
+            if key in quick_metadata:
+                print(quick_metadata[key][0])
 print("</active-change-context>")
 PY
 )"
