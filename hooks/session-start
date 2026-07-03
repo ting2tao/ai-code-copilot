@@ -65,16 +65,46 @@ changes_dir = Path.cwd() / ".ai_code_copilot" / "changes"
 if not changes_dir.is_dir():
     raise SystemExit(0)
 
-def field_value(path, key):
+def summary_status(path):
     if not path.exists():
         return None
     try:
-        for line in path.read_text(encoding="utf-8").splitlines():
-            if line.strip().startswith(f"{key}:"):
-                return line.split(":", 1)[1].strip()
+        lines = path.read_text(encoding="utf-8").splitlines()
     except (OSError, UnicodeError):
         return None
-    return None
+    fields = {}
+    metadata_started = False
+    in_leading_comment = False
+    for line in lines:
+        stripped = line.strip()
+        if not metadata_started:
+            if in_leading_comment:
+                if "-->" in stripped:
+                    in_leading_comment = False
+                continue
+            if not stripped:
+                continue
+            if stripped.startswith("<!--"):
+                in_leading_comment = "-->" not in stripped
+                continue
+        elif not stripped or stripped.startswith(("#", "<!--")):
+            break
+        key, separator, raw_value = stripped.partition(":")
+        if (
+            not separator
+            or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,63}", key)
+            or not raw_value.strip()
+        ):
+            break
+        if key in fields:
+            return None
+        fields[key] = raw_value.strip()
+        metadata_started = True
+    raw_status = fields.get("status")
+    normalized = scalar_value(raw_status) if raw_status is not None else None
+    if normalized is None or not re.fullmatch(r"[a-z][a-z0-9-]*", normalized):
+        return None
+    return normalized
 
 def has_control_characters(value):
     return any(unicodedata.category(character).startswith("C") for character in value)
@@ -140,16 +170,23 @@ def quick_front_matter(path):
         normalized = scalar_value(raw_value.strip())
         if normalized is None:
             return None
-        fields[key] = (stripped, normalized)
+        fields[key] = normalized
     return fields if closed else None
+
+def canonical_metadata_line(key, value):
+    if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:/@+\-]*", value):
+        rendered = value
+    else:
+        rendered = json.dumps(value, ensure_ascii=False)
+        rendered = rendered.replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
+    return f"{key}: {rendered}"
 
 def change_status(change):
     summary = change / "summary.md"
     if summary.exists():
-        raw_status = field_value(summary, "status")
-        return scalar_value(raw_status) if raw_status is not None else None
+        return summary_status(summary)
     fields = quick_front_matter(change / "quick-card.md")
-    return fields.get("status", (None, None))[1] if fields is not None else None
+    return fields.get("status") if fields is not None else None
 
 all_changes = sorted(
     p for p in changes_dir.iterdir()
@@ -203,7 +240,7 @@ else:
     if quick_metadata is not None:
         for key in quick_fields:
             if key in quick_metadata:
-                print(quick_metadata[key][0])
+                print(canonical_metadata_line(key, quick_metadata[key]))
 print("</active-change-context>")
 PY
 )"
