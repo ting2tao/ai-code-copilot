@@ -56,6 +56,7 @@ prompt_text = (root / "agents" / "copilot-prompt.md").read_text(encoding="utf-8"
 hook_text = (root / "hooks" / "session-start").read_text(encoding="utf-8")
 skill_text = (root / "skill" / "SKILL.md").read_text(encoding="utf-8")
 init_project_text = (root / "scripts" / "init_project.sh").read_text(encoding="utf-8")
+check_framework_text = (root / "scripts" / "check_framework.sh").read_text(encoding="utf-8")
 agents_text = (root / "AGENTS.md").read_text(encoding="utf-8")
 agents_lines = agents_text.splitlines()
 if len(agents_lines) > 120:
@@ -131,6 +132,10 @@ if log_compression.get("reviewThresholdLines") != 150:
     raise SystemExit("project config logCompression.reviewThresholdLines must default to 150")
 if log_compression.get("fixThresholdLines") != 200:
     raise SystemExit("project config logCompression.fixThresholdLines must default to 200")
+
+shared_fixture_output = ">/tmp/" + "ai-code-copilot-fixture"
+if shared_fixture_output in check_framework_text:
+    raise SystemExit("fixture command output must live inside its unique temporary project directory")
 
 for marker in [
     "except OSError as exc:",
@@ -383,7 +388,7 @@ if [ -d tests/fixtures ]; then
     [ -d "$fixture" ] || continue
     tmpdir="$(mktemp -d /tmp/ai-code-copilot-fixture.XXXXXX)"
     cp -R "$fixture"/. "$tmpdir"/
-    AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" >/tmp/ai-code-copilot-fixture.out
+    AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" >"$tmpdir/init.out"
     test -f "$tmpdir/.ai_code_copilot/.copilot-state.json" || fail "fixture missing state: $fixture"
     grep -q '"projectContextSyncedAt":' "$tmpdir/.ai_code_copilot/.copilot-state.json" || fail "fixture state missing projectContextSyncedAt: $fixture"
     grep -q '"projectContextStaleAfterDays": 30' "$tmpdir/.ai_code_copilot/.copilot-state.json" || fail "fixture state missing projectContextStaleAfterDays: $fixture"
@@ -437,7 +442,7 @@ if [ -d tests/fixtures ]; then
         grep -q '| `apps/web` | `frontend-react` | `apps/web/package.json` |' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "monorepo fixture context missing frontend module row"
         ;;
     esac
-    AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync --dry-run >/tmp/ai-code-copilot-fixture-dry-run.out
+    AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync --dry-run >"$tmpdir/dry-run.out"
     if find "$tmpdir/.ai_code_copilot" -name '*.new' -type f | grep -q .; then
       fail "dry-run wrote .new files for fixture: $fixture"
     fi
