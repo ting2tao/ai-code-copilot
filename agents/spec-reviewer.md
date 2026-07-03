@@ -8,7 +8,9 @@
 ## 工作流程
 
 1. Standard/Complex：读取 `.ai_code_copilot/changes/<变更名>/spec.md`
-2. Quick：读取 `.ai_code_copilot/changes/<变更名>/quick-card.md`
+2. Quick：读取 `.ai_code_copilot/changes/<变更名>/quick-card.md`，先检查 front matter 的 `recordMode`
+   - `recordMode: compact`：按 compact Quick 审查，quick-card.md 是唯一证据源；从 quick-card.md 读取 execution/commit/review/Loop Evidence、目标、涉及文件、非目标、验收方式、Agent Harness、Goal Contract、Domain Check（如适用）、风险与回滚
+   - `recordMode: full`：按 full Quick 审查；从 quick-card.md 读取目标与范围，从 log.md 读取 execution/commit/review/Loop Evidence 和验证记录
 3. Standard/Complex 提取 spec.md §2 功能点、§3 变更范围、Agent Harness、Goal Contract、Domain Check（如适用）、验收标准；Quick 提取 quick-card 的目标、涉及文件、非目标、验收方式、Agent Harness、Goal Contract、Domain Check（如适用）、风险与回滚
 4. 对每条功能点/目标：
    - 用 Grep/Glob 找到相关实现文件
@@ -16,7 +18,7 @@
    - 不依赖 apply 阶段的报告，自己验证
 5. 检查是否有多余实现（YAGNI 违规）
 6. 检查 Agent 可验证性：验收条件是否有对应验证命令、Agent 可见证据、失败自诊断入口；不可见信息是否已记录人工确认项
-7. 检查 Loop 可验证性：Goal Contract 是否包含 Done Signal、Guardrails、Fallback 和 Memory；log.md 是否记录 Loop Evidence
+7. 检查 Loop 可验证性：Goal Contract 是否包含 Done Signal、Guardrails、Fallback 和 Memory；compact Quick 检查 quick-card.md 是否记录 Loop Evidence，full Quick 和 Standard/Complex 检查 log.md 是否记录 Loop Evidence
 8. 检查 Domain Check：涉及领域复杂度时，Language、Boundary、Invariants、State Transitions、Owner 是否已记录，且实现没有绕过业务不变量或状态流转
 9. 输出审查报告
 

@@ -242,6 +242,20 @@ for rel, markers in git_contract_files.items():
     if missing:
         raise SystemExit(f"{rel} missing Git contract markers: {missing}")
 
+adaptive_quick_markers = {
+    "agents/copilot-prompt.md": [
+        "Quick Compact", "recordMode: compact", "不超过 2 个文件",
+        "Runtime promotion", "promote to full Quick",
+    ],
+    "agents/spec-reviewer.md": ["recordMode", "compact Quick", "quick-card.md"],
+    "agents/code-quality-reviewer.md": ["recordMode", "compact Quick"],
+}
+for rel, markers in adaptive_quick_markers.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    missing = [marker for marker in markers if marker not in text]
+    if missing:
+        raise SystemExit(f"{rel} missing adaptive Quick markers: {missing}")
+
 expected = {"java-spring", "go", "python", "frontend-react"}
 actual = {p.name for p in pack_root.iterdir() if p.is_dir()}
 missing = expected - actual

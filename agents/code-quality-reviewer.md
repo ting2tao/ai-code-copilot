@@ -14,6 +14,11 @@
 - 全局默认：`<COPILOT_HOME>/rules/coding-style.md`（`<COPILOT_HOME>` 按主提示词的 Codex/Claude 兼容规则定位）
 - 命中技术栈的 pack 规则：`<COPILOT_HOME>/packs/<pack>/rules/*.md`
 
+Quick 证据源：
+- `recordMode: compact` 的 compact Quick：从 `quick-card.md` 读取目标、范围、execution/commit/review/Loop Evidence、验证命令、风险与回滚；不得要求必须存在 log.md。
+- `recordMode: full` 的 full Quick：从 quick-card.md 读取目标与范围，从 log.md 读取 execution/commit/review/Loop Evidence、验证命令、风险与回滚。
+- 若 compact Quick 中发现 Important/Critical correction、durable knowledge 或 open risk，应标记需要 Runtime promotion，要求先升级为 full Quick 再继续后续修复/归档。
+
 ## 审查分级
 
 - **Critical**（阻塞发布）：安全漏洞、资金逻辑错误、并发安全问题、数据丢失风险、空 catch 吞掉关键异常

@@ -49,11 +49,16 @@
 
 | 档位 | 判断标准 | 流程 | 文档产出 |
 |------|---------|------|---------|
-| **Quick** | ≤1天，改动<5文件，无跨模块 | 说明范围→quick-card→确认→执行→review | quick-card + log |
+| **Quick** | ≤1天，改动<5文件，无跨模块 | 说明范围→quick-card→确认→执行→review | compact: quick-card；full: quick-card + log + summary |
 | **Standard** | 1-5天，或用户明确要求 | /brainstorm(必须)→/propose→/apply→/review | design-brief + spec + tasks + test-spec + log |
 | **Complex** | >5天，或跨 3+ 模块 | /brainstorm(必须)→roadmap→拆子项目→每个走 Standard | roadmap + design-brief + 子项目各自 spec+tasks+test-spec+log |
 
 **Quick 档必须告知限制：** /review 的 Spec Compliance 阶段仅对照 quick-card 的目标/范围/验收方式，不做完整 spec 逐条审查；Code Quality 审查仍完整执行。
+
+**Quick 内部记录模式：**
+- **Quick Compact**：仅当预计不超过 2 个文件、单一目的、单 commit、不改 API/DB/依赖/CI/部署/generated artifact，不涉及资金/权限/认证/安全/敏感信息/状态机/跨模块业务规则，并且有可执行验证与直接回滚时使用。`quick-card.md` front matter 必须写 `recordMode: compact`。
+- **Quick Full**：任一 Compact 条件不满足或无法确认时使用。`quick-card.md` front matter 必须写 `recordMode: full`，并补齐 `log.md` 与 `summary.md`。
+- Compact 是最小记录模式，不是低标准模式；确认范围、Agent Harness、Goal Contract、风险/回滚、验证证据和 commit 证据仍必须可审查。
 
 不确定档位时，默认 Standard。
 
@@ -223,7 +228,7 @@ Step 0 · 检查 design-brief（前置）
     → 跳过 Step 3 的方案探索（设计已在 brainstorm 中确认）
     → Step 1 Research 仍执行（补充技术细节）
   - 若不存在且为 Standard/Complex 档 → HARD-GATE：禁止继续，提示"必须先完成 /brainstorm <变更名>"
-  - 若不存在且为 Quick 档 → 走 Quick 轻量提案：生成 quick-card.md + log.md，不生成 spec/tasks
+  - 若不存在且为 Quick 档 → 先判断 Quick Compact / Quick Full；Compact 生成 quick-card.md，不生成 spec/tasks/log/summary；Full 生成 quick-card.md + log.md + summary.md，不生成 spec/tasks
 
 Step 1 · Research（每个结论必须有代码出处）
   - 找到相关入口类、核心链路
@@ -262,24 +267,28 @@ Step 6 · HARD-GATE 确认
 ```
 
 **Quick 轻量提案规则：**
-- 在 `.ai_code_copilot/changes/<变更名>/quick-card.md` 写入：关联 Issue、目标、涉及文件、非目标、验收方式、Agent Harness、Goal Contract、风险/人工确认项
-- 同步创建 log.md 和 summary.md，记录档位为 Quick、目标、范围、风险和 loaded-knowledge
+- 先确定 Quick 记录模式：
+  - **Quick Compact**：仅当满足“预计不超过 2 个文件、单一目的、单 commit、无 Compact 排除风险、有可执行验证与直接回滚”时使用；在 `.ai_code_copilot/changes/<变更名>/quick-card.md` 写入 `recordMode: compact`，并把关联 Issue、目标、涉及文件、非目标、验收方式、Agent Harness、Goal Contract、风险/人工确认项、执行记录、commit 记录、review 记录和 Loop Evidence 都放入 quick-card.md。
+  - **Quick Full**：任一 Compact 条件不满足或无法确认时使用；在 quick-card.md 写入 `recordMode: full`，同步创建 `log.md` 和 `summary.md`，记录档位、目标、范围、风险、loaded-knowledge、执行证据与运行时摘要。
+- Compact 不创建 log.md 和 summary.md；Full 必须创建 `quick-card.md + log.md + summary.md`。
 - 显示："quick-card 已生成。请确认后回复「确认」才能执行。"
-- 收到确认后，在 quick-card.md 与 log.md 记录确认时间、确认人、确认范围摘要 hash
+- 收到确认后，Compact 在 quick-card.md 记录确认时间、确认人、确认范围摘要 hash；Full 在 quick-card.md 与 log.md 记录确认时间、确认人、确认范围摘要 hash
 
 ### /apply <变更名> — 执行编码
 
 **Context to load：**
 - Standard/Complex：完整读取当前变更的 `spec.md`、`tasks.md`、`test-spec.md`、`summary.md`
-- Quick：完整读取当前变更的 `quick-card.md`、`summary.md`
+- Quick Compact（`recordMode: compact`）：完整读取当前变更的 `quick-card.md`；执行/commit/review/Loop Evidence 都以 quick-card.md 为唯一记录源
+- Quick Full（`recordMode: full`）：完整读取当前变更的 `quick-card.md`、`log.md`、`summary.md`
 - 读取 `.ai_code_copilot/rules/project-context.md`、`coding-style.md`、`commit-convention.md`、`security.md`
 - 根据 project-context 命中的技术栈和目标文件，读取对应 pack rules；多技术栈项目只加载涉及模块的 pack
-- 读取 `summary.md` 的 `loaded-knowledge` 字段对应知识文件；不重新做全库检索
-- 开始执行时更新 `summary.md`：`status: in-apply`
+- Quick Full/Standard/Complex 读取 `summary.md` 的 `loaded-knowledge` 字段对应知识文件；Quick Compact 若 quick-card.md 记录 loaded-knowledge 则按该字段读取；不重新做全库检索
+- 开始执行时更新记录源状态：Quick Compact 更新 quick-card.md front matter；Quick Full/Standard/Complex 更新 `summary.md`：`status: in-apply`
 
 前置检查（任一不满足则停止）：
 - Standard/Complex：`spec.md`、`tasks.md`、`test-spec.md` 存在
 - Quick：`quick-card.md` 存在
+- Quick Full：`log.md`、`summary.md` 存在；Quick Compact：不得依赖 log.md/summary.md 作为执行证据源
 - 用户在本次会话中已显式确认，或文档中存在确认记录且当前确认范围摘要 hash 未变化
 - 关联 Issue 已记录：Standard/Complex 必须在 spec.md 写明 Issue ID/URL；Quick 必须在 quick-card.md 写明 Issue ID/URL。严禁无票开发
 
@@ -300,21 +309,33 @@ Preflight（任一不满足则停止）：
 - **紧急停车**：遇逻辑冲突或 spec 缺失 → 立即停止，触发 Reverse Sync（先改 spec 再改代码）
 - **零偏差原则**：Plan 是合同，AI 是打印机。有偏差必须停下来报告
 
+**Runtime promotion（Compact Quick 运行时升级）：**
+- 若 Quick Compact 在 /apply 或 /fix 中触发任一条件，必须立即 promote to full Quick：
+  - 实际或预计改动文件数超过 2；
+  - 出现第二个目的或第二个 commit；
+  - 发现 Compact 排除风险：API/DB/依赖/CI/部署/generated artifact、资金/权限/认证/安全/敏感信息/状态机/跨模块业务规则；
+  - 已确认范围发生实质变化；
+  - review 需要 Important/Critical correction；
+  - 出现 durable knowledge 或 open risk。
+- 升级顺序固定为：`stop edits -> create log.md and summary.md -> copy existing evidence from quick-card.md -> set recordMode: full -> recompute confirmation hash -> request confirmation if hash changed -> resume only after the full record is valid`
+- 升级后，`quick-card.md` 保留原始轻量提案与升级记录；`log.md` 成为执行证据、验证证据、review outcomes、durable knowledge 和 open risk 的主记录；`summary.md` 成为 SessionStart 运行时摘要。
+
 **Verification 铁律（每个 task 完成后必须）：**
 - 展示可验证证据：编译输出 / 测试套件输出（命令见 project-context.md）/ curl 调用结果
-- 将验证证据写入 `log.md ## Verification log`：至少包含 `command`、`exit code`、`output 摘要`；未写入该记录时，当前 task 视为未完成，不得标记 ✅，不得进入下一个 task
+- 将验证证据写入记录源：Standard/Complex 与 Quick Full 写入 `log.md ## Verification log`；Quick Compact 写入 `quick-card.md ## Execution record` 和 Loop Evidence 表。至少包含 `command`、`exit code`、`output 摘要`；未写入该记录时，当前 task 视为未完成，不得标记 ✅，不得进入下一个 task
 - 若 spec/quick-card 记录了日志、指标、trace、截图或 UI 操作入口，必须展示至少一个对应的 Agent 可见验证证据；不可访问时写明原因并记录人工确认项
 - 若 spec/quick-card/test-spec 记录了 Goal Contract，必须展示 Loop Evidence：Done Signal 是否满足、Guardrails 是否守住、Fallback 是否触发、Memory 是否需要更新
 - 禁止"应该没问题"、"应该能跑"等无证据声明
 
 **实时 log 写入（每个 task 后立即执行）：**
+- Quick Compact 的实时记录写入 quick-card.md 对应 compact 表；一旦需要 durable knowledge、open risk、过程性调试或多 commit 历史，必须先按 Runtime promotion 升级为 Quick Full。
 - 关键决策/方向调整/Reverse Sync 事件 → 写入 log.md ## Active decisions
 - 踩坑/隐含规则/新发现 → 写入 log.md ## 知识发现（即使用户没问）
 - 中间尝试、调试细节、重复记录 → 写入 log.md ## Process notes，后续可按 Log compression rule 归档
 - Agent Harness 缺失或失效（测试不可跑、日志不可见、指标不可查、文档过时）→ 写入 log.md，并说明应补工具、规则、模板还是 knowledge
 - Loop Evidence（Done Signal、Guardrails、Fallback、Memory）→ 写入 log.md；循环失效时说明缺的是目标、完成信号、护栏、降级策略还是沉淀位置
-- ⚠️ 全部 task 完成时，若 ## 知识发现 为空，必须回顾过程补写至少 1 条
-- 每个 task 完成后同步刷新 `summary.md` 的 status/scope/open-risks/loaded-knowledge，确保 SessionStart 摘要不依赖 `/archive`
+- ⚠️ 全部 task 完成时，Quick Full/Standard/Complex 若 ## 知识发现 为空，必须回顾过程补写至少 1 条；Quick Compact 若发现可复用 durable knowledge，必须先 Runtime promotion，若无 durable knowledge 则在 quick-card.md 标记 none
+- 每个 task 完成后同步刷新记录源：Quick Compact 刷新 quick-card.md front matter 与 compact 表；Quick Full/Standard/Complex 刷新 `summary.md` 的 status/scope/open-risks/loaded-knowledge，确保 SessionStart 摘要不依赖 `/archive`
 
 **自动 git commit：**
 ```bash
@@ -328,31 +349,32 @@ git commit -m "<type>(<scope>): <中文简述>"
 - type 仅允许：`feat`（新功能）、`fix`（修复）、`docs`（文档）、`refactor`（重构）、`test`（测试）、`chore`（杂项）、`perf`（性能）、`ci`（CI）、`build`（构建）
 - scope 使用模块或能力名的小写 kebab-case，例如 `search`、`org-search`、`coupon`、`git-contract`；Issue 编号不是 scope；不要把 `[issue-xxx]` 放在 commit message 前缀
 - 关联 Issue 时优先使用 `fix(org-search): 支持按组织名称查询服务范围 (#7)`，或在 commit body/PR body 写 `Refs #7` / `Closes #7`
-- 提交完成后必须立即把 commit hash 和完整 message 写入 tasks.md 或 log.md，作为 /review 的提交证据
+- 提交完成后必须立即把 commit hash 和完整 message 写入记录源：Quick Compact 写入 quick-card.md 的 Commit record；Quick Full/Standard/Complex 写入 tasks.md 或 log.md，作为 /review 的提交证据
 
 **所有 task 完成后，回填 log.md ## Summary：**
 - 完成时间：当天日期
 - 涉及文件数：本次变更实际改动的文件数
 - commit 列表：读取 tasks.md/log.md 中记录的 commit hash 和 message；若缺失则先补录，不依赖非标准 message 前缀兜底
+Quick Compact 全部 task 完成后，回填 quick-card.md 的 Execution record、Commit record 和 Finish record；若需要 Summary/open-risks/Knowledge candidates，先按 Runtime promotion 升级。
 
 ### /fix <变更名> [描述] — 增量修正
 
 **Context to load：**
-- 当前变更的 spec/tasks/test-spec/log 或 quick-card/log
+- 当前变更的 spec/tasks/test-spec/log，或 Quick Compact 的 quick-card，或 Quick Full 的 quick-card/log/summary
 - `/review` 结论、遗留问题和失败证据
 - 与本次修复目标文件匹配的项目规则和 pack rules
 - 若 log.md 超过 `.ai_code_copilot/config.json` 的 `logCompression.fixThresholdLines`，修复记录写入后执行 Log compression rule
 
 - /review 后的修正环节，在已完成基础上做增量改动
-- **文档同步铁律**：每次 /fix 完成后必须同步更新 spec.md/tasks.md/test-spec.md/log.md；Quick 档同步 quick-card.md/log.md
+- **文档同步铁律**：每次 /fix 完成后必须同步更新 spec.md/tasks.md/test-spec.md/log.md；Quick Compact 同步 quick-card.md，若触发 Runtime promotion 先升级再同步 quick-card.md/log.md/summary.md；Quick Full 同步 quick-card.md/log.md/summary.md
 - 自动 commit：`fix(<scope>): <中文简述>`，scope 使用模块或能力名
 
 **完成声明铁律（/fix 执行顺序）：**
 1. 修改代码
 2. 执行编译检查（project-context.md 中的命令）→ 展示输出
 3. 执行相关测试 → 展示输出
-4. 将验证证据写入 `log.md ## Verification log`（command + exit code + output 摘要）；未写入则不得声明修复完成
-5. 同步更新 spec.md / tasks.md / test-spec.md / log.md（Quick 档同步 quick-card.md / log.md）
+4. 将验证证据写入记录源（Quick Compact 写入 quick-card.md；Quick Full/Standard/Complex 写入 `log.md ## Verification log`，command + exit code + output 摘要）；未写入则不得声明修复完成
+5. 同步更新 spec.md / tasks.md / test-spec.md / log.md（Quick Compact 同步 quick-card.md；Quick Full 同步 quick-card.md / log.md / summary.md）
 6. git commit
 7. 此时才可说"修复完成"
 
@@ -408,13 +430,14 @@ Step 5 · 验证与记录
 **Context to load：**
 - 当前变更的 spec 或 quick-card、实际代码 diff、tasks/log 中的 commit 证据
 - `<COPILOT_HOME>/agents/spec-reviewer.md` 与 `<COPILOT_HOME>/agents/code-quality-reviewer.md`
-- 当前变更 `log.md` 的 Summary/Active decisions/Known risks/Review outcomes/Verification log
+- 当前变更记录源：Quick Compact 从 `quick-card.md` 读取 execution/commit/review/Loop Evidence；Quick Full 和 Standard/Complex 从 `log.md` 读取 Summary/Active decisions/Known risks/Review outcomes/Verification log
 - 审查只加载相关项目规则；不加载 knowledge，不在 review 阶段额外读取 pack 全量，除非目标文件质量检查必须引用对应 stack 规则
-- 开始审查时更新 `summary.md`：`status: in-review`
+- 开始审查时更新记录源状态：Quick Compact 更新 quick-card.md front matter；Quick Full/Standard/Complex 更新 `summary.md`：`status: in-review`
 
 ```
 前置检查（任一不满足则停止）：
 - 优先读取 log.md/tasks.md 中记录的 /apply commit hash
+- Quick Compact 优先读取 quick-card.md Commit record 中记录的 /apply commit hash
 - 若无 commit hash → 停止，提示："未检测到 /apply 的提交记录，请先补录 tasks.md/log.md 或执行 /apply <变更名>"
 - Quick 档也需要有 quick-card 与代码变更证据；无提交但有用户明确要求 review 当前工作区时，必须先说明这是未提交工作区审查
 
@@ -453,16 +476,16 @@ Step 5 · 验证与记录
 ```
 
 审查完成后（无论 PASS/FAIL / NEEDS_INFO）：
-  将审查结论写入 .ai_code_copilot/changes/<变更名>/log.md 的 ## Review outcomes 章节：
+  将审查结论写入记录源：Quick Compact 写入 .ai_code_copilot/changes/<变更名>/quick-card.md 的 Review record；Quick Full/Standard/Complex 写入 log.md 的 ## Review outcomes 章节：
   - Spec Compliance：结论（PASS/FAIL）+ 问题列表
   - Code Quality：结论（PASS/FAIL）+ Critical/Important 问题列表
   - GitHub Readiness：READY / NEEDS_INFO + 缺失字段列表
   - Harness Readiness：READY / NEEDS_INFO + Agent 可见能力缺口
   - Loop Readiness：READY / NEEDS_INFO + Goal/Done Signal/Guardrails/Fallback/Memory 缺口
-  - 若 log.md 超过 `.ai_code_copilot/config.json` 的 `logCompression.reviewThresholdLines`，执行 Log compression rule；压缩不得移除 commit hash、验证命令输出、review FAIL 原因或人工接受风险
-  - 同步更新 `summary.md`：PASS 时记录 review 状态，FAIL 时把关键风险写入 `open-risks`
+  - Quick Full/Standard/Complex 若 log.md 超过 `.ai_code_copilot/config.json` 的 `logCompression.reviewThresholdLines`，执行 Log compression rule；压缩不得移除 commit hash、验证命令输出、review FAIL 原因或人工接受风险
+  - 同步更新记录源状态：Quick Compact 更新 quick-card.md；Quick Full/Standard/Complex 更新 `summary.md`：PASS 时记录 review 状态，FAIL 时把关键风险写入 `open-risks`
 
-Quick 档 /review：阶段一改为对照 quick-card 的目标、涉及文件、非目标、验收方式和风险项做轻量合规检查；阶段二照常执行 Code Quality。
+Quick 档 /review：阶段一改为对照 quick-card 的目标、涉及文件、非目标、验收方式和风险项做轻量合规检查；阶段二照常执行 Code Quality。compact Quick 的执行、commit、review、Loop Evidence 均从 quick-card.md 读取；full Quick 与 Standard/Complex 仍从 log.md 读取运行证据。
 
 ### /finish <变更名> — GitHub 收尾（Issue + PR）
 
@@ -593,15 +616,19 @@ Complex 档在进入子项目 Standard 流程前，必须生成 `.ai_code_copilo
 Codex 兼容入口：在 Codex 中输入 `archive <变更名>`、`归档 <变更名>` 或 `沉淀知识 <变更名>`；不要输入 /archive，因为 Codex 客户端会优先把 `/archive` 解释为归档当前会话，导致 ai-code-copilot 收不到这条消息。
 
 **Context to load：**
-- 当前变更 log.md、spec/quick-card、tasks 中的完成证据
+- 当前变更 spec/quick-card、tasks 中的完成证据；Quick Compact 从 quick-card.md 读取 execution/commit/review/Loop Evidence，Quick Full/Standard/Complex 从 log.md 读取完成证据
 - knowledge/index.md（用于分配新 ID 和追加索引）
 - 不加载整个 knowledge/；只读取需要合并或更新的目标知识文件
 
 ```
-1. 读取 .ai_code_copilot/changes/<变更名>/log.md
+1. 读取当前变更记录源：Quick Compact 读取 .ai_code_copilot/changes/<变更名>/quick-card.md；Quick Full/Standard/Complex 读取 log.md
+   - compact change 无 durable knowledge 且无 open risk 时，可直接执行 archive（仍需保留归档摘要）
+   - compact change 一旦发现 durable knowledge 或 open risk，必须先按 Runtime promotion promote to full Quick，再继续 archive
 2. 提取知识条目：
-   - 若 log.md ## 知识发现 有条目 → 直接使用
-   - 若为空 → 兜底提取：回顾 spec.md + log.md ## Active decisions / ## Process notes + git diff，主动提炼 3-5 条潜在知识点
+   - Quick Compact 若 quick-card.md 未记录 durable knowledge 且 open risk 为 none → 跳过知识提取，直接进入归档确认
+   - Quick Compact 若 quick-card.md 记录 durable knowledge 或 open risk → 先 Runtime promotion，再按 full Quick 读取 log.md
+   - Quick Full/Standard/Complex 若 log.md ## 知识发现 有条目 → 直接使用
+   - Quick Full/Standard/Complex 若为空 → 兜底提取：回顾 spec.md/quick-card.md + log.md ## Active decisions / ## Process notes + git diff，主动提炼 3-5 条潜在知识点
 3. 提取 Harness 改进项：
    - 哪些失败来自测试、日志、指标、工具、规则或文档缺失
    - 哪些人类判断可以升级为模板、lint、自检脚本或 knowledge
