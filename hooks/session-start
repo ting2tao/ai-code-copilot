@@ -241,7 +241,7 @@ if len(active) > 1:
     print(
         "<active-change-context>\n"
         "检测到多个进行中变更；仅列名称，不加载 spec/log 全文。请在命令中明确变更名。\n"
-        f"changes: {names}{suffix}\n"
+        f"{canonical_metadata_line('changes', names + suffix)}\n"
         "</active-change-context>"
     )
     raise SystemExit(0)
@@ -251,7 +251,7 @@ summary = change / "summary.md"
 required_fields = ["change:", "status:", "spec-hash:", "goal:", "scope:", "open-risks:", "loaded-knowledge:"]
 print("<active-change-context>")
 print("检测到 1 个进行中变更；SessionStart 只注入摘要，完整 spec/tasks/test-spec 由命令阶段按需加载。")
-print(f"path: .ai_code_copilot/changes/{change.name}")
+print(canonical_metadata_line("path", f".ai_code_copilot/changes/{change.name}"))
 if summary.exists():
     metadata = summary_metadata(summary)
     if metadata is None:
@@ -265,6 +265,7 @@ if summary.exists():
         for key, value in metadata[:8]:
             print(canonical_metadata_line(key, value))
 else:
+    quick_card = change / "quick-card.md"
     quick_fields = [
         "change",
         "status",
@@ -275,8 +276,13 @@ else:
         "issueRelationship",
         "branch",
     ]
-    quick_metadata = quick_front_matter(change / "quick-card.md")
-    if quick_metadata is not None:
+    quick_metadata = quick_front_matter(quick_card)
+    if quick_metadata is None:
+        if quick_card.exists():
+            print("quick-card-validation: invalid quick-card metadata; content omitted.")
+        else:
+            print("quick-card-validation: missing quick-card.md; metadata omitted.")
+    else:
         for key in quick_fields:
             if key in quick_metadata:
                 print(canonical_metadata_line(key, quick_metadata[key]))

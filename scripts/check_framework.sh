@@ -735,6 +735,90 @@ PY
     fi
   done
 
+  rm -rf -- "$compact_change"
+  dangerous_change="$compact_project/.ai_code_copilot/changes/unsafe<change>&name"
+  mkdir -p "$dangerous_change"
+  cat > "$dangerous_change/quick-card.md" <<'EOF'
+---
+change: unsafe-change-safe-id
+status: in-apply
+recordMode: compact
+branch: docs/unsafe-change
+---
+EOF
+  run_compact_session
+  if ! python3 - "$compact_output" <<'PY'
+import json
+import sys
+
+context = json.loads(open(sys.argv[1], encoding="utf-8").read())["hookSpecificOutput"]["additionalContext"]
+active = context.split("<active-change-context>\n", 1)[1].split("\n</active-change-context>", 1)[0]
+valid = (
+    "change: unsafe-change-safe-id" in active
+    and r'path: ".ai_code_copilot/changes/unsafe\u003cchange\u003e\u0026name"' in active
+    and "unsafe<change>&name" not in active
+    and active.count("<active-change-context>") == 0
+    and active.count("</active-change-context>") == 0
+)
+raise SystemExit(0 if valid else 1)
+PY
+  then
+    fail "SessionStart emitted unsafe active change path"
+  fi
+  rm -rf -- "$dangerous_change"
+  compact_change="$compact_project/.ai_code_copilot/changes/tiny-doc-fix"
+  mkdir -p "$compact_change"
+
+  rm -f -- "$compact_change/summary.md" "$compact_change/quick-card.md"
+  run_compact_session
+  if ! python3 - "$compact_output" <<'PY'
+import json
+import sys
+
+context = json.loads(open(sys.argv[1], encoding="utf-8").read())["hookSpecificOutput"]["additionalContext"]
+active = context.split("<active-change-context>\n", 1)[1].split("\n</active-change-context>", 1)[0]
+valid = (
+    "quick-card-validation: missing quick-card.md; metadata omitted." in active
+    and "quick-card-validation: invalid quick-card metadata; content omitted." not in active
+    and "change:" not in active
+    and "status:" not in active
+)
+raise SystemExit(0 if valid else 1)
+PY
+  then
+    fail "SessionStart did not diagnose missing Quick card"
+  fi
+
+  cat > "$compact_change/quick-card.md" <<'EOF'
+---
+change: invalid-quick
+status: in-apply
+branch: [docs, invalid]
+---
+## Body metadata must not be trusted
+change: body-metadata
+status: finished
+EOF
+  run_compact_session
+  if ! python3 - "$compact_output" <<'PY'
+import json
+import sys
+
+context = json.loads(open(sys.argv[1], encoding="utf-8").read())["hookSpecificOutput"]["additionalContext"]
+active = context.split("<active-change-context>\n", 1)[1].split("\n</active-change-context>", 1)[0]
+valid = (
+    "quick-card-validation: invalid quick-card metadata; content omitted." in active
+    and "quick-card-validation: missing quick-card.md; metadata omitted." not in active
+    and "invalid-quick" not in active
+    and "body-metadata" not in active
+    and "status: finished" not in active
+)
+raise SystemExit(0 if valid else 1)
+PY
+  then
+    fail "SessionStart did not diagnose invalid Quick metadata"
+  fi
+
   cat > "$compact_change/quick-card.md" <<'EOF'
 ---
 change: tiny-doc-fix
