@@ -61,23 +61,44 @@ changes_dir = Path.cwd() / ".ai_code_copilot" / "changes"
 if not changes_dir.is_dir():
     raise SystemExit(0)
 
-def summary_status(change):
-    summary = change / "summary.md"
-    if not summary.exists():
+def field_value(path, key):
+    if not path.exists():
         return None
     try:
-        for line in summary.read_text(encoding="utf-8").splitlines():
-            if line.strip().startswith("status:"):
-                return line.split(":", 1)[1].strip().split()[0]
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.strip().startswith(f"{key}:"):
+                return line.split(":", 1)[1].strip().strip('"')
     except Exception:
         return None
     return None
+
+def change_status(change):
+    return field_value(change / "summary.md", "status") or field_value(change / "quick-card.md", "status")
+
+def quick_front_matter(path, allowed_keys):
+    if not path.exists():
+        return []
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except Exception:
+        return []
+    if not lines or lines[0].strip() != "---":
+        return []
+    fields = {}
+    for line in lines[1:]:
+        stripped = line.strip()
+        if stripped == "---":
+            break
+        key, separator, _ = stripped.partition(":")
+        if separator and key in allowed_keys and key not in fields:
+            fields[key] = stripped
+    return [fields[key] for key in allowed_keys if key in fields]
 
 all_changes = sorted(
     p for p in changes_dir.iterdir()
     if p.is_dir() and p.name not in {"archives", "templates"} and not p.name.startswith(".")
 )
-active = [p for p in all_changes if summary_status(p) != "finished"]
+active = [p for p in all_changes if change_status(p) != "finished"]
 if not active:
     raise SystemExit(0)
 
@@ -111,7 +132,18 @@ if summary.exists():
     for line in useful[:8]:
         print(line)
 else:
-    print("summary: missing summary.md; 命令阶段再读取完整变更文档。")
+    quick_fields = [
+        "change",
+        "status",
+        "recordMode",
+        "specHash",
+        "parentIssue",
+        "workIssue",
+        "issueRelationship",
+        "branch",
+    ]
+    for line in quick_front_matter(change / "quick-card.md", quick_fields):
+        print(line)
 print("</active-change-context>")
 PY
 )"

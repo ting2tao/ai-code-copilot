@@ -383,6 +383,54 @@ if found_java_terms:
     )
 PY
 
+compact_project="$(mktemp -d "${TMPDIR:-/tmp}/ai-code-copilot-compact.XXXXXX")"
+compact_output="$(mktemp "${TMPDIR:-/tmp}/ai-code-copilot-compact-output.XXXXXX")"
+cleanup_compact_fixture() {
+  rm -rf -- "$compact_project"
+  rm -f -- "$compact_output"
+}
+trap cleanup_compact_fixture EXIT
+
+mkdir -p "$compact_project/.ai_code_copilot/changes/tiny-doc-fix"
+cat > "$compact_project/.ai_code_copilot/changes/tiny-doc-fix/quick-card.md" <<'EOF'
+---
+change: tiny-doc-fix
+status: in-apply
+recordMode: compact
+specHash: sha256:test
+parentIssue: none
+workIssue: "#42"
+issueRelationship: standalone
+closeTarget: workIssue
+branch: docs/tiny-doc-fix
+---
+EOF
+(cd "$compact_project" && "$ROOT/hooks/session-start") > "$compact_output"
+if ! python3 - "$compact_output" <<'PY'
+import json
+import sys
+
+output = json.loads(open(sys.argv[1], encoding="utf-8").read())
+context = output["hookSpecificOutput"]["additionalContext"]
+raise SystemExit(0 if "recordMode: compact" in context else 1)
+PY
+then
+  fail "SessionStart did not load compact Quick metadata"
+fi
+if ! python3 - "$compact_output" <<'PY'
+import json
+import sys
+
+output = json.loads(open(sys.argv[1], encoding="utf-8").read())
+context = output["hookSpecificOutput"]["additionalContext"]
+raise SystemExit(0 if 'workIssue: "#42"' in context else 1)
+PY
+then
+  fail "SessionStart omitted compact workIssue"
+fi
+cleanup_compact_fixture
+trap - EXIT
+
 if [ -d tests/fixtures ]; then
   for fixture in tests/fixtures/*; do
     [ -d "$fixture" ] || continue
