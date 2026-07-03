@@ -656,9 +656,9 @@ Phase 4 · 实施修复
 完整规则见 `rules/commit-convention.md`。执行时必须遵守以下摘要：
 
 1. 严禁无票开发；Issue ID/URL 必须写入 `spec.md` 或 `quick-card.md`
-2. 禁止在 `master`/`main` 直接开发或提交；分支名称必须匹配 `type/scope`
+2. 禁止在 `master`/`main` 直接开发或提交；分支名称必须匹配 `type/scope`，type 仅允许 `feat`、`fix`、`docs`、`refactor`、`test`、`chore`、`perf`、`ci`、`build`
 3. 每个 task/fix 原则上一 task 一 commit
-4. commit message 必须使用强制 scope 的 Conventional Commits：`type(scope): description`
+4. commit message 必须使用强制 scope 的 Conventional Commits：`type(scope): description`，type 仅允许 `feat`、`fix`、`docs`、`refactor`、`test`、`chore`、`perf`、`ci`、`build`
 5. commit 前执行 `project-context.md` 中记录的编译/测试/检查命令
 6. commit hash 和完整 message 必须写入 `tasks.md` 或 `log.md`
 7. 禁止自动 push — push 由用户主动触发
