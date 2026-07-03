@@ -108,10 +108,11 @@ for rel in ["agents/copilot-prompt.md", "hooks/session-start", "README.md", "REA
 
 project_config = json.loads((root / "config" / "project-config.json").read_text(encoding="utf-8"))
 github_workflow = project_config.get("githubWorkflow", {})
+if "issueWhenMissing" in github_workflow:
+    raise SystemExit("project config must not configure mandatory Issue creation")
 expected_config = {
     "projectContextStaleAfterDays": 30,
     "finishMode": "ask",
-    "issueWhenMissing": "ask",
     "createPrAfterReviewPass": False,
     "defaultBaseBranch": "main",
     "pushRemote": "origin",
@@ -129,6 +130,21 @@ if log_compression.get("reviewThresholdLines") != 150:
     raise SystemExit("project config logCompression.reviewThresholdLines must default to 150")
 if log_compression.get("fixThresholdLines") != 200:
     raise SystemExit("project config logCompression.fixThresholdLines must default to 200")
+
+quick_card = (root / "changes/templates/quick-card.md").read_text(encoding="utf-8")
+for marker in [
+    "recordMode:", "parentIssue:", "workIssue:", "issueRelationship:",
+    "closeTarget:", "branch:", "## Execution record", "## Commit record",
+    "## Review record", "## Finish record",
+]:
+    if marker not in quick_card:
+        raise SystemExit(f"quick-card.md missing compact marker: {marker}")
+
+for rel in ["changes/templates/spec.md", "changes/templates/summary.md", "changes/templates/log.md"]:
+    text = (root / rel).read_text(encoding="utf-8")
+    for marker in ["parentIssue", "workIssue", "closeTarget", "branch"]:
+        if marker not in text:
+            raise SystemExit(f"{rel} missing Issue contract marker: {marker}")
 
 allowed_types = "feat|fix|docs|refactor|test|chore|perf|ci|build"
 branch_pattern = re.compile(rf"^({allowed_types})/[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -313,7 +329,7 @@ if [ -d tests/fixtures ]; then
     grep -q '"projectContextStaleAfterDays": 30' "$tmpdir/.ai_code_copilot/.copilot-state.json" || fail "fixture state missing projectContextStaleAfterDays: $fixture"
     test -f "$tmpdir/.ai_code_copilot/config.json" || fail "fixture missing project config: $fixture"
     grep -q '"finishMode": "ask"' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing finishMode ask: $fixture"
-    grep -q '"issueWhenMissing": "ask"' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing issueWhenMissing ask: $fixture"
+    ! grep -q '"issueWhenMissing":' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config must omit obsolete issueWhenMissing: $fixture"
     grep -q '"projectContextStaleAfterDays": 30' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing projectContextStaleAfterDays: $fixture"
     grep -q '"reviewThresholdLines": 150' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing reviewThresholdLines: $fixture"
     grep -q '"fixThresholdLines": 200' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing fixThresholdLines: $fixture"
@@ -367,12 +383,14 @@ if [ -d tests/fixtures ]; then
     fi
     printf 'custom project context\n' > "$tmpdir/.ai_code_copilot/rules/project-context.md"
     printf 'custom domain rules\n' > "$tmpdir/.ai_code_copilot/rules/domain-rules.md"
-    printf '{"githubWorkflow":{"finishMode":"manual"}}\n' > "$tmpdir/.ai_code_copilot/config.json"
+    printf '{"githubWorkflow":{"finishMode":"manual","issueWhenMissing":"ask"}}\n' > "$tmpdir/.ai_code_copilot/config.json"
     printf 'old test template\n' > "$tmpdir/.ai_code_copilot/changes/templates/test-spec.md"
     AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >/tmp/ai-code-copilot-fixture-sync.out
     grep -q 'custom project context' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "sync overwrote project-owned project-context: $fixture"
     grep -q 'custom domain rules' "$tmpdir/.ai_code_copilot/rules/domain-rules.md" || fail "sync overwrote project-owned domain-rules: $fixture"
     grep -q '"finishMode":"manual"' "$tmpdir/.ai_code_copilot/config.json" || fail "sync overwrote project-owned config: $fixture"
+    grep -q '"issueWhenMissing":"ask"' "$tmpdir/.ai_code_copilot/config.json" || fail "sync did not preserve obsolete project-owned issueWhenMissing config: $fixture"
+    grep -q 'migration-note: githubWorkflow.issueWhenMissing is obsolete and ignored; project-owned config was preserved.' /tmp/ai-code-copilot-fixture-sync.out || fail "sync missing obsolete issueWhenMissing migration note: $fixture"
     test ! -f "$tmpdir/.ai_code_copilot/rules/project-context.md.new" || fail "sync generated project-context.md.new for project-owned rule: $fixture"
     test ! -f "$tmpdir/.ai_code_copilot/rules/domain-rules.md.new" || fail "sync generated domain-rules.md.new for project-owned rule: $fixture"
     test ! -f "$tmpdir/.ai_code_copilot/config.json.new" || fail "sync generated config.json.new for project-owned config: $fixture"

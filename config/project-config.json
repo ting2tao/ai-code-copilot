@@ -6,7 +6,6 @@
   },
   "githubWorkflow": {
     "finishMode": "ask",
-    "issueWhenMissing": "ask",
     "createPrAfterReviewPass": false,
     "defaultBaseBranch": "main",
     "pushRemote": "origin",

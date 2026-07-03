@@ -438,6 +438,14 @@ for pack_dir, manifest in read_manifests():
 
 events = []
 
+obsolete_issue_config = False
+if config_path.exists():
+    try:
+        existing_config = json.loads(config_path.read_text(encoding="utf-8"))
+        obsolete_issue_config = "issueWhenMissing" in existing_config.get("githubWorkflow", {})
+    except Exception:
+        pass
+
 config_status, config_dest = write_project_owned(
     config_path,
     (copilot_home / "config" / "project-config.json").read_text(encoding="utf-8"),
@@ -494,6 +502,8 @@ for status, path in events:
         print(f"{status}: {path.relative_to(project_dir)}")
 if any(status == "candidate" for status, _ in events) and not dry_run:
     print("note: .new files were generated for existing files that differ; review and merge them manually.")
+if obsolete_issue_config:
+    print("migration-note: githubWorkflow.issueWhenMissing is obsolete and ignored; project-owned config was preserved.")
 if dry_run:
     if any(status == "candidate" for status, _ in events):
         print("note: candidates listed only; no files were written.")

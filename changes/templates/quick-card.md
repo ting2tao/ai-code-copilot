@@ -1,8 +1,24 @@
+---
+change: {change-name}
+status: proposed
+recordMode: compact | full
+specHash: {sha256}
+parentIssue: none | #123 | URL
+workIssue: pending | #456 | URL
+issueRelationship: pending | sub-issue | standalone
+closeTarget: workIssue
+branch: type/scope
+---
+
 # Quick 变更卡：{变更名}
 
 > **状态**：[ ] 草稿 / [ ] 已确认 / [ ] 实施中 / [ ] 已完成
 > **创建时间**：{YYYY-MM-DD}
-> **关联 Issue**：{Issue ID 或 URL，必填；严禁无票开发}
+> **父 Issue（parentIssue）**：{none / #123 / URL；已有父需求时填写}
+> **工作 Issue（workIssue）**：{pending / #456 / URL；Quick Card 确认后必须创建或绑定}
+> **Issue 关系（issueRelationship）**：{pending / sub-issue / standalone}
+> **关闭目标（closeTarget）**：workIssue（PR closing keyword 只关闭 workIssue）
+> **分支（branch）**：{type/scope；例如 feat/issue-workflow}
 > **确认时间**：{YYYY-MM-DD HH:mm 或"未确认"}
 > **确认人**：{用户/姓名}
 > **确认范围 Hash**：{quick-card.md 内容摘要}
@@ -57,3 +73,23 @@
 - 风险：{风险点；无则填"无明显风险"}
 - 人工确认项：{涉及资金/状态/权限/敏感信息则必须列出；无则填"无"}
 - 回滚方案：{代码/配置/数据回滚方式}
+
+## Execution record
+
+| command | exit code | output summary | Loop Evidence |
+|---|---:|---|---|
+
+## Commit record
+
+| hash | message |
+|---|---|
+
+## Review record
+
+| Spec Compliance | Code Quality | GitHub Readiness | open risks |
+|---|---|---|---|
+
+## Finish record
+
+| PR | base | remote | closing statement | parent reference | final validation |
+|---|---|---|---|---|---|

@@ -12,7 +12,10 @@
 ## Preflight
 
 - [ ] `git status --short` 已检查，未覆盖用户无关改动
-- [ ] spec.md 或 quick-card.md 已记录关联 Issue ID/URL，未无票开发
+- [ ] spec.md 或 quick-card.md 已记录已解析的 workIssue（#ID 或 URL），未无票开发
+- [ ] parentIssue 已记录为 none / #ID / URL；如存在父 Issue，workIssue 已作为 native sub-issue 或 standalone 关系说明
+- [ ] closeTarget 为 workIssue，PR closing keyword 只关闭工作 Issue，父 Issue 仅引用
+- [ ] branch 已记录且符合 `type/scope` 格式（例如 `feat/issue-workflow`）
 - [ ] 当前分支不是 master/main
 - [ ] project-context.md 中的编译/测试命令可执行
 - [ ] 本文件列出的目标文件路径仍匹配当前代码

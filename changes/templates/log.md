@@ -14,6 +14,11 @@
 | 状态 | proposed / in-apply / in-review / done |
 | 开始时间 | {YYYY-MM-DD} |
 | 完成时间 | {YYYY-MM-DD 或"未完成"} |
+| parentIssue | {none / #123 / URL} |
+| workIssue | {pending / #456 / URL} |
+| issueRelationship | {pending / sub-issue / standalone} |
+| closeTarget | workIssue |
+| branch | {type/scope} |
 | 确认时间 | {YYYY-MM-DD HH:mm 或"未确认"} |
 | 确认人 | {用户/姓名} |
 | 确认范围 Hash | {确认时 spec/tasks/test-spec 或 quick-card 的内容摘要} |
@@ -22,6 +27,8 @@
 | Last compressed | — |
 | Archived entries | 0 |
 | Archive hash | — |
+
+> Standard/full Quick 使用本文件和 summary.md 记录执行、审查与收尾；compact Quick 由 quick-card.md 的 Execution/Commit/Review/Finish record 承载这些记录。
 
 ---
 
@@ -173,16 +180,21 @@ output:
 
 ## /finish 记录
 
-> `/finish` 用于 GitHub 收尾：验证、push、创建 PR，并用 `Closes #ID` 关联 Issue。
+> `/finish` 用于 GitHub 收尾：验证、push、创建 PR，并用 `Closes #workIssue` 关闭工作 Issue；父 Issue 只用 `Refs` 引用。
 
 | 字段 | 内容 |
 |------|------|
 | finish 模式 | ask / manual / auto-pr |
-| Issue | {Issue ID/URL} |
-| 分支 | {branch} |
+| parentIssue | {none / #123 / URL；仅引用，不用 closing keyword 关闭} |
+| workIssue | {#456 / URL；PR closing statement 的关闭目标} |
+| issueRelationship | {sub-issue / standalone} |
+| closeTarget | workIssue |
+| branch | {type/scope} |
 | 远端 | origin |
 | PR | {PR URL 或"未创建"} |
 | Base branch | main |
+| closing statement | {Closes #workIssue} |
+| parent reference | {Refs #parentIssue 或"none"} |
 | 验证命令 | `{command}` |
 | 验证结果 | {实际输出摘要 + exit code} |
 
