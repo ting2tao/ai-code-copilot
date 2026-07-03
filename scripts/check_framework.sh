@@ -459,18 +459,32 @@ if [ -d tests/fixtures ]; then
     test ! -f "$tmpdir/.ai_code_copilot/config.json.new" || fail "sync generated config.json.new for project-owned config: $fixture"
     cmp -s "$ROOT/changes/templates/test-spec.md" "$tmpdir/.ai_code_copilot/changes/templates/test-spec.md" || fail "sync did not update managed test-spec template: $fixture"
     test ! -f "$tmpdir/.ai_code_copilot/changes/templates/test-spec.md.new" || fail "sync generated test-spec.md.new instead of updating managed template: $fixture"
-    if [ "$fixture" = "java" ]; then
+    if [ "$(basename "$fixture")" = "java-spring" ]; then
       printf '{invalid json\n' > "$tmpdir/.ai_code_copilot/config.json"
-      AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/invalid-json-sync.out"
+      if ! AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/invalid-json-sync.out"; then
+        fail "sync failed instead of warning about invalid project config JSON"
+      fi
       grep -q 'warning: could not check obsolete githubWorkflow.issueWhenMissing: existing config contains invalid JSON:' "$tmpdir/invalid-json-sync.out" || fail "sync did not warn about invalid project config JSON"
 
       printf '[]\n' > "$tmpdir/.ai_code_copilot/config.json"
-      AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/non-object-sync.out"
+      if ! AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/non-object-sync.out"; then
+        fail "sync failed instead of warning about non-object project config"
+      fi
       grep -q 'warning: could not check obsolete githubWorkflow.issueWhenMissing: existing config root must be a JSON object;' "$tmpdir/non-object-sync.out" || fail "sync did not warn about non-object project config"
 
       printf '{"githubWorkflow":"manual"}\n' > "$tmpdir/.ai_code_copilot/config.json"
-      AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/non-object-workflow-sync.out"
+      if ! AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/non-object-workflow-sync.out"; then
+        fail "sync failed instead of warning about non-object githubWorkflow config"
+      fi
       grep -q 'warning: could not check obsolete githubWorkflow.issueWhenMissing: existing config githubWorkflow must be a JSON object;' "$tmpdir/non-object-workflow-sync.out" || fail "sync did not warn about non-object githubWorkflow config"
+
+      rm -f "$tmpdir/.ai_code_copilot/config.json"
+      mkdir "$tmpdir/.ai_code_copilot/config.json"
+      if ! AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/unreadable-config-sync.out"; then
+        fail "sync failed instead of warning about unreadable project config"
+      fi
+      grep -q 'warning: could not check obsolete githubWorkflow.issueWhenMissing: unable to read existing config:' "$tmpdir/unreadable-config-sync.out" || fail "sync did not warn about unreadable project config"
+      test -d "$tmpdir/.ai_code_copilot/config.json" || fail "sync replaced project-owned config directory"
     fi
     rm -rf "$tmpdir"
   done

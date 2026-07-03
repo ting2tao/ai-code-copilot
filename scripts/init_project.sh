@@ -440,7 +440,9 @@ events = []
 
 obsolete_issue_config = False
 config_inspection_warning = None
-if config_path.exists():
+existing_config_text = None
+config_path_present = config_path.exists() or config_path.is_symlink()
+if config_path_present:
     try:
         existing_config_text = config_path.read_text(encoding="utf-8")
     except OSError as exc:
@@ -460,10 +462,12 @@ if config_path.exists():
                 else:
                     obsolete_issue_config = "issueWhenMissing" in github_workflow
 
-config_status, config_dest = write_project_owned(
-    config_path,
-    (copilot_home / "config" / "project-config.json").read_text(encoding="utf-8"),
-)
+framework_config_text = (copilot_home / "config" / "project-config.json").read_text(encoding="utf-8")
+if config_path_present:
+    config_status = "unchanged" if existing_config_text == framework_config_text else "preserved-project-owned"
+    config_dest = config_path
+else:
+    config_status, config_dest = write_project_owned(config_path, framework_config_text)
 events.append((config_status, config_dest))
 
 for src in sorted((copilot_home / "rules").glob("*.md")):
