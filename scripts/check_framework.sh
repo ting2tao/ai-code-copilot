@@ -55,6 +55,7 @@ pack_root = root / "packs"
 prompt_text = (root / "agents" / "copilot-prompt.md").read_text(encoding="utf-8")
 hook_text = (root / "hooks" / "session-start").read_text(encoding="utf-8")
 skill_text = (root / "skill" / "SKILL.md").read_text(encoding="utf-8")
+init_project_text = (root / "scripts" / "init_project.sh").read_text(encoding="utf-8")
 agents_text = (root / "AGENTS.md").read_text(encoding="utf-8")
 agents_lines = agents_text.splitlines()
 if len(agents_lines) > 120:
@@ -131,14 +132,73 @@ if log_compression.get("reviewThresholdLines") != 150:
 if log_compression.get("fixThresholdLines") != 200:
     raise SystemExit("project config logCompression.fixThresholdLines must default to 200")
 
-quick_card = (root / "changes/templates/quick-card.md").read_text(encoding="utf-8")
 for marker in [
-    "recordMode:", "parentIssue:", "workIssue:", "issueRelationship:",
-    "closeTarget:", "branch:", "## Execution record", "## Commit record",
-    "## Review record", "## Finish record",
+    "except OSError as exc:",
+    "except json.JSONDecodeError as exc:",
+    "existing config root must be a JSON object",
+    "existing config githubWorkflow must be a JSON object",
+    "warning: could not check obsolete githubWorkflow.issueWhenMissing",
 ]:
+    if marker not in init_project_text:
+        raise SystemExit(f"init_project.sh missing config migration check: {marker}")
+
+quick_card = (root / "changes/templates/quick-card.md").read_text(encoding="utf-8")
+for marker in ["## Execution record", "## Commit record", "## Review record", "## Finish record"]:
     if marker not in quick_card:
         raise SystemExit(f"quick-card.md missing compact marker: {marker}")
+
+front_matter_match = re.match(r"\A---\n(.*?)\n---(?:\n|\Z)", quick_card, re.DOTALL)
+if not front_matter_match:
+    raise SystemExit("quick-card.md must start with YAML front matter")
+
+front_matter = {}
+raw_front_matter = {}
+for line in front_matter_match.group(1).splitlines():
+    if not line.strip() or line.lstrip().startswith("#"):
+        continue
+    if ":" not in line:
+        raise SystemExit(f"quick-card.md front matter entry is not key/value: {line!r}")
+    key, raw_value = line.split(":", 1)
+    key = key.strip()
+    raw_value = raw_value.strip()
+    value = raw_value.split(" #", 1)[0].strip()
+    if key in front_matter:
+        raise SystemExit(f"quick-card.md front matter duplicates key: {key}")
+    front_matter[key] = value
+    raw_front_matter[key] = raw_value
+
+expected_quick_card_front_matter = {
+    "change": '"{change-name}"',
+    "status": "proposed",
+    "recordMode": "compact",
+    "specHash": '"{sha256}"',
+    "parentIssue": "none",
+    "workIssue": "pending",
+    "issueRelationship": "pending",
+    "closeTarget": "workIssue",
+    "branch": '"type/scope"',
+}
+if set(front_matter) != set(expected_quick_card_front_matter):
+    raise SystemExit(
+        "quick-card.md front matter keys drifted: "
+        f"expected={sorted(expected_quick_card_front_matter)} actual={sorted(front_matter)}"
+    )
+for key, expected_value in expected_quick_card_front_matter.items():
+    value = front_matter[key]
+    if value != expected_value:
+        raise SystemExit(
+            f"quick-card.md front matter {key} must default to scalar "
+            f"{expected_value!r}, got {value!r}"
+        )
+    if not value or value[0] in "[{" or " | " in value:
+        raise SystemExit(f"quick-card.md front matter {key} must be a stable scalar default")
+for key in ["parentIssue", "workIssue"]:
+    if re.search(r"(^|\s)#[0-9]+", raw_front_matter[key]):
+        raise SystemExit(f"quick-card.md front matter {key} must not contain an unquoted Issue example")
+if "compact 模式这些表是唯一证据源" not in quick_card:
+    raise SystemExit("quick-card.md must define compact tables as the sole evidence source")
+if "full 模式证据写入 log.md 和 summary.md" not in quick_card:
+    raise SystemExit("quick-card.md must route full evidence to log.md and summary.md")
 
 for rel in ["changes/templates/spec.md", "changes/templates/summary.md", "changes/templates/log.md"]:
     text = (root / rel).read_text(encoding="utf-8")
@@ -384,18 +444,34 @@ if [ -d tests/fixtures ]; then
     printf 'custom project context\n' > "$tmpdir/.ai_code_copilot/rules/project-context.md"
     printf 'custom domain rules\n' > "$tmpdir/.ai_code_copilot/rules/domain-rules.md"
     printf '{"githubWorkflow":{"finishMode":"manual","issueWhenMissing":"ask"}}\n' > "$tmpdir/.ai_code_copilot/config.json"
+    cp "$tmpdir/.ai_code_copilot/config.json" "$tmpdir/config.before-sync.json"
     printf 'old test template\n' > "$tmpdir/.ai_code_copilot/changes/templates/test-spec.md"
-    AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >/tmp/ai-code-copilot-fixture-sync.out
+    sync_output="$tmpdir/fixture-sync.out"
+    AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$sync_output"
     grep -q 'custom project context' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "sync overwrote project-owned project-context: $fixture"
     grep -q 'custom domain rules' "$tmpdir/.ai_code_copilot/rules/domain-rules.md" || fail "sync overwrote project-owned domain-rules: $fixture"
+    cmp -s "$tmpdir/config.before-sync.json" "$tmpdir/.ai_code_copilot/config.json" || fail "sync changed project-owned config bytes: $fixture"
     grep -q '"finishMode":"manual"' "$tmpdir/.ai_code_copilot/config.json" || fail "sync overwrote project-owned config: $fixture"
     grep -q '"issueWhenMissing":"ask"' "$tmpdir/.ai_code_copilot/config.json" || fail "sync did not preserve obsolete project-owned issueWhenMissing config: $fixture"
-    grep -q 'migration-note: githubWorkflow.issueWhenMissing is obsolete and ignored; project-owned config was preserved.' /tmp/ai-code-copilot-fixture-sync.out || fail "sync missing obsolete issueWhenMissing migration note: $fixture"
+    grep -q 'migration-note: githubWorkflow.issueWhenMissing is obsolete and ignored; project-owned config was preserved.' "$sync_output" || fail "sync missing obsolete issueWhenMissing migration note: $fixture"
     test ! -f "$tmpdir/.ai_code_copilot/rules/project-context.md.new" || fail "sync generated project-context.md.new for project-owned rule: $fixture"
     test ! -f "$tmpdir/.ai_code_copilot/rules/domain-rules.md.new" || fail "sync generated domain-rules.md.new for project-owned rule: $fixture"
     test ! -f "$tmpdir/.ai_code_copilot/config.json.new" || fail "sync generated config.json.new for project-owned config: $fixture"
     cmp -s "$ROOT/changes/templates/test-spec.md" "$tmpdir/.ai_code_copilot/changes/templates/test-spec.md" || fail "sync did not update managed test-spec template: $fixture"
     test ! -f "$tmpdir/.ai_code_copilot/changes/templates/test-spec.md.new" || fail "sync generated test-spec.md.new instead of updating managed template: $fixture"
+    if [ "$fixture" = "java" ]; then
+      printf '{invalid json\n' > "$tmpdir/.ai_code_copilot/config.json"
+      AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/invalid-json-sync.out"
+      grep -q 'warning: could not check obsolete githubWorkflow.issueWhenMissing: existing config contains invalid JSON:' "$tmpdir/invalid-json-sync.out" || fail "sync did not warn about invalid project config JSON"
+
+      printf '[]\n' > "$tmpdir/.ai_code_copilot/config.json"
+      AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/non-object-sync.out"
+      grep -q 'warning: could not check obsolete githubWorkflow.issueWhenMissing: existing config root must be a JSON object;' "$tmpdir/non-object-sync.out" || fail "sync did not warn about non-object project config"
+
+      printf '{"githubWorkflow":"manual"}\n' > "$tmpdir/.ai_code_copilot/config.json"
+      AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/non-object-workflow-sync.out"
+      grep -q 'warning: could not check obsolete githubWorkflow.issueWhenMissing: existing config githubWorkflow must be a JSON object;' "$tmpdir/non-object-workflow-sync.out" || fail "sync did not warn about non-object githubWorkflow config"
+    fi
     rm -rf "$tmpdir"
   done
 fi

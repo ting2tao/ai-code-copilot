@@ -439,12 +439,26 @@ for pack_dir, manifest in read_manifests():
 events = []
 
 obsolete_issue_config = False
+config_inspection_warning = None
 if config_path.exists():
     try:
-        existing_config = json.loads(config_path.read_text(encoding="utf-8"))
-        obsolete_issue_config = "issueWhenMissing" in existing_config.get("githubWorkflow", {})
-    except Exception:
-        pass
+        existing_config_text = config_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        config_inspection_warning = f"unable to read existing config: {exc}"
+    else:
+        try:
+            existing_config = json.loads(existing_config_text)
+        except json.JSONDecodeError as exc:
+            config_inspection_warning = f"existing config contains invalid JSON: {exc}"
+        else:
+            if not isinstance(existing_config, dict):
+                config_inspection_warning = "existing config root must be a JSON object"
+            else:
+                github_workflow = existing_config.get("githubWorkflow", {})
+                if not isinstance(github_workflow, dict):
+                    config_inspection_warning = "existing config githubWorkflow must be a JSON object"
+                else:
+                    obsolete_issue_config = "issueWhenMissing" in github_workflow
 
 config_status, config_dest = write_project_owned(
     config_path,
@@ -502,6 +516,8 @@ for status, path in events:
         print(f"{status}: {path.relative_to(project_dir)}")
 if any(status == "candidate" for status, _ in events) and not dry_run:
     print("note: .new files were generated for existing files that differ; review and merge them manually.")
+if config_inspection_warning:
+    print(f"warning: could not check obsolete githubWorkflow.issueWhenMissing: {config_inspection_warning}; project-owned config was preserved.")
 if obsolete_issue_config:
     print("migration-note: githubWorkflow.issueWhenMissing is obsolete and ignored; project-owned config was preserved.")
 if dry_run:

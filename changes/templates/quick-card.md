@@ -1,13 +1,13 @@
 ---
-change: {change-name}
+change: "{change-name}"
 status: proposed
-recordMode: compact | full
-specHash: {sha256}
-parentIssue: none | #123 | URL
-workIssue: pending | #456 | URL
-issueRelationship: pending | sub-issue | standalone
+recordMode: compact # compact | full
+specHash: "{sha256}"
+parentIssue: none # none | "#123" | URL
+workIssue: pending # pending | "#456" | URL
+issueRelationship: pending # pending | sub-issue | standalone
 closeTarget: workIssue
-branch: type/scope
+branch: "type/scope"
 ---
 
 # Quick 变更卡：{变更名}
@@ -75,6 +75,8 @@ branch: type/scope
 - 回滚方案：{代码/配置/数据回滚方式}
 
 ## Execution record
+
+> compact 模式这些表是唯一证据源；full 模式证据写入 log.md 和 summary.md，Quick Card 只保留索引与摘要。
 
 | command | exit code | output summary | Loop Evidence |
 |---|---:|---|---|
