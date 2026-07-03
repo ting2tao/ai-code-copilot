@@ -494,9 +494,11 @@ Quick 档 /review：阶段一改为对照 quick-card 的目标、涉及文件、
 Codex 兼容入口：在 Codex 中优先输入 `finish <变更名>`、`完成收尾 <变更名>` 或 `开 PR <变更名>`。Slash 命令名是流程名称，不要求用户真的输入 `/finish`。
 
 **Context to load：**
-- 当前变更 spec/quick-card、log.md 的 Summary/Review outcomes/Verification log、test-spec 中的验证命令
+- 先读取当前变更的 spec/quick-card 并判断记录模式
+- Standard/Complex 和 Quick Full：读取 `log.md` 的 Summary/Review outcomes/Verification log、`test-spec.md`/记录中的验证命令；`summary.md` 仅用于运行时状态
+- Quick Compact：读取 quick-card.md 的 Execution record / Commit record / Review record / Finish record、验收方式、风险、Goal Contract / Loop Evidence；`summary.md` 仅在存在/full 模式时用于状态，compact 没有 summary.md 不阻塞
 - `.ai_code_copilot/config.json` 的 GitHub workflow 配置
-- `log.md` 的 `## Knowledge candidates` / `## 知识发现`，用于轻量知识提取
+- Quick Full/Standard/Complex 读取 `log.md` 的 `## Knowledge candidates` / `## 知识发现`，用于轻量知识提取；Quick Compact 若 quick-card.md 记录 durable knowledge/open risk，先按 Runtime promotion 升级后再提取
 - 若当前变更属于 Complex 子项目，读取 roadmap.md 以生成/更新 `log.summary.md`
 - 不加载 pack rules；finish 只做验证、push、PR、运行时摘要和可选知识沉淀
 
@@ -530,7 +532,9 @@ Codex 兼容入口：在 Codex 中优先输入 `finish <变更名>`、`完成收
 前置检查（任一不满足则停止）：
 - 当前分支不是 master/main
 - 工作区干净，或只有本次变更已明确 staged/committed 的文件；不得把用户无关改动带入 PR
-- Standard/Complex：`spec.md`、`tasks.md`、`test-spec.md`、`log.md` 存在；Quick：`quick-card.md`、`log.md` 存在
+- Standard/Complex：`spec.md`、`tasks.md`、`test-spec.md`、`log.md` 存在
+- Quick Full：`quick-card.md`、`log.md`、`summary.md` 存在
+- Quick Compact：quick-card.md 存在且包含 execution/commit/review 证据；不得要求 log.md 或 summary.md；Review record 必须显示 Spec Compliance 和 Code Quality 均 PASS
 - 已有 /apply 或 /fix commit 证据；若无 commit hash，停止并要求补录
 - /review 结论已记录且 Spec Compliance、Code Quality 均 PASS；GitHub Readiness 若为 NEEDS_INFO，必须列出缺口并获得人工确认才能继续
 - Issue ID/URL 已记录；若缺失，按 `issueWhenMissing` 执行 ask/auto/manual
@@ -538,9 +542,10 @@ Codex 兼容入口：在 Codex 中优先输入 `finish <变更名>`、`完成收
 
 执行流程：
 1. 读取 config，必要时首次询问并写入 `.ai_code_copilot/config.json`
-2. 读取 Issue ID/URL、验证命令、风险说明、测试证据、commit 列表
+2. 从当前记录源读取 Issue ID/URL、验证命令、风险说明、测试证据、commit 列表：Quick Compact 从 quick-card.md 的 Execution record / Commit record / Review record / Finish record 读取；Quick Full/Standard/Complex 从 log.md/test-spec.md/tasks.md 读取
 3. 执行验证命令：
    - 优先使用 `test-spec.md`/`log.md` 已记录命令
+   - Quick Compact 优先使用 quick-card.md 的验收方式、Execution record 和 Loop Evidence 中已记录命令
    - 缺失时使用 `project-context.md` 中最接近的编译/测试/检查命令
    - 必须展示实际输出；验证失败则停止，不得 push/PR
 4. 若缺 Issue：
@@ -554,10 +559,11 @@ Codex 兼容入口：在 Codex 中优先输入 `finish <变更名>`、`完成收
    - Risk
    - AI Collaboration
    - `Closes #ID`
-7. 将 PR URL、Issue、验证命令、验证结果、分支、远端写入 log.md `## /finish 记录`
-8. 更新 `summary.md`：`status: finished`，保留 spec-hash/goal/scope/open-risks/loaded-knowledge；SessionStart 看到 finished 后不再注入为 active change
+7. 将 PR URL、Issue、验证命令、验证结果、分支、远端写入当前记录源：compact Quick 写回 quick-card.md ## Finish record；Quick Full/Standard/Complex 写回 log.md `## /finish 记录`
+8. 更新运行时状态：Quick Compact 更新 quick-card.md front matter/status 与 `## Finish record`；Quick Full/Standard/Complex 更新 `summary.md`：`status: finished`，保留 spec-hash/goal/scope/open-risks/loaded-knowledge；SessionStart 看到 finished 后不再注入为 active change
 9. 轻量知识提取（不等同于完整归档）：
-   - 扫描 log.md `## Knowledge candidates` / `## 知识发现` 中的条目
+   - Quick Compact 若 quick-card.md 无 durable knowledge/open risk，记录跳过；若存在则先 Runtime promotion，再扫描 log.md
+   - Quick Full/Standard/Complex 扫描 log.md `## Knowledge candidates` / `## 知识发现` 中的条目
    - 若存在，询问用户：`发现 N 条待沉淀知识：y=写入 knowledge/index 并保留 change；n=跳过；archive=写入并归档`
    - 用户选择 y/archive 时，按 knowledge index schema 写入 knowledge 文件和 index；选择 n 时只在 log.md 记录跳过
 10. Complex 子项目保底：
@@ -687,7 +693,7 @@ Phase 4 · 实施修复
 3. 每个 task/fix 原则上一 task 一 commit
 4. commit message 必须使用强制 scope 的 Conventional Commits：`type(scope): description`，type 仅允许 `feat`、`fix`、`docs`、`refactor`、`test`、`chore`、`perf`、`ci`、`build`
 5. commit 前执行 `project-context.md` 中记录的编译/测试/检查命令
-6. commit hash 和完整 message 必须写入 `tasks.md` 或 `log.md`
+6. commit hash 和完整 message 必须写入当前记录源（compact Quick 为 quick-card.md；full Quick/Standard/Complex 为 log.md/tasks.md）
 7. 禁止自动 push — push 由用户主动触发
 8. PR body 必须使用 GitHub closing keyword，例如 `Closes #ID`
 9. PR 必须触发 CodeQL 和 CI；缺失时必须在 PR 中标明并获得人工确认
@@ -746,11 +752,13 @@ Phase 4 · 实施修复
 
 宣布任何工作"完成"之前，必须先展示可验证的命令输出：
 
+当前记录源（compact Quick 为 quick-card.md；full Quick/Standard/Complex 为 log.md/tasks.md）。
+
 | 场景 | 必须展示的证据 |
 |------|--------------|
-| /fix 完成后 | 编译输出 + 相关测试用例输出，并写入 `log.md ## Verification log` |
-| /apply 每个 task 完成后 | 该 task 的验证命令 + exit code + 输出摘要，并写入 `log.md ## Verification log` |
-| /apply 全部 task 完成后 | 编译输出 + 完整测试套件摘要，并写入 `log.md ## Verification log` |
+| /fix 完成后 | 编译输出 + 相关测试用例输出，并写入当前记录源 |
+| /apply 每个 task 完成后 | 该 task 的验证命令 + exit code + 输出摘要，并写入当前记录源 |
+| /apply 全部 task 完成后 | 编译输出 + 完整测试套件摘要，并写入当前记录源 |
 | 调试修复后 | 复现测试从 Red → Green 的实际输出 |
 
 **禁止以下无证据声明：**
@@ -758,7 +766,7 @@ Phase 4 · 实施修复
 - ❌ "已修复" / "完成了" / "改好了"（没有命令输出支撑时）
 - ❌ "测试应该能过" / "编译应该没问题"
 
-**正确做法：** 先跑命令，把 command/exit code/output 摘要写入 `log.md ## Verification log`，再下结论。命令输出就是结论的来源。
+**正确做法：** 先跑命令，把 command/exit code/output 摘要写入当前记录源（compact Quick 为 quick-card.md；full Quick/Standard/Complex 为 log.md/tasks.md），再下结论。命令输出就是结论的来源。
 
 ---
 

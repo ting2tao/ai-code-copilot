@@ -256,6 +256,28 @@ for rel, markers in adaptive_quick_markers.items():
     if missing:
         raise SystemExit(f"{rel} missing adaptive Quick markers: {missing}")
 
+finish_record_source_markers = [
+    "Quick Compact：读取 quick-card.md 的 Execution record / Commit record / Review record / Finish record",
+    "Quick Compact：quick-card.md 存在且包含 execution/commit/review 证据；不得要求 log.md 或 summary.md",
+    "compact Quick 写回 quick-card.md ## Finish record",
+    "当前记录源（compact Quick 为 quick-card.md；full Quick/Standard/Complex 为 log.md/tasks.md）",
+]
+missing_finish_markers = [marker for marker in finish_record_source_markers if marker not in prompt_text]
+if missing_finish_markers:
+    raise SystemExit(
+        "agents/copilot-prompt.md missing compact Quick /finish record source markers: "
+        + ", ".join(missing_finish_markers)
+    )
+for forbidden in [
+    "Quick：`quick-card.md`、`log.md` 存在",
+    "Quick：quick-card.md、log.md 存在",
+]:
+    if forbidden in prompt_text:
+        raise SystemExit(
+            "agents/copilot-prompt.md must not require Quick log.md unconditionally during /finish: "
+            + forbidden
+        )
+
 expected = {"java-spring", "go", "python", "frontend-react"}
 actual = {p.name for p in pack_root.iterdir() if p.is_dir()}
 missing = expected - actual
