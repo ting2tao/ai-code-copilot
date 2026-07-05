@@ -17,7 +17,7 @@
 Quick 证据源：
 - `recordMode: compact` 的 compact Quick：从 `quick-card.md` 读取目标、范围、execution/commit/review/Loop Evidence、验证命令、风险与回滚；不得要求必须存在 log.md。
 - `recordMode: full` 的 full Quick：从 quick-card.md 读取目标与范围，从 log.md 读取 execution/commit/review/Loop Evidence、验证命令、风险与回滚。
-- 若 compact Quick 中发现 Important/Critical correction、durable knowledge 或 open risk，应标记需要 Runtime promotion，要求先升级为 full Quick 再继续后续修复/归档。
+- 若 compact Quick 中发现 Important/Critical correction、任何 open/accepted residual risk、durable knowledge 或 open risk，必须标记 Runtime promotion，先升级为 full Quick，再进入修复（fix）、接受（accept）记录或后续归档（archive）；升级完成前不得直接写入不存在的 log.md。
 
 ## 审查分级
 

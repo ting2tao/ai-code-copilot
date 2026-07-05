@@ -357,7 +357,7 @@ git commit -m "<type>(<scope>): <中文简述>"
 - 完成时间：当天日期
 - 涉及文件数：本次变更实际改动的文件数
 - commit 列表：读取 tasks.md/log.md 中记录的 commit hash 和 message；若缺失则先补录，不依赖非标准 message 前缀兜底
-Quick Compact 全部 task 完成后，回填 quick-card.md 的 Execution record、Commit record 和 Finish record；若需要 Summary/open-risks/Knowledge candidates，先按 Runtime promotion 升级。
+Quick Compact 全部 task 完成后，回填 quick-card.md 的 Execution record、Commit record 和当时真实可得的 Loop Evidence；若需要 Summary/open-risks/Knowledge candidates，先按 Runtime promotion 升级。
 
 ### /fix <变更名> [描述] — 增量修正
 
@@ -460,7 +460,9 @@ Step 5 · 验证与记录
   
   → PASS：建议执行 /archive
   → FAIL：回到 /fix，Critical 和 Important 必须修复
-  → 用户显式接受某 Important 问题时：写入 log.md ## 遗留问题（注明接受原因）
+  → 用户显式接受某 Important 问题时：
+    - Quick Compact：发现 Important/Critical correction 或任何 open/accepted residual risk 时，必须标记 Runtime promotion，先升级为 Quick Full，再进入修复/接受记录/后续 archive；升级完成前不得直接写 log.md，升级完成后在 log.md ## 遗留问题注明接受原因
+    - Quick Full/Standard/Complex：用户显式接受 Important 时，写入 log.md ## 遗留问题（注明接受原因）
 
 阶段三：GitHub Readiness（本地检查，不替代 GitHub 统计）
   读取 `.ai_code_copilot/rules/github-metrics.md`；若项目级不存在则读取 `<COPILOT_HOME>/rules/github-metrics.md`

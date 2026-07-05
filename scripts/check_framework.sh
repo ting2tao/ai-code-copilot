@@ -296,29 +296,41 @@ if missing_finish_rules:
         "agents/copilot-prompt.md missing compact Quick /finish record source semantics: "
         + ", ".join(missing_finish_rules)
     )
-compact_finish_requirement = re.compile(
-    r"(?:Quick\s+Compact|compact\s+Quick)[^\n]*(?:log\.md|summary\.md)[^\n]*(?:必须|存在|required|要求)",
-    re.IGNORECASE,
-)
-allowed_compact_finish_context = re.compile(
-    r"(?:不得要求|没有\s+summary\.md\s+不阻塞|仅在存在/full\s+模式)",
+compact_finish_scope = re.compile(r"(?:Quick\s+Compact|compact\s+Quick)", re.IGNORECASE)
+full_record_file = re.compile(r"(?:log\.md|summary\.md)", re.IGNORECASE)
+requirement_word = re.compile(r"(?:必须|存在|required|要求|包含|依赖|需要)", re.IGNORECASE)
+explicit_full_record_negation = re.compile(
+    r"(?:(?:不得要求|无需|不需要|不依赖|禁止要求)\s*`?(?:log\.md|summary\.md)`?"
+    r"(?:\s*或\s*`?(?:log\.md|summary\.md)`?)*|"
+    r"`?(?:log\.md|summary\.md)`?\s*(?:不阻塞|仅在存在/full\s+模式|无需存在|不需要存在|不得存在|不应存在))",
     re.IGNORECASE,
 )
 
 
 def forbidden_compact_finish_requirements(text):
-    return [
-        line.strip()
-        for line in text.splitlines()
-        if compact_finish_requirement.search(line)
-        and not allowed_compact_finish_context.search(line)
-    ]
+    forbidden = []
+    for line in text.splitlines():
+        if not compact_finish_scope.search(line):
+            continue
+        for clause in re.split(r"[，,；;。]", line):
+            clause_without_negation = explicit_full_record_negation.sub("", clause)
+            if (
+                full_record_file.search(clause_without_negation)
+                and requirement_word.search(clause_without_negation)
+            ):
+                forbidden.append(line.strip())
+                break
+    return forbidden
 
 
 for sample in [
     "Quick Compact preflight：log.md 必须存在",
     "compact Quick evidence source：summary.md required",
     "Quick Compact 收尾要求：summary.md 存在",
+    "Quick Compact：必须存在 log.md",
+    "compact Quick：要求记录包含 summary.md",
+    "Quick Compact：不得要求 review.md，但 log.md 必须存在",
+    "Quick Compact：不得要求 review.md 但 log.md 必须存在",
 ]:
     if not forbidden_compact_finish_requirements(sample):
         raise SystemExit(f"compact Quick /finish forbidden regex missed regression sample: {sample}")
@@ -378,8 +390,8 @@ apply_completion_rules = {
         r"所有 task 完成后[^\n]*Quick Full/Standard/Complex[^\n]*log\.md[^\n]*Summary",
         re.IGNORECASE,
     ),
-    "compact mode writes its quick-card records": re.compile(
-        r"Quick Compact[^\n]*回填[^\n]*quick-card\.md[^\n]*Execution record[^\n]*Commit record[^\n]*Finish record",
+    "compact mode writes only its available apply records": re.compile(
+        r"Quick Compact[^\n]*回填[^\n]*quick-card\.md[^\n]*Execution record[^\n]*Commit record[^\n]*Loop Evidence",
         re.IGNORECASE,
     ),
     "compact mode promotes before full-only fields": re.compile(
@@ -390,6 +402,11 @@ apply_completion_rules = {
 for description, pattern in apply_completion_rules.items():
     if not pattern.search(apply_section):
         quick_workflow_errors.append(f"agents/copilot-prompt.md missing /apply completion rule: {description}")
+compact_apply_completion = re.search(r"Quick Compact[^\n]*全部 task 完成[^\n]*", apply_section, re.IGNORECASE)
+if compact_apply_completion and "Finish record" in compact_apply_completion.group(0):
+    quick_workflow_errors.append(
+        "agents/copilot-prompt.md must reserve Quick Compact Finish record for /finish"
+    )
 
 spec_reviewer_text = (root / "agents" / "spec-reviewer.md").read_text(encoding="utf-8")
 promotion_trigger_rules = {
@@ -428,6 +445,42 @@ else:
         quick_workflow_errors.append(
             "agents/spec-reviewer.md Runtime promotion evidence order must match agents/copilot-prompt.md"
         )
+
+code_quality_reviewer_text = (root / "agents" / "code-quality-reviewer.md").read_text(encoding="utf-8")
+quality_promotion_rules = {
+    "correction and residual risk trigger promotion": re.compile(
+        r"compact Quick[^\n]*Important/Critical correction[^\n]*(?:open/accepted residual risk|accepted residual risk[^\n]*open risk)[^\n]*Runtime promotion",
+        re.IGNORECASE,
+    ),
+    "promotion precedes fix acceptance and archive": re.compile(
+        r"Runtime promotion[^\n]*(?:先升级|升级为 full Quick)[^\n]*(?:修复|fix)[^\n]*(?:接受|accept)[^\n]*(?:归档|archive)",
+        re.IGNORECASE,
+    ),
+}
+for description, pattern in quality_promotion_rules.items():
+    if not pattern.search(code_quality_reviewer_text):
+        quick_workflow_errors.append(
+            f"agents/code-quality-reviewer.md missing compact review rule: {description}"
+        )
+
+review_section = section_between(
+    prompt_text,
+    "### /review <变更名> — 两阶段 Sub-Agent 审查 + GitHub Readiness",
+    "### /finish <变更名> — GitHub 收尾（Issue + PR）",
+)
+accepted_risk_rules = {
+    "compact accepted risk promotes before log write": re.compile(
+        r"Quick Compact[^\n]*(?:Important/Critical correction|Important)[^\n]*(?:open/accepted residual risk|accepted residual risk)[^\n]*Runtime promotion[^\n]*log\.md",
+        re.IGNORECASE,
+    ),
+    "full modes keep residual risk in log": re.compile(
+        r"Quick Full/Standard/Complex[^\n]*(?:接受|accept)[^\n]*Important[^\n]*log\.md",
+        re.IGNORECASE,
+    ),
+}
+for description, pattern in accepted_risk_rules.items():
+    if not pattern.search(review_section):
+        quick_workflow_errors.append(f"agents/copilot-prompt.md missing /review rule: {description}")
 
 if quick_workflow_errors:
     raise SystemExit("Quick workflow consistency check failed:\n- " + "\n- ".join(quick_workflow_errors))
