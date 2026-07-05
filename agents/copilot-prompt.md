@@ -179,8 +179,15 @@ Codex 输入提示：请直接说 `finish <变更名>`、`archive <变更名>` �
 - 读取与当前需求直接相关的代码、构建文件和目录结构
 - 仅读取命中技术栈 pack 的设计/结构类规则摘要；不加载完整 pack rules
 - 不加载 knowledge 全文；brainstorm 阶段只记录可能需要的知识关键词
+- 从用户输入和 active change 读取 `parentIssue`；两者都未提供时，只问一次是否有 parent Issue，不在后续步骤重复追问
 
 ```
+Step 0 · Parent requirement discovery
+  - parentIssue 未提供时只问一次是否有 parent Issue；用户回答没有时记录 `parentIssue: none`
+  - 提供 parentIssue 后，先验证当前仓库与 owner/repo，再读取 title、body、acceptance checklist、relationship metadata、decision-bearing comments
+  - 总结 overall goal、当前变更 boundary、completed sibling work、contradictions，并写入 design-brief
+  - parent Issue 不可读、无法读取或信息矛盾时，阻塞合同确认时创建，明确列出缺口，不猜、不补写隐含需求
+
 Step 1 · 理解意图（每次只问一个问题，禁止连发多问）
   - 优先给选择题（2-3 选项 + 推荐 + 理由）
   - 开放题仅用于无法预设选项时
@@ -221,6 +228,7 @@ Standard/Complex 档跳过 brainstorm 直接说 /propose 时，必须拦截并�
 - `.ai_code_copilot/rules/project-context.md` 与相关代码链路
 - `.ai_code_copilot/knowledge/index.md`，然后执行 Knowledge retrieval step，最多加载 5 条知识文件
 - 不加载完整 pack rules；技术栈规则在 `/apply` 阶段按目标文件和 pack 命中情况加载
+- 从输入、design-brief 和 active change 读取 `parentIssue`；均未提供时只问一次，已明确为 none 时不得再问
 
 ```
 Step 0 · 检查 design-brief（前置）
@@ -229,6 +237,10 @@ Step 0 · 检查 design-brief（前置）
     → Step 1 Research 仍执行（补充技术细节）
   - 若不存在且为 Standard/Complex 档 → HARD-GATE：禁止继续，提示"必须先完成 /brainstorm <变更名>"
   - 若不存在且为 Quick 档 → 先判断 Quick Compact / Quick Full；Compact 生成 quick-card.md，不生成 spec/tasks/log/summary；Full 生成 quick-card.md + log.md + summary.md，不生成 spec/tasks
+  - parentIssue 未提供时只问一次是否有 parent Issue；回答无则写 `parentIssue: none`
+  - 提供 parentIssue 后，读取 title、body、acceptance checklist、relationship metadata、decision-bearing comments
+  - 总结 overall goal、当前变更 boundary、completed sibling work、contradictions，并写入合同记录源
+  - parent Issue 不可读、无法读取或信息矛盾时，阻塞合同确认时创建，明确列出缺口，不猜、不以常识补全
 
 Step 1 · Research（每个结论必须有代码出处）
   - 找到相关入口类、核心链路
@@ -264,6 +276,20 @@ Step 6 · HARD-GATE 确认
   - spec.md 状态改为"已确认"
   - 记录确认时间、确认人（若未知填"用户"）、确认范围摘要 hash（spec.md + tasks.md + test-spec.md 内容 hash）
   收到确认前，禁止任何编码动作。
+
+Step 7 · 确认后自动创建 work Issue，并建立分支合同
+  - 唯一性铁律：确认后自动创建唯一 work Issue，不得重复创建；`parentIssue` 只代表整体需求，不能代替本变更的 `workIssue`
+  - 合同持久化位置：Standard/Complex 把字段写入 spec.md，并把创建/关联响应写入 log.md；Quick Compact 写入 quick-card.md；Quick Full 同时把响应写入 log.md。所有模式都必须保存 `parentIssue/workIssue/issueRelationship/closeTarget/branch`
+  - 先用 `gh repo view --json nameWithOwner` 验证当前仓库并解析 owner/repo；所有 owner/repo/numbers 只能来自已验证仓库和已确认合同
+  - 若 `workIssue` 已 resolved，GET 并校验它属于当前仓库、可读且仍 open，然后 reuse/复用；校验失败必须阻塞，绝不另建替代 Issue
+  - 若 `workIssue` 仍为 pending，从 confirmed contract 生成 title/body；body 至少包含 Goal、Boundary、Acceptance Checklist、Test Evidence plan、Risk、AI Collaboration。执行 `gh issue create` 后立即持久化/写回 `workIssue` number、URL 和状态，命令后续失败也不得丢失
+  - 有 parentIssue 时必须建立 GitHub native sub-issue；成功验证后写 `issueRelationship: sub-issue`。无 parent 时写 `issueRelationship: standalone`。两种情况都写 `closeTarget: workIssue`
+  - GitHub API 契约（数据库 ID 不是 Issue number）：
+    1. GET work issue：`gh api -H "X-GitHub-Api-Version: 2026-03-10" "repos/${owner}/${repo}/issues/${work_number}" --jq '.id'`，取 REST database `.id` 写入 `work_issue_id`
+    2. POST：`gh api --method POST -H "X-GitHub-Api-Version: 2026-03-10" "repos/${owner}/${repo}/issues/${parent_number}/sub_issues" -F sub_issue_id=${work_issue_id}`
+    3. 再 GET：`gh api -H "X-GitHub-Api-Version: 2026-03-10" "repos/${owner}/${repo}/issues/${parent_number}/sub_issues"`，确认响应中包含 `work_number`
+  - 关联失败时保留已创建 work Issue，写 `issueRelationship: pending`，记录完整响应并重试/阻塞 /apply；不得重复创建或新建替代 Issue。HTTP 403、404、410、422 时同样禁止新建替代 Issue
+  - `issueRelationship` 成为 `sub-issue` 或 `standalone` 后，才 derive/推导 `type/scope`，创建或校验分支；分支合同持久化后才允许 `/apply`
 ```
 
 **Quick 轻量提案规则：**
@@ -273,6 +299,7 @@ Step 6 · HARD-GATE 确认
 - Compact 不创建 log.md 和 summary.md；Full 必须创建 `quick-card.md + log.md + summary.md`。
 - 显示："quick-card 已生成。请确认后回复「确认」才能执行。"
 - 收到确认后，Compact 在 quick-card.md 记录确认时间、确认人、确认范围摘要 hash；Full 在 quick-card.md 与 log.md 记录确认时间、确认人、确认范围摘要 hash
+- Quick 确认后也必须执行 Step 7；Compact 将 `parentIssue/workIssue/issueRelationship/closeTarget/branch` 写入 quick-card.md，Full 同时把 Issue 创建、关联响应与分支验证证据写入 log.md
 
 ### /apply <变更名> — 执行编码
 
@@ -290,12 +317,14 @@ Step 6 · HARD-GATE 确认
 - Quick：`quick-card.md` 存在
 - Quick Full：`log.md`、`summary.md` 存在；Quick Compact：不得依赖 log.md/summary.md 作为执行证据源
 - 用户在本次会话中已显式确认，或文档中存在确认记录且当前确认范围摘要 hash 未变化
-- 关联 Issue 已记录：Standard/Complex 必须在 spec.md 写明 Issue ID/URL；Quick 必须在 quick-card.md 写明 Issue ID/URL。严禁无票开发
+- 已确认合同的 `workIssue` 已 resolved 且属于当前仓库、可读、open；Standard/Complex 必须在 spec.md 写明 work Issue ID/URL，Quick 必须在 quick-card.md 写明。只有 `parentIssue` 不算有票，严禁无票开发
+- `issueRelationship` 必须为 `sub-issue` 或 `standalone`，不得为 `pending`；`closeTarget` 必须为 `workIssue`
 
 Preflight（任一不满足则停止）：
 - 执行 `git status --short`，识别用户已有改动；不得覆盖与当前 task 无关的未提交改动
 - 检查当前分支；在 master/main 分支立即停止
 - 检查当前分支必须匹配 `type/scope`：type 仅允许 `feat`、`fix`、`docs`、`refactor`、`test`、`chore`、`perf`、`ci`、`build`，scope 必须是小写 kebab-case；不匹配时阻塞任何文件编辑与 commit，先询问用户切换/重命名分支
+- 从已验证仓库读取 `workIssue`，确认 number/URL 与合同一致；缺失、closed、cross-repo、unreadable 或关联仍 pending 时阻塞，不得创建替代 Issue
 - 检查 project-context.md 中记录的编译/测试命令是否存在；缺失则先询问用户补齐
 - 检查 tasks.md 或 quick-card.md 中列出的目标文件路径仍匹配当前代码；不匹配则触发 Reverse Sync
 - 涉及数据库、接口、状态机、权限、资金时，确认 spec/quick-card 中已有风险和回滚说明
@@ -350,7 +379,7 @@ git commit -m "<type>(<scope>): <中文简述>"
 - 格式：`type(scope): description`，scope 不可省略，例如 `feat(org-search): 支持按组织名称查询服务范围`
 - type 仅允许：`feat`（新功能）、`fix`（修复）、`docs`（文档）、`refactor`（重构）、`test`（测试）、`chore`（杂项）、`perf`（性能）、`ci`（CI）、`build`（构建）
 - scope 使用模块或能力名的小写 kebab-case，例如 `search`、`org-search`、`coupon`、`git-contract`；Issue 编号不是 scope；不要把 `[issue-xxx]` 放在 commit message 前缀
-- 关联 Issue 时优先使用 `fix(org-search): 支持按组织名称查询服务范围 (#7)`，或在 commit body/PR body 写 `Refs #7` / `Closes #7`
+- commit subject 可在末尾引用 `workIssue`，例如 `fix(org-search): 支持按组织名称查询服务范围 (#7)`；自动关闭只放在 PR body 的 `Closes #<workIssue>`，可选 parent 只用 `Refs #<parentIssue>`
 - 提交完成后必须立即把 commit hash 和完整 message 写入记录源：Quick Compact 写入 quick-card.md 的 Commit record；Quick Full/Standard/Complex 写入 tasks.md 或 log.md，作为 /review 的提交证据
 
 **所有 task 完成后，Quick Full/Standard/Complex 回填 log.md ## Summary：**
@@ -467,7 +496,7 @@ Step 5 · 验证与记录
 阶段三：GitHub Readiness（本地检查，不替代 GitHub 统计）
   读取 `.ai_code_copilot/rules/github-metrics.md`；若项目级不存在则读取 `<COPILOT_HOME>/rules/github-metrics.md`
   检查 GitHub 是否能干净统计本次变更：
-  - Issue ID/URL 已记录，PR body 应使用 `Closes #ID`
+  - confirmed/resolved `workIssue` ID/URL 已记录，PR body 使用 `Closes #<workIssue>`；可选 parentIssue 只使用 `Refs #<parentIssue>`
   - PR 模板字段应填写 Change Type、Test Evidence、Risk、AI Collaboration
   - 新增/更新测试，或给出无需测试原因
   - 验证命令和实际结果已记录
@@ -493,12 +522,13 @@ Quick 档 /review：阶段一改为对照 quick-card 的目标、涉及文件、
 
 ### /finish <变更名> — GitHub 收尾（Issue + PR）
 
-适用场景：变更已完成并通过 /review 后，一键完成验证、push、创建 PR，并用 GitHub closing keyword 关闭关联 Issue。/finish 负责 GitHub 收尾，/archive 负责知识沉淀，两者边界独立。
+适用场景：变更已完成并通过 /review 后，一键完成验证、push、创建 PR，并用 GitHub closing keyword 只关闭本变更的 `workIssue`。`parentIssue` 仅用于追踪整体需求进度。/finish 负责 GitHub 收尾，/archive 负责知识沉淀，两者边界独立。
 
 Codex 兼容入口：在 Codex 中优先输入 `finish <变更名>`、`完成收尾 <变更名>` 或 `开 PR <变更名>`。Slash 命令名是流程名称，不要求用户真的输入 `/finish`。
 
 **Context to load：**
 - 先读取当前变更的 spec/quick-card 并判断记录模式
+- 从合同记录读取并交叉验证 `parentIssue`、`workIssue`、`issueRelationship`、`closeTarget` 和 `branch`；不得从当前分支名、PR 草稿或用户临时输入重新推断 Issue
 - Standard/Complex 和 Quick Full：读取 `log.md` 的 Summary/Review outcomes/Verification log、`test-spec.md`/记录中的验证命令；`summary.md` 仅用于运行时状态
 - Quick Compact：读取 quick-card.md 的 Execution record / Commit record / Review record / Finish record、验收方式、风险、Goal Contract / Loop Evidence；`summary.md` 仅在存在/full 模式时用于状态，compact 没有 summary.md 不阻塞
 - `.ai_code_copilot/config.json` 的 GitHub workflow 配置
@@ -517,7 +547,6 @@ Codex 兼容入口：在 Codex 中优先输入 `finish <变更名>`、`完成收
 {
   "githubWorkflow": {
     "finishMode": "ask",
-    "issueWhenMissing": "ask",
     "createPrAfterReviewPass": false,
     "defaultBaseBranch": "main",
     "pushRemote": "origin",
@@ -530,8 +559,6 @@ Codex 兼容入口：在 Codex 中优先输入 `finish <变更名>`、`完成收
 - `finishMode=ask`：每次 /finish 前展示将执行的动作，等待用户确认
 - `finishMode=auto-pr`：/review PASS 后用户说"完成收尾"或"/finish"时自动执行 push + PR；不得跳过验证
 - `finishMode=manual`：只输出待执行命令和 PR body，不执行 push/PR
-- `issueWhenMissing=ask`：spec/quick-card 缺 Issue 时询问是否创建 Issue
-- `issueWhenMissing=auto`：缺 Issue 时用 `gh issue create` 自动创建，并把 Issue ID 写回 spec/quick-card 与 log.md
 
 前置检查（任一不满足则停止）：
 - 当前分支不是 master/main
@@ -541,36 +568,38 @@ Codex 兼容入口：在 Codex 中优先输入 `finish <变更名>`、`完成收
 - Quick Compact：quick-card.md 存在且包含 execution/commit/review 证据；不得要求 log.md 或 summary.md；Review record 必须显示 Spec Compliance 和 Code Quality 均 PASS
 - 已有 /apply 或 /fix commit 证据；若无 commit hash，停止并要求补录
 - /review 结论已记录且 Spec Compliance、Code Quality 均 PASS；GitHub Readiness 若为 NEEDS_INFO，必须列出缺口并获得人工确认才能继续
-- Issue ID/URL 已记录；若缺失，按 `issueWhenMissing` 执行 ask/auto/manual
+- `workIssue` 已记录且与已确认合同一致；workIssue 缺失时阻塞，不询问创建、不自动创建
+- `issueRelationship: pending` 时阻塞并回到确认后的关联重试流程；必须复用原 work Issue
+- workIssue 已关闭、跨仓库、workIssue 不可读或当前仓库验证失败时均阻塞；不得换票
+- `closeTarget` 必须严格等于 `workIssue`；只有 `parentIssue` 或 closeTarget 指向 parent 时阻塞
 - `gh auth status` 可用；若不可用，停止并提示用户认证
 
 执行流程：
 1. 读取 config，必要时首次询问并写入 `.ai_code_copilot/config.json`
-2. 从当前记录源读取 Issue ID/URL、验证命令、风险说明、测试证据、commit 列表：Quick Compact 从 quick-card.md 的 Execution record / Commit record / Review record / Finish record 读取；Quick Full/Standard/Complex 从 log.md/test-spec.md/tasks.md 读取
+2. 从当前记录源读取已确认的 parent/work Issue 合同、验证命令、风险说明、测试证据、commit 列表：Quick Compact 从 quick-card.md 的 front matter / Execution record / Commit record / Review record / Finish record 读取；Quick Full/Standard/Complex 从 spec.md/log.md/test-spec.md/tasks.md 读取
+   - 用已验证仓库 GET `workIssue`，确认 open、可读、同仓库，且 `issueRelationship` 与 GitHub 当前关系一致
+   - parentIssue 非 none 时也只校验引用目标；parentIssue 永不使用 closing keyword
 3. 执行验证命令：
    - 优先使用 `test-spec.md`/`log.md` 已记录命令
    - Quick Compact 优先使用 quick-card.md 的验收方式、Execution record 和 Loop Evidence 中已记录命令
    - 缺失时使用 `project-context.md` 中最接近的编译/测试/检查命令
    - 必须展示实际输出；验证失败则停止，不得 push/PR
-4. 若缺 Issue：
-   - ask：询问用户是否创建 Issue；确认后 `gh issue create`
-   - auto：直接 `gh issue create`
-   - manual：停止并输出缺失项
-5. `git push -u <pushRemote> <branch>`
-6. `gh pr create --base <defaultBaseBranch> --head <branch>`，PR body 必须包含：
+4. `git push -u <pushRemote> <branch>`
+5. `gh pr create --base <defaultBaseBranch> --head <branch>`，PR body 只能由已记录合同与验证证据构建，必须包含：
    - Summary
    - Test Evidence（粘贴实际验证命令）
    - Risk
    - AI Collaboration
-   - `Closes #ID`
-7. 将 PR URL、Issue、验证命令、验证结果、分支、远端写入当前记录源：compact Quick 写回 quick-card.md ## Finish record；Quick Full/Standard/Complex 写回 log.md `## /finish 记录`
-8. 更新运行时状态：Quick Compact 更新 quick-card.md front matter/status 与 `## Finish record`；Quick Full/Standard/Complex 更新 `summary.md`：`status: finished`，保留 spec-hash/goal/scope/open-risks/loaded-knowledge；SessionStart 看到 finished 后不再注入为 active change
-9. 轻量知识提取（不等同于完整归档）：
+   - `Closes #<workIssue>`，且唯一 closeTarget 为 workIssue
+   - parentIssue 非 none 时追加 `Refs #<parentIssue>`；parentIssue 永不使用 closing keyword
+6. 将 PR URL、parentIssue、workIssue、issueRelationship、closeTarget、验证命令、验证结果、分支、远端写入当前记录源：compact Quick 写回 quick-card.md ## Finish record；Quick Full/Standard/Complex 写回 log.md `## /finish 记录`
+7. 更新运行时状态：Quick Compact 更新 quick-card.md front matter/status 与 `## Finish record`；Quick Full/Standard/Complex 更新 `summary.md`：`status: finished`，保留 spec-hash/goal/scope/open-risks/loaded-knowledge；SessionStart 看到 finished 后不再注入为 active change
+8. 轻量知识提取（不等同于完整归档）：
    - Quick Compact 若 quick-card.md 无 durable knowledge/open risk，记录跳过；若存在则先 Runtime promotion，再扫描 log.md
    - Quick Full/Standard/Complex 扫描 log.md `## Knowledge candidates` / `## 知识发现` 中的条目
    - 若存在，询问用户：`发现 N 条待沉淀知识：y=写入 knowledge/index 并保留 change；n=跳过；archive=写入并归档`
    - 用户选择 y/archive 时，按 knowledge index schema 写入 knowledge 文件和 index；选择 n 时只在 log.md 记录跳过
-10. Complex 子项目保底：
+9. Complex 子项目保底：
    - 若当前 change 关联 roadmap.md 或 roadmap.md 声明了本子项目，生成/更新 `log.summary.md`（≤30 行）
    - `log.summary.md` 必须包含关键决策、对外接口约定、影响下游的风险和验证快照
    - 在 roadmap.md 对应行记录 upstream summary 路径；下游子项目启动前由负责人 review
@@ -692,14 +721,14 @@ Phase 4 · 实施修复
 
 完整规则见 `rules/commit-convention.md`。执行时必须遵守以下摘要：
 
-1. 严禁无票开发；Issue ID/URL 必须写入 `spec.md` 或 `quick-card.md`
+1. 严禁无票开发；confirmed/resolved `workIssue` 必须写入 `spec.md` 或 `quick-card.md`，只有 parentIssue 不够
 2. 禁止在 `master`/`main` 直接开发或提交；分支名称必须匹配 `type/scope`，type 仅允许 `feat`、`fix`、`docs`、`refactor`、`test`、`chore`、`perf`、`ci`、`build`
 3. 每个 task/fix 原则上一 task 一 commit
 4. commit message 必须使用强制 scope 的 Conventional Commits：`type(scope): description`，type 仅允许 `feat`、`fix`、`docs`、`refactor`、`test`、`chore`、`perf`、`ci`、`build`
 5. commit 前执行 `project-context.md` 中记录的编译/测试/检查命令
 6. commit hash 和完整 message 必须写入当前记录源（compact Quick 为 quick-card.md；full Quick/Standard/Complex 为 log.md/tasks.md）
 7. 禁止自动 push — push 由用户主动触发
-8. PR body 必须使用 GitHub closing keyword，例如 `Closes #ID`
+8. PR body 必须用 `Closes #<workIssue>` 关闭 work Issue；parentIssue 非 none 时只能使用 `Refs #<parentIssue>`
 9. PR 必须触发 CodeQL 和 CI；缺失时必须在 PR 中标明并获得人工确认
 10. GitHub 指标口径见 `rules/github-metrics.md`；项目侧负责留下可统计信号，最终统计由 GitHub/API/Actions 完成
 

@@ -33,11 +33,20 @@ alwaysApply: true
 
 关闭 Issue 数量统计时，应按 type、priority、size 分组或加权。取消、不做、重复、迁移类 Issue 不应计入有效完成量。
 
+### Work closure 与 parent progress
+
+- `workIssue` 是一个已确认变更的交付单元；其 closure/关闭由合并 PR 中的 `Closes #<workIssue>` 统计。
+- `parentIssue` 是整体需求；work Issue closure/关闭与 parent requirement progress 必须分开统计，后者按 native sub-issue 的完成数/总数和 acceptance checklist 进度计算。
+- 每个变更的 `closeTarget` 必须固定为 `workIssue`。`parentIssue` 只能用 `Refs #<parentIssue>` 关联，不能因单个 work Issue 合并而自动关闭。
+- `issueRelationship: sub-issue` 必须由 GitHub native relationship 验证；`standalone` 单独统计，`pending` 不计为可开工或可完成样本。
+- 同一 confirmed contract 重复创建的 Issue 不得计入产出；应标记 duplicate 并调查流程违规。
+
 ## 3. PR Body 必填信号
 
 PR body 应使用 `.github/PULL_REQUEST_TEMPLATE.md`，至少包含：
 
-- `Closes #ID`
+- `Closes #<workIssue>`
+- parentIssue 非 none 时的 `Refs #<parentIssue>`
 - Change Type
 - Test Evidence
 - Risk
@@ -106,7 +115,8 @@ CI 修复不依赖特殊前缀如 `[AI-Gen]`。推荐由 GitHub 统计：
 
 `/review` 完成 Spec Compliance 和 Code Quality 后，必须检查：
 
-- [ ] Issue ID/URL 已记录，PR body 使用 `Closes #ID`
+- [ ] `workIssue` ID/URL 已记录，`closeTarget: workIssue`，PR body 使用 `Closes #<workIssue>`
+- [ ] parentIssue 非 none 时只使用 `Refs #<parentIssue>`，parent progress 与 work closure 分开统计
 - [ ] Issue 具备 type / priority / size labels，或 PR 中说明暂缺
 - [ ] PR body 填写 Change Type
 - [ ] PR body 填写 Test Evidence，包含验证命令和实际结果

@@ -268,6 +268,148 @@ finish_section = section_between(
     "### /finish <变更名> — GitHub 收尾（Issue + PR）",
     "### /test <变更名> — TDD 测试",
 )
+brainstorm_section = section_between(
+    prompt_text,
+    "### /brainstorm <需求描述> — 设计探索（苏格拉底式对话）",
+    "### /propose <需求描述> — 创建变更提案",
+)
+propose_section = section_between(
+    prompt_text,
+    "### /propose <需求描述> — 创建变更提案",
+    "### /apply <变更名> — 执行编码",
+)
+apply_section = section_between(
+    prompt_text,
+    "### /apply <变更名> — 执行编码",
+    "### /fix <变更名> [描述] — 增量修正",
+)
+
+issue_contract_markers = {
+    "agents/copilot-prompt.md": [
+        "parentIssue", "workIssue", "issueRelationship", "closeTarget",
+        "确认后自动创建", "不得重复创建", "Closes #<workIssue>",
+        "Refs #<parentIssue>",
+    ],
+    "rules/commit-convention.md": [
+        "parentIssue", "workIssue", "Closes #<workIssue>",
+        "Refs #<parentIssue>",
+    ],
+    "rules/github-metrics.md": [
+        "parentIssue", "workIssue", "closeTarget", "Closes #<workIssue>",
+    ],
+}
+for rel, markers in issue_contract_markers.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    missing = [marker for marker in markers if marker not in text]
+    if missing:
+        raise SystemExit(f"{rel} missing Issue lifecycle contract markers: {missing}")
+
+for command, section in [("/brainstorm", brainstorm_section), ("/propose", propose_section)]:
+    parent_discovery_rules = {
+        "asks at most once when parent is absent": re.compile(
+            r"parentIssue[^\n]*(?:未提供|缺失)[^\n]*(?:只问一次|仅询问一次)[^\n]*parent Issue",
+            re.IGNORECASE,
+        ),
+        "reads requirement-bearing parent data": re.compile(
+            r"title[^\n]*body[^\n]*(?:acceptance checklist|验收清单)[^\n]*relationship metadata[^\n]*(?:decision-bearing comments|决策性评论)",
+            re.IGNORECASE,
+        ),
+        "summarizes boundaries and contradictions": re.compile(
+            r"overall goal[^\n]*(?:当前变更 boundary|change boundary)[^\n]*completed sibling work[^\n]*contradictions",
+            re.IGNORECASE,
+        ),
+        "blocks rather than guessing": re.compile(
+            r"(?:不可读|无法读取|矛盾)[^\n]*(?:阻塞确认|阻塞合同确认)[^\n]*(?:不猜|不得猜)",
+            re.IGNORECASE,
+        ),
+    }
+    missing = [name for name, pattern in parent_discovery_rules.items() if not pattern.search(section)]
+    if missing:
+        raise SystemExit(f"agents/copilot-prompt.md {command} missing parent Issue discovery semantics: {missing}")
+
+confirmed_issue_rules = {
+    "confirmation creates exactly one work Issue": re.compile(
+        r"确认后自动创建[^\n]*work Issue[^\n]*不得重复创建",
+        re.IGNORECASE,
+    ),
+    "resolved work Issue is validated and reused": re.compile(
+        r"workIssue[^\n]*(?:resolved|已解析)[^\n]*(?:校验|验证)[^\n]*(?:复用|reuse)",
+        re.IGNORECASE,
+    ),
+    "new work Issue is persisted immediately": re.compile(
+        r"gh issue create[^\n]*(?:立即|马上)[^\n]*(?:持久化|写回)[^\n]*workIssue",
+        re.IGNORECASE,
+    ),
+    "relationship failure preserves Issue and blocks apply": re.compile(
+        r"关联失败[^\n]*保留[^\n]*work Issue[^\n]*issueRelationship: pending[^\n]*(?:重试|阻塞)[^\n]*/apply",
+        re.IGNORECASE,
+    ),
+    "known HTTP failures do not replace Issue": re.compile(
+        r"403[^\n]*404[^\n]*410[^\n]*422[^\n]*(?:不得|禁止)[^\n]*(?:替代|新建).*Issue",
+        re.IGNORECASE,
+    ),
+    "branch follows Issue lifecycle": re.compile(
+        r"issueRelationship[^\n]*(?:sub-issue|standalone)[^\n]*(?:derive|推导)[^\n]*type/scope[^\n]*(?:创建|校验)[^\n]*分支",
+        re.IGNORECASE,
+    ),
+}
+missing = [name for name, pattern in confirmed_issue_rules.items() if not pattern.search(propose_section)]
+if missing:
+    raise SystemExit("agents/copilot-prompt.md missing confirmed Issue lifecycle semantics: " + ", ".join(missing))
+
+api_contract_markers = [
+    "X-GitHub-Api-Version: 2026-03-10",
+    "repos/${owner}/${repo}/issues/${parent_number}/sub_issues",
+    "-F sub_issue_id=${work_issue_id}",
+    "REST database `.id`",
+    "work_number",
+]
+missing = [marker for marker in api_contract_markers if marker not in propose_section]
+if missing:
+    raise SystemExit(f"agents/copilot-prompt.md missing native sub-issue API contract: {missing}")
+apply_issue_rules = {
+    "requires resolved open work Issue rather than parent only": re.compile(
+        r"workIssue[^\n]*resolved[^\n]*(?:open|仍 open)[^\n]*parentIssue[^\n]*(?:不算|不够)",
+        re.IGNORECASE,
+    ),
+    "requires resolved relationship and work close target": re.compile(
+        r"issueRelationship[^\n]*sub-issue[^\n]*standalone[^\n]*pending[^\n]*closeTarget[^\n]*workIssue",
+        re.IGNORECASE,
+    ),
+    "blocks invalid Issue without replacement": re.compile(
+        r"workIssue[^\n]*(?:缺失|missing)[^\n]*(?:closed|已关闭)[^\n]*(?:cross-repo|跨仓库)[^\n]*(?:unreadable|不可读)[^\n]*pending[^\n]*阻塞[^\n]*(?:不得|禁止)[^\n]*(?:替代|创建).*Issue",
+        re.IGNORECASE,
+    ),
+}
+missing = [name for name, pattern in apply_issue_rules.items() if not pattern.search(apply_section)]
+if missing:
+    raise SystemExit("agents/copilot-prompt.md /apply missing Issue preflight semantics: " + ", ".join(missing))
+if "issueWhenMissing" in prompt_text:
+    raise SystemExit("agents/copilot-prompt.md must not use obsolete issueWhenMissing policy")
+for marker in [
+    "workIssue 缺失", "issueRelationship: pending", "workIssue 已关闭",
+    "跨仓库", "workIssue 不可读", "Closes #<workIssue>", "Refs #<parentIssue>",
+    "parentIssue 永不使用 closing keyword",
+]:
+    if marker not in finish_section:
+        raise SystemExit(f"agents/copilot-prompt.md /finish missing work Issue close semantics: {marker}")
+finish_pr_rule = re.compile(
+    r"PR body[^\n]*(?:已记录合同|合同)[\s\S]*?Closes #<workIssue>"
+    r"[\s\S]*?Refs #<parentIssue>[^\n]*parentIssue 永不使用 closing keyword",
+    re.IGNORECASE,
+)
+if not finish_pr_rule.search(finish_section):
+    raise SystemExit("agents/copilot-prompt.md /finish must build PR close references from the recorded contract")
+
+commit_text = (root / "rules" / "commit-convention.md").read_text(encoding="utf-8")
+if not re.search(r"严禁无票开发[^\n]*workIssue[^\n]*(?:confirmed|resolved)[^\n]*parentIssue[^\n]*(?:不足|不够)", commit_text, re.IGNORECASE):
+    raise SystemExit("rules/commit-convention.md must define no-ticket development around confirmed/resolved workIssue")
+metrics_text = (root / "rules" / "github-metrics.md").read_text(encoding="utf-8")
+if not re.search(r"work Issue[^\n]*(?:关闭|closure)[^\n]*parent requirement progress[^\n]*(?:分开|分别)", metrics_text, re.IGNORECASE):
+    raise SystemExit("rules/github-metrics.md must separate work Issue closure from parent requirement progress")
+if not re.search(r"closeTarget[^\n]*(?:必须|固定)[^\n]*workIssue", metrics_text):
+    raise SystemExit("rules/github-metrics.md must require closeTarget=workIssue")
+
 finish_record_source_rules = {
     "context reads compact evidence from quick-card": re.compile(
         r"Quick Compact[^\n]*(?:读取|从)[^\n]*quick-card\.md[^\n]*Execution record[^\n]*Commit record[^\n]*Review record",
