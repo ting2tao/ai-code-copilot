@@ -328,7 +328,9 @@ Preflight（任一不满足则停止）：
 - 禁止"应该没问题"、"应该能跑"等无证据声明
 
 **实时 log 写入（每个 task 后立即执行）：**
-- Quick Compact 的实时记录写入 quick-card.md 对应 compact 表；一旦需要 durable knowledge、open risk、过程性调试或多 commit 历史，必须先按 Runtime promotion 升级为 Quick Full。
+- Quick Compact 每个 task 只写 quick-card.md 当前记录源（front matter、Execution record、Loop Evidence 和对应 compact 表），不得直接写 log.md 或 summary.md。
+- Quick Compact 如出现关键决策/方向调整、Reverse Sync、过程调试、Agent Harness gap、Loop failure、可沉淀 durable knowledge 或 open risk，必须先按 Runtime promotion 升级为 Quick Full，创建并启用 log.md/summary.md，再按以下 full 记录规则写入。
+- 以下实时写入规则仅适用于 Quick Full/Standard/Complex（包括已从 Quick Compact Runtime promotion 的变更）：
 - 关键决策/方向调整/Reverse Sync 事件 → 写入 log.md ## Active decisions
 - 踩坑/隐含规则/新发现 → 写入 log.md ## 知识发现（即使用户没问）
 - 中间尝试、调试细节、重复记录 → 写入 log.md ## Process notes，后续可按 Log compression rule 归档

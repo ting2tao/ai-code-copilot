@@ -256,26 +256,116 @@ for rel, markers in adaptive_quick_markers.items():
     if missing:
         raise SystemExit(f"{rel} missing adaptive Quick markers: {missing}")
 
-finish_record_source_markers = [
-    "Quick Compact：读取 quick-card.md 的 Execution record / Commit record / Review record / Finish record",
-    "Quick Compact：quick-card.md 存在且包含 execution/commit/review 证据；不得要求 log.md 或 summary.md",
-    "compact Quick 写回 quick-card.md ## Finish record",
-    "当前记录源（compact Quick 为 quick-card.md；full Quick/Standard/Complex 为 log.md/tasks.md）",
+def section_between(text, start, end):
+    try:
+        return text.split(start, 1)[1].split(end, 1)[0]
+    except IndexError as exc:
+        raise SystemExit(f"missing prompt section boundary: {start} -> {end}") from exc
+
+
+finish_section = section_between(
+    prompt_text,
+    "### /finish <变更名> — GitHub 收尾（Issue + PR）",
+    "### /test <变更名> — TDD 测试",
+)
+finish_record_source_rules = {
+    "context reads compact evidence from quick-card": re.compile(
+        r"Quick Compact[^\n]*(?:读取|从)[^\n]*quick-card\.md[^\n]*Execution record[^\n]*Commit record[^\n]*Review record",
+        re.IGNORECASE,
+    ),
+    "preflight accepts compact evidence without full records": re.compile(
+        r"Quick Compact[^\n]*quick-card\.md[^\n]*execution[^\n]*commit[^\n]*review[^\n]*(?:不得要求|不依赖)[^\n]*(?:log\.md|summary\.md)",
+        re.IGNORECASE,
+    ),
+    "verification commands come from compact quick-card": re.compile(
+        r"Quick Compact[^\n]*(?:优先使用|验证命令)[^\n]*quick-card\.md[^\n]*(?:验收方式|Execution record|Loop Evidence)",
+        re.IGNORECASE,
+    ),
+    "finish evidence writes back to compact quick-card": re.compile(
+        r"compact Quick[^\n]*(?:写回|写入)[^\n]*quick-card\.md[^\n]*Finish record",
+        re.IGNORECASE,
+    ),
+}
+missing_finish_rules = [
+    description
+    for description, pattern in finish_record_source_rules.items()
+    if not pattern.search(finish_section)
 ]
-missing_finish_markers = [marker for marker in finish_record_source_markers if marker not in prompt_text]
-if missing_finish_markers:
+if missing_finish_rules:
     raise SystemExit(
-        "agents/copilot-prompt.md missing compact Quick /finish record source markers: "
-        + ", ".join(missing_finish_markers)
+        "agents/copilot-prompt.md missing compact Quick /finish record source semantics: "
+        + ", ".join(missing_finish_rules)
     )
-for forbidden in [
-    "Quick：`quick-card.md`、`log.md` 存在",
-    "Quick：quick-card.md、log.md 存在",
+compact_finish_requirement = re.compile(
+    r"(?:Quick\s+Compact|compact\s+Quick)[^\n]*(?:log\.md|summary\.md)[^\n]*(?:必须|存在|required|要求)",
+    re.IGNORECASE,
+)
+allowed_compact_finish_context = re.compile(
+    r"(?:不得要求|没有\s+summary\.md\s+不阻塞|仅在存在/full\s+模式)",
+    re.IGNORECASE,
+)
+
+
+def forbidden_compact_finish_requirements(text):
+    return [
+        line.strip()
+        for line in text.splitlines()
+        if compact_finish_requirement.search(line)
+        and not allowed_compact_finish_context.search(line)
+    ]
+
+
+for sample in [
+    "Quick Compact preflight：log.md 必须存在",
+    "compact Quick evidence source：summary.md required",
+    "Quick Compact 收尾要求：summary.md 存在",
 ]:
-    if forbidden in prompt_text:
+    if not forbidden_compact_finish_requirements(sample):
+        raise SystemExit(f"compact Quick /finish forbidden regex missed regression sample: {sample}")
+for sample in [
+    "Quick Full：quick-card.md、log.md、summary.md 必须存在",
+    "Standard/Complex：log.md required",
+    "Quick Compact：不得要求 log.md 或 summary.md",
+    "Quick Compact：summary.md 仅在存在/full 模式时用于状态",
+]:
+    if forbidden_compact_finish_requirements(sample):
+        raise SystemExit(f"compact Quick /finish forbidden regex rejected valid wording: {sample}")
+
+forbidden_finish_requirements = forbidden_compact_finish_requirements(finish_section)
+if forbidden_finish_requirements:
+    raise SystemExit(
+        "agents/copilot-prompt.md must not require compact Quick log.md/summary.md during /finish: "
+        + "; ".join(forbidden_finish_requirements)
+    )
+
+apply_section = section_between(
+    prompt_text,
+    "### /apply <变更名> — 执行编码",
+    "### /fix <变更名> [描述] — 增量修正",
+)
+realtime_record_section = section_between(
+    apply_section,
+    "**实时 log 写入（每个 task 后立即执行）：**",
+    "**自动 git commit：**",
+)
+compact_apply_marker = re.compile(
+    r"Quick Compact[^\n]*每个 task[^\n]*(?:只|仅)[^\n]*quick-card\.md",
+    re.IGNORECASE,
+)
+if not compact_apply_marker.search(realtime_record_section):
+    raise SystemExit(
+        "agents/copilot-prompt.md must make quick-card.md the only per-task record source for Quick Compact"
+    )
+full_record_guard = "以下实时写入规则仅适用于 Quick Full/Standard/Complex"
+if full_record_guard not in realtime_record_section:
+    raise SystemExit(
+        "agents/copilot-prompt.md must guard realtime log.md writes behind Quick Full/Standard/Complex or Runtime promotion"
+    )
+guard_offset = realtime_record_section.index(full_record_guard)
+for log_write in re.finditer(r"写入\s*`?log\.md", realtime_record_section):
+    if log_write.start() < guard_offset:
         raise SystemExit(
-            "agents/copilot-prompt.md must not require Quick log.md unconditionally during /finish: "
-            + forbidden
+            "agents/copilot-prompt.md has an unconditional realtime log.md write before the full-record guard"
         )
 
 expected = {"java-spring", "go", "python", "frontend-react"}
