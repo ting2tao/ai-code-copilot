@@ -296,30 +296,53 @@ if missing_finish_rules:
         "agents/copilot-prompt.md missing compact Quick /finish record source semantics: "
         + ", ".join(missing_finish_rules)
     )
-compact_finish_scope = re.compile(r"(?:Quick\s+Compact|compact\s+Quick)", re.IGNORECASE)
+quick_mode_scope = re.compile(
+    r"(?P<compact>Quick\s+Compact|compact\s+Quick)|"
+    r"(?P<full>Quick\s+Full|full\s+Quick|Standard/Complex)",
+    re.IGNORECASE,
+)
 full_record_file = re.compile(r"(?:log\.md|summary\.md)", re.IGNORECASE)
 requirement_word = re.compile(r"(?:必须|存在|required|要求|包含|依赖|需要)", re.IGNORECASE)
 explicit_full_record_negation = re.compile(
-    r"(?:(?:不得要求|无需|不需要|不依赖|禁止要求)\s*`?(?:log\.md|summary\.md)`?"
-    r"(?:\s*或\s*`?(?:log\.md|summary\.md)`?)*|"
-    r"`?(?:log\.md|summary\.md)`?\s*(?:不阻塞|仅在存在/full\s+模式|无需存在|不需要存在|不得存在|不应存在))",
+    r"(?:(?:不得要求|无需|不需要|不依赖|禁止要求|禁止依赖)\s*"
+    r"`?(?:log\.md|summary\.md)`?(?:\s*(?:或|和|、)\s*`?(?:log\.md|summary\.md)`?)*|"
+    r"`?(?:log\.md|summary\.md)`?(?:\s*(?:或|和|、)\s*`?(?:log\.md|summary\.md)`?)*\s*"
+    r"(?:均)?(?:不阻塞|仅在存在/full\s+模式|无需存在|不需要存在|不得存在|不应存在))",
     re.IGNORECASE,
 )
 
 
 def forbidden_compact_finish_requirements(text):
     forbidden = []
-    for line in text.splitlines():
-        if not compact_finish_scope.search(line):
-            continue
-        for clause in re.split(r"[，,；;。]", line):
+    compact_context = False
+
+    def scan_fragment(fragment, source_line):
+        for clause in re.split(r"[，,；;。]", fragment):
             clause_without_negation = explicit_full_record_negation.sub("", clause)
             if (
                 full_record_file.search(clause_without_negation)
                 and requirement_word.search(clause_without_negation)
             ):
-                forbidden.append(line.strip())
-                break
+                forbidden.append(source_line.strip())
+                return
+
+    for line in text.splitlines():
+        if not line.strip():
+            compact_context = False
+            continue
+        mode_matches = list(quick_mode_scope.finditer(line))
+        if not mode_matches and re.match(r"^\s*(?:#{1,6}\s|\*\*[^*]+\*\*\s*$)", line):
+            compact_context = False
+            continue
+
+        cursor = 0
+        for mode_match in mode_matches:
+            if compact_context:
+                scan_fragment(line[cursor:mode_match.start()], line)
+            compact_context = bool(mode_match.group("compact"))
+            cursor = mode_match.end()
+        if compact_context:
+            scan_fragment(line[cursor:], line)
     return forbidden
 
 
@@ -331,6 +354,8 @@ for sample in [
     "compact Quick：要求记录包含 summary.md",
     "Quick Compact：不得要求 review.md，但 log.md 必须存在",
     "Quick Compact：不得要求 review.md 但 log.md 必须存在",
+    "Quick Compact：\n- log.md 必须存在",
+    "Quick Full：\n- log.md 必须存在\nQuick Compact：\n- summary.md required",
 ]:
     if not forbidden_compact_finish_requirements(sample):
         raise SystemExit(f"compact Quick /finish forbidden regex missed regression sample: {sample}")
@@ -339,6 +364,12 @@ for sample in [
     "Standard/Complex：log.md required",
     "Quick Compact：不得要求 log.md 或 summary.md",
     "Quick Compact：summary.md 仅在存在/full 模式时用于状态",
+    "Quick Compact：\n- 禁止依赖 log.md 或 summary.md",
+    "Quick Compact：\n- log.md 和 summary.md 均不得存在",
+    "Quick Compact：\n- 只读取 quick-card.md\nQuick Full：\n- log.md 和 summary.md 必须存在",
+    "compact Quick：\n- 只读取 quick-card.md\nStandard/Complex：\n- log.md required",
+    "Quick Compact：\n- 只读取 quick-card.md\n\nQuick Full：\n- log.md 必须存在",
+    "Quick Compact：\n- 只读取 quick-card.md\n**Quick Full 前置检查**\n- summary.md required",
 ]:
     if forbidden_compact_finish_requirements(sample):
         raise SystemExit(f"compact Quick /finish forbidden regex rejected valid wording: {sample}")
