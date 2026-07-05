@@ -368,6 +368,70 @@ for log_write in re.finditer(r"写入\s*`?log\.md", realtime_record_section):
             "agents/copilot-prompt.md has an unconditional realtime log.md write before the full-record guard"
         )
 
+quick_workflow_errors = []
+if re.search(r"^\*\*所有 task 完成后，回填 log\.md", apply_section, re.MULTILINE):
+    quick_workflow_errors.append(
+        "agents/copilot-prompt.md unconditionally requires log.md when all /apply tasks finish"
+    )
+apply_completion_rules = {
+    "full modes own the final log summary": re.compile(
+        r"所有 task 完成后[^\n]*Quick Full/Standard/Complex[^\n]*log\.md[^\n]*Summary",
+        re.IGNORECASE,
+    ),
+    "compact mode writes its quick-card records": re.compile(
+        r"Quick Compact[^\n]*回填[^\n]*quick-card\.md[^\n]*Execution record[^\n]*Commit record[^\n]*Finish record",
+        re.IGNORECASE,
+    ),
+    "compact mode promotes before full-only fields": re.compile(
+        r"Quick Compact[^\n]*(?:full-only|Summary/open-risks/Knowledge candidates)[^\n]*Runtime promotion",
+        re.IGNORECASE,
+    ),
+}
+for description, pattern in apply_completion_rules.items():
+    if not pattern.search(apply_section):
+        quick_workflow_errors.append(f"agents/copilot-prompt.md missing /apply completion rule: {description}")
+
+spec_reviewer_text = (root / "agents" / "spec-reviewer.md").read_text(encoding="utf-8")
+promotion_trigger_rules = {
+    "more than two files": r"(?:实际|预计)[^\n]*(?:超过|>)[^\n]*2[^\n]*文件",
+    "second purpose or commit": r"第二个目的[^\n]*第二个 commit",
+    "compact exclusion risk": r"Compact 排除风险[^\n]*API/DB/依赖/CI/部署/generated artifact[^\n]*资金/权限/认证/安全/敏感信息/状态机/跨模块业务规则",
+    "Reverse Sync scope expansion": r"Reverse Sync[^\n]*(?:扩大|变化)[^\n]*范围",
+    "Important or Critical correction": r"Important/Critical correction",
+    "durable knowledge or open risk": r"durable knowledge[^\n]*open risk",
+}
+for description, pattern in promotion_trigger_rules.items():
+    if not re.search(pattern, spec_reviewer_text, re.IGNORECASE):
+        quick_workflow_errors.append(
+            f"agents/spec-reviewer.md missing Runtime promotion trigger: {description}"
+        )
+
+promotion_evidence_marker = re.search(
+    r"Runtime promotion[^\n]*(?:证据|顺序)",
+    spec_reviewer_text,
+    re.IGNORECASE,
+)
+if not promotion_evidence_marker:
+    quick_workflow_errors.append("agents/spec-reviewer.md must inspect Runtime promotion evidence and order")
+else:
+    promotion_sequence = [
+        "stop edits",
+        "create log.md and summary.md",
+        "copy existing evidence from quick-card.md",
+        "set recordMode: full",
+        "recompute confirmation hash",
+        "request confirmation if hash changed",
+        "resume only after the full record is valid",
+    ]
+    sequence_positions = [spec_reviewer_text.find(step, promotion_evidence_marker.start()) for step in promotion_sequence]
+    if any(position < 0 for position in sequence_positions) or sequence_positions != sorted(sequence_positions):
+        quick_workflow_errors.append(
+            "agents/spec-reviewer.md Runtime promotion evidence order must match agents/copilot-prompt.md"
+        )
+
+if quick_workflow_errors:
+    raise SystemExit("Quick workflow consistency check failed:\n- " + "\n- ".join(quick_workflow_errors))
+
 expected = {"java-spring", "go", "python", "frontend-react"}
 actual = {p.name for p in pack_root.iterdir() if p.is_dir()}
 missing = expected - actual

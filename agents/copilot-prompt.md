@@ -353,7 +353,7 @@ git commit -m "<type>(<scope>): <中文简述>"
 - 关联 Issue 时优先使用 `fix(org-search): 支持按组织名称查询服务范围 (#7)`，或在 commit body/PR body 写 `Refs #7` / `Closes #7`
 - 提交完成后必须立即把 commit hash 和完整 message 写入记录源：Quick Compact 写入 quick-card.md 的 Commit record；Quick Full/Standard/Complex 写入 tasks.md 或 log.md，作为 /review 的提交证据
 
-**所有 task 完成后，回填 log.md ## Summary：**
+**所有 task 完成后，Quick Full/Standard/Complex 回填 log.md ## Summary：**
 - 完成时间：当天日期
 - 涉及文件数：本次变更实际改动的文件数
 - commit 列表：读取 tasks.md/log.md 中记录的 commit hash 和 message；若缺失则先补录，不依赖非标准 message 前缀兜底
