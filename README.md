@@ -180,7 +180,7 @@ Goal: write the contract for what will change and how.
   - current code and feature list
   - change scope and risks
   - technical decisions and open questions
-- Produce:
+- Produce five files:
   - `spec.md`: requirement contract
   - `tasks.md`: implementation plan with file paths and function signatures
   - `test-spec.md`: P0/P1/P2 test strategy and verification commands
@@ -197,7 +197,7 @@ Goal: implement task by task, with evidence after each step.
 - Execute tasks one by one, or in a controlled batch when requested.
 - After each task, show verifiable evidence such as build output, test output, or curl results.
 - Avoid evidence-free claims such as "should be fine".
-- Keep `log.md` updated with decisions, issues, and knowledge discoveries.
+- Write decisions, issues, and knowledge discoveries to the current record source: Quick Compact uses `quick-card.md`; Quick Full/Standard/Complex use `log.md` and `summary.md`.
 - Create commits such as `feat(scope): concise description` or `fix(scope): concise description`.
 
 Branches use the strict `type/scope` form. Commit messages use the strict Conventional Commits form `type(scope): description`. Put Issue references in the body or PR.
@@ -239,7 +239,7 @@ Goal: verify, push, create a PR, and close only the work Issue with `Closes #<wo
 ### 7. `/archive` - Knowledge Capture
 
 - In Codex, trigger this flow with `archive <change>` or natural language. 不要输入 /archive because Codex uses that slash command to archive the current session.
-- Extract knowledge entries from `log.md`.
+- Select the source by `recordMode`: extract from `quick-card.md` for Quick Compact, or from `log.md` for Quick Full/Standard/Complex.
 - Confirm each entry before writing it to `knowledge/`.
 - Move the change directory to `changes/archives/`.
 - Load relevant knowledge automatically in future proposals.

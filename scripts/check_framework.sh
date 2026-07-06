@@ -114,70 +114,75 @@ workflow_docs = [
     "AGENTS.md",
     "docs/ai-code-copilot-overview.md",
 ]
-workflow_doc_markers = [
-    "Quick Compact",
-    "Quick Full",
-    "type/scope",
-    "type(scope): description",
-    "parentIssue",
-    "workIssue",
-    "Closes #<workIssue>",
-    "Refs #<parentIssue>",
-    "finishMode",
-    "issueWhenMissing",
-]
-for rel in workflow_docs:
-    text = (root / rel).read_text(encoding="utf-8")
-    missing_markers = [marker for marker in workflow_doc_markers if marker not in text]
-    if missing_markers:
-        raise SystemExit(
-            f"{rel} missing adaptive Quick/Issue workflow markers: "
-            + ", ".join(missing_markers)
-        )
 
-workflow_doc_contracts = {
-    "README.md": {
-        "compact record source": ["Quick Compact", "quick-card.md", "single record source"],
-        "full record sources": ["Quick Full", "quick-card.md", "log.md", "summary.md"],
-        "mandatory work issue": ["confirmed", "workIssue", "automatically create", "reuse"],
-        "parent issue discovery": ["parentIssue", "overall requirement", "sub-issue"],
-        "finish policy": ["Closes #<workIssue>", "Refs #<parentIssue>", "finishMode"],
-        "obsolete issue policy": ["issueWhenMissing", "obsolete", "ignored"],
-    },
-    "README-CN.md": {
-        "compact record source": ["Quick Compact", "quick-card.md", "唯一记录源"],
-        "full record sources": ["Quick Full", "quick-card.md", "log.md", "summary.md"],
-        "mandatory work issue": ["确认", "workIssue", "自动创建", "复用"],
-        "parent issue discovery": ["parentIssue", "整体需求", "sub-issue"],
-        "finish policy": ["Closes #<workIssue>", "Refs #<parentIssue>", "finishMode"],
-        "obsolete issue policy": ["issueWhenMissing", "废弃", "忽略"],
-    },
-    "AGENTS.md": {
-        "compact record source": ["Quick Compact", "quick-card.md", "唯一记录源"],
-        "full record sources": ["Quick Full", "quick-card.md", "log.md", "summary.md"],
-        "mandatory work issue": ["确认", "workIssue", "自动创建", "复用"],
-        "parent issue discovery": ["parentIssue", "整体需求", "sub-issue"],
-        "finish policy": ["Closes #<workIssue>", "Refs #<parentIssue>", "finishMode"],
-        "obsolete issue policy": ["issueWhenMissing", "废弃", "忽略"],
-    },
-    "docs/ai-code-copilot-overview.md": {
-        "compact record source": ["Quick Compact", "quick-card.md", "唯一记录源"],
-        "full record sources": ["Quick Full", "quick-card.md", "log.md", "summary.md"],
-        "mandatory work issue": ["确认", "workIssue", "自动创建", "复用"],
-        "parent issue discovery": ["parentIssue", "整体需求", "sub-issue"],
-        "finish policy": ["Closes #<workIssue>", "Refs #<parentIssue>", "finishMode"],
-        "obsolete issue policy": ["issueWhenMissing", "废弃", "忽略"],
-    },
+def extract_markdown_section(text, heading, next_heading_pattern):
+    match = re.search(
+        rf"^{re.escape(heading)}\s*$\n(?P<body>.*?)(?=^{next_heading_pattern}|\Z)",
+        text,
+        re.MULTILINE | re.DOTALL,
+    )
+    return match.group("body") if match else ""
+
+
+workflow_contract_sections = {
+    "README.md": ("### Quick record modes and Issue contract", r"## "),
+    "README-CN.md": ("### Quick 记录模式与 Issue 合同", r"## "),
+    "AGENTS.md": ("## 核心设计原则", r"## "),
+    "docs/ai-code-copilot-overview.md": ("## Quick 与 GitHub 合同", r"## "),
 }
-for rel in workflow_docs:
+workflow_section_markers = {
+    "README.md": [
+        "Quick Compact", "single record source", "Quick Full", "log.md", "summary.md",
+        "parentIssue", "overall requirement", "workIssue", "automatically create", "reuse",
+        "sub-issue", "type/scope", "type(scope): description", "Closes #<workIssue>",
+        "Refs #<parentIssue>", "finishMode", "issueWhenMissing", "obsolete", "ignored",
+    ],
+    "README-CN.md": [
+        "Quick Compact", "唯一记录源", "Quick Full", "log.md", "summary.md",
+        "parentIssue", "整体需求", "workIssue", "自动创建", "复用", "sub-issue",
+        "type/scope", "type(scope): description", "Closes #<workIssue>",
+        "Refs #<parentIssue>", "finishMode", "issueWhenMissing", "废弃", "忽略",
+    ],
+    "AGENTS.md": [
+        "Quick Compact", "唯一记录源", "Quick Full", "log.md", "summary.md",
+        "parentIssue", "整体需求", "workIssue", "自动创建", "复用", "sub-issue",
+        "type/scope", "type(scope): description", "Closes #<workIssue>",
+        "Refs #<parentIssue>", "finishMode", "issueWhenMissing", "废弃", "忽略",
+    ],
+    "docs/ai-code-copilot-overview.md": [
+        "Quick Compact", "唯一记录源", "Quick Full", "log.md", "summary.md",
+        "parentIssue", "整体需求", "workIssue", "自动创建", "复用", "sub-issue",
+        "type/scope", "type(scope): description", "Closes #<workIssue>",
+        "Refs #<parentIssue>", "finishMode", "issueWhenMissing", "废弃", "忽略",
+    ],
+}
+workflow_sections = {}
+for rel, (heading, next_heading_pattern) in workflow_contract_sections.items():
     text = (root / rel).read_text(encoding="utf-8")
-    lowered = text.lower()
-    for contract, markers in workflow_doc_contracts[rel].items():
-        missing_markers = [marker for marker in markers if marker.lower() not in lowered]
-        if missing_markers:
-            raise SystemExit(
-                f"{rel} missing {contract} contract: " + ", ".join(missing_markers)
-            )
+    section = extract_markdown_section(text, heading, next_heading_pattern)
+    if not section:
+        raise SystemExit(f"{rel} missing workflow contract section: {heading}")
+    workflow_sections[rel] = section
+    missing_markers = [marker for marker in workflow_section_markers[rel] if marker not in section]
+    if missing_markers:
+        raise SystemExit(f"{rel} workflow contract section missing: " + ", ".join(missing_markers))
+
+
+def invalid_closes_targets(text):
+    targets = re.findall(r"Closes\s+#(?P<target><[^>\n]+>|\d+|[A-Za-z][A-Za-z0-9_-]*)", text)
+    return [target for target in targets if target != "<workIssue>"]
+
+
+negative_closes_examples = ["Closes #123", "Closes #<parentIssue>", "Closes #ID"]
+for example in negative_closes_examples:
+    if invalid_closes_targets(example) != [example.removeprefix("Closes #")]:
+        raise SystemExit(f"Closes target validator failed negative fixture: {example}")
+if invalid_closes_targets("Closes #<workIssue>"):
+    raise SystemExit("Closes target validator rejected the workIssue target")
+for rel in workflow_docs:
+    invalid_targets = invalid_closes_targets((root / rel).read_text(encoding="utf-8"))
+    if invalid_targets:
+        raise SystemExit(f"{rel} contains forbidden Closes targets: " + ", ".join(invalid_targets))
 
 compact_eligibility_markers = {
     "README.md": ["executable verification", "direct rollback"],
@@ -186,8 +191,7 @@ compact_eligibility_markers = {
     "docs/ai-code-copilot-overview.md": ["可执行验证", "直接回滚"],
 }
 for rel, markers in compact_eligibility_markers.items():
-    text = (root / rel).read_text(encoding="utf-8")
-    missing_markers = [marker for marker in markers if marker not in text]
+    missing_markers = [marker for marker in markers if marker not in workflow_sections[rel]]
     if missing_markers:
         raise SystemExit(
             f"{rel} missing Quick Compact verification/rollback eligibility: "
@@ -220,11 +224,6 @@ for rel, markers in finish_record_markers.items():
     missing_markers = [marker for marker in markers if marker not in body]
     if missing_markers:
         raise SystemExit(f"{rel} /finish missing mode-aware record contract: " + ", ".join(missing_markers))
-
-for rel in workflow_docs:
-    text = (root / rel).read_text(encoding="utf-8")
-    if "Closes #ID" in text:
-        raise SystemExit(f"{rel} must not retain generic Closes #ID under the workIssue contract")
 
 obsolete_log_claims = {
     "README.md": ["each change keeps `log.md`", "Record finish results in `log.md`"],
@@ -267,6 +266,34 @@ for rel, markers in readme_continuous_record_contracts.items():
     missing_markers = [marker for marker in markers if marker not in principle_line]
     if missing_markers:
         raise SystemExit(f"{rel} continuous-record principle missing mode split: " + ", ".join(missing_markers))
+
+archive_record_contracts = {
+    "README.md": ["Quick Compact", "quick-card.md", "Quick Full/Standard/Complex", "log.md"],
+    "README-CN.md": ["Quick Compact", "quick-card.md", "Quick Full/Standard/Complex", "log.md"],
+}
+for rel, markers in archive_record_contracts.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    archive_match = re.search(r"^### 7\..*?/archive.*?$(?P<body>.*?)(?=^## )", text, re.MULTILINE | re.DOTALL)
+    if not archive_match:
+        raise SystemExit(f"{rel} missing /archive documentation section")
+    body = archive_match.group("body")
+    missing_markers = [marker for marker in markers if marker not in body]
+    if missing_markers:
+        raise SystemExit(f"{rel} /archive missing recordMode source split: " + ", ".join(missing_markers))
+
+readme_propose_output_contracts = {
+    "README.md": ["Produce five files", "spec.md", "tasks.md", "test-spec.md", "log.md", "summary.md"],
+    "README-CN.md": ["输出五个文件", "spec.md", "tasks.md", "test-spec.md", "log.md", "summary.md"],
+}
+for rel, markers in readme_propose_output_contracts.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    propose_match = re.search(r"^### 2\..*?/propose.*?$(?P<body>.*?)(?=^### 3\.)", text, re.MULTILINE | re.DOTALL)
+    if not propose_match:
+        raise SystemExit(f"{rel} missing /propose documentation section")
+    body = propose_match.group("body")
+    missing_markers = [marker for marker in markers if marker not in body]
+    if missing_markers:
+        raise SystemExit(f"{rel} /propose output list must stay synchronized: " + ", ".join(missing_markers))
 
 project_config = json.loads((root / "config" / "project-config.json").read_text(encoding="utf-8"))
 github_workflow = project_config.get("githubWorkflow", {})

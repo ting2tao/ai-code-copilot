@@ -180,7 +180,7 @@ AI：好的，我来提两个方案...
   - 代码现状 + 功能点清单
   - 变更范围 + 风险点
   - 技术决策 + 待澄清项
-- 输出四个文件：
+- 输出五个文件：
   - `spec.md` — 需求合同（要做什么）
   - `tasks.md` — 执行计划（精确到文件路径和函数签名）
   - `test-spec.md` — 测试策略草案（P0/P1/P2 + 验证命令）
@@ -197,7 +197,7 @@ AI：好的，我来提两个方案...
 - 逐 task 执行（也可说"批量跑"）
 - 每个 task 完成后必须展示：编译输出 / 测试输出 / curl 结果
 - 禁止"应该没问题"等无证据声明
-- 实时写入 log.md（决策、踩坑、知识发现）
+- 按当前模式写入决策、踩坑和知识发现：Quick Compact 写 `quick-card.md`；Quick Full/Standard/Complex 写 `log.md` 与 `summary.md`
 - 自动 git commit：`feat(scope): 中文简述` / `fix(scope): 中文简述`
 
 **Git 规范：** 分支严格使用 `type/scope`；commit message 严格使用 `type(scope): description`。Issue 信息放在正文或 PR。
@@ -235,7 +235,7 @@ Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再
 ### 7. /archive — 知识沉淀
 
 - 在 Codex 中请用 `archive <变更名>`、`归档 <变更名>` 或自然语言触发；不要输入 /archive，它是 Codex 客户端的“归档当前会话”命令
-- 从 log.md 提取知识条目
+- 按 `recordMode` 选择记录源：Quick Compact 从 `quick-card.md` 提取，Quick Full/Standard/Complex 从 `log.md` 提取
 - 逐条确认是否沉淀到 `knowledge/`
 - 变更目录移至 `changes/archives/`
 - 下次新需求，相关知识自动加载
