@@ -187,12 +187,21 @@ def invalid_closing_references(text, allow_negative_context=False):
         invalid.extend(
             f"{match.group('keyword')} #{match.group('target')}"
             for match in matches
-            if match.group("target") != "<workIssue>"
+            if not (
+                match.group("keyword").lower() == "closes"
+                and match.group("target") == "<workIssue>"
+            )
         )
     return invalid
 
 
-negative_closes_examples = ["Closes #123", "Fixes #<parentIssue>", "Resolves #ID"]
+negative_closes_examples = [
+    "Closes #123",
+    "Fixes #<parentIssue>",
+    "Resolves #ID",
+    "Fixes #<workIssue>",
+    "Resolves #<workIssue>",
+]
 for example in negative_closes_examples:
     if invalid_closing_references(example) != [example]:
         raise SystemExit(f"Closes target validator failed negative fixture: {example}")
