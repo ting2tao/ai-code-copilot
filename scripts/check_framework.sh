@@ -236,6 +236,38 @@ for rel, claims in obsolete_log_claims.items():
     if found:
         raise SystemExit(f"{rel} retains all-modes-log.md claims: " + ", ".join(found))
 
+readme_apply_contracts = {
+    "README.md": ["Quick Compact", "quick-card.md", "Quick Full/Standard/Complex", "log.md", "summary.md"],
+    "README-CN.md": ["Quick Compact", "quick-card.md", "Quick Full/Standard/Complex", "log.md", "summary.md"],
+}
+for rel, markers in readme_apply_contracts.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    apply_row = next((line for line in text.splitlines() if line.startswith("| `/apply`")), "")
+    missing_markers = [marker for marker in markers if marker not in apply_row]
+    if missing_markers:
+        raise SystemExit(f"{rel} /apply command row missing record-source split: " + ", ".join(missing_markers))
+
+readme_continuous_record_contracts = {
+    "README.md": ["Current-mode record source", "Quick Compact", "quick-card.md", "Quick Full/Standard/Complex", "log.md", "summary.md"],
+    "README-CN.md": ["当前模式记录源", "Quick Compact", "quick-card.md", "Quick Full/Standard/Complex", "log.md", "summary.md"],
+}
+for rel, markers in readme_continuous_record_contracts.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    principle_line = next(
+        (
+            line
+            for line in text.splitlines()
+            if "**Continuous log**" in line
+            or "**Current-mode record source**" in line
+            or "**全程记录**" in line
+            or "**当前模式记录源**" in line
+        ),
+        "",
+    )
+    missing_markers = [marker for marker in markers if marker not in principle_line]
+    if missing_markers:
+        raise SystemExit(f"{rel} continuous-record principle missing mode split: " + ", ".join(missing_markers))
+
 project_config = json.loads((root / "config" / "project-config.json").read_text(encoding="utf-8"))
 github_workflow = project_config.get("githubWorkflow", {})
 if "issueWhenMissing" in github_workflow:

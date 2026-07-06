@@ -250,7 +250,7 @@ Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再
 | `/init` | 初始化项目、分析工程结构、setup | 自动识别你的项目，配置协作环境 | `.ai_code_copilot/` 目录 |
 | `/brainstorm` | 先讨论一下、帮我分析方案、设计探索、方案对比 | 先聊清楚再动手，避免写错方向 | `design-brief.md` |
 | `/propose` | 帮我实现、加功能、加接口、优化、重构 | 写规格说明书，明确改什么、怎么改 | `spec.md` + `tasks.md` |
-| `/apply` | 开始写代码、继续执行 | 按 spec 逐个 task 编码，每个都有证据验证 | 代码 + `log.md` |
+| `/apply` | 开始写代码、继续执行 | 按合同逐个 task 编码，每个都有证据验证 | Quick Compact：代码 + `quick-card.md`；Quick Full/Standard/Complex：代码 + `log.md`/`summary.md` |
 | `/review` | 帮我看看代码、review 一下 | 先查有没有按 spec 实现，再查代码质量 | 审查报告 |
 | `/fix` | 修 bug、改一下 xxx、排查问题 | review 发现问题就修，修完再审 | 修复代码 |
 | `/fix-ci` | CI 报错、Actions 失败、流水线失败、修 CI | 基于 CI 日志做最小修复，并验证失败命令重新通过 | 修复代码 + `log.md` |
@@ -269,7 +269,7 @@ Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再
 5. **两阶段评审**：spec-reviewer 审需求合规，code-quality-reviewer 审代码质量，职责隔离
 6. **完成即验证**：/fix、/apply 完成后必须展示编译和测试输出，禁止无证据声明"好了"
 7. **GitHub 可统计**：/finish、PR 模板和 github-metrics 规则让 Issue、测试、CI、风险信息可被 GitHub/API/Actions 采集
-8. **全程记录**：log.md 自动维护过程记录、知识发现、review 结论、遗留问题
+8. **当前模式记录源**：Quick Compact 在 `quick-card.md` 维护过程、证据和 review 结论；Quick Full/Standard/Complex 使用 `log.md`/`summary.md`
 9. **知识飞轮**：/finish 可提前捕获知识候选，/archive 仍是推荐的清理和深度沉淀路径
 
 ---

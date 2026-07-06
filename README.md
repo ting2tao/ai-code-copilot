@@ -252,7 +252,7 @@ Goal: verify, push, create a PR, and close only the work Issue with `Closes #<wo
 | `/init` | initialize project, analyze structure, setup | Detect the project and configure collaboration context | `.ai_code_copilot/` |
 | `/brainstorm` | discuss first, analyze options, design exploration | Clarify direction before writing specs | `design-brief.md` |
 | `/propose` | implement this, add feature, add API, optimize, refactor | Define what changes and how | `spec.md` + `tasks.md` |
-| `/apply` | start coding, continue implementation | Implement task by task with verification evidence | code + `log.md` |
+| `/apply` | start coding, continue implementation | Implement task by task with verification evidence | Quick Compact: code + `quick-card.md`; Quick Full/Standard/Complex: code + `log.md`/`summary.md` |
 | `/review` | review this, check code | Check spec compliance and code quality | review report |
 | `/fix` | fix bug, change this, investigate issue | Fix review findings or bugs, then review again | code fix |
 | `/fix-ci` | CI failed, Actions failed, fix CI | Repair CI failures with local reproduction where possible | code fix + `log.md` |
@@ -269,7 +269,7 @@ Goal: verify, push, create a PR, and close only the work Issue with `Closes #<wo
 5. **Two-stage review**: spec reviewer checks requirement compliance; code-quality reviewer checks implementation quality.
 6. **Evidence before claims**: `/fix` and `/apply` must show build/test output before claiming success.
 7. **GitHub-measurable work**: `/finish`, PR templates, and GitHub metrics rules make issues, tests, CI, and risk data collectible.
-8. **Continuous log**: `log.md` tracks decisions, discoveries, review results, and open issues.
+8. **Current-mode record source**: Quick Compact keeps decisions, evidence, and review results in `quick-card.md`; Quick Full/Standard/Complex use `log.md`/`summary.md`.
 9. **Knowledge flywheel**: `/finish` can capture knowledge candidates early; `/archive` remains the recommended cleanup and deeper knowledge path.
 
 ## Quick Start
