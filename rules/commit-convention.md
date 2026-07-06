@@ -10,9 +10,9 @@ GitHub 指标统计口径见 `github-metrics.md`；本文件只定义协作、co
 
 ### GitHub 官方可识别
 
-- PR 或 commit 中使用 closing keywords 关联并关闭 Issue，例如 `Closes #7`、`Fixes #7`、`Resolves #7`。
-- closing keywords 只有在合并到默认分支时才会自动关闭 Issue。
-- PR 可以手动或通过关键字关联 Issue；本项目只用 `Closes #<workIssue>` 关闭工作票，用 `Refs #<parentIssue>` 引用父需求。
+- closing keyword 只允许在 PR body 中用于当前合同的工作票，固定写作 `Closes #<workIssue>`；合并到默认分支时关闭该 work Issue。
+- `parentIssue` 只能使用 `Refs #<parentIssue>` 引用，不得使用任何 closing keyword。
+- 当前合同不使用 `Fixes` 或 `Resolves`，也不允许用数字示例替代已解析的 `workIssue` 占位符。
 
 ### 社区通用规范
 

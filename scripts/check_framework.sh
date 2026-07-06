@@ -113,6 +113,7 @@ workflow_docs = [
     "README-CN.md",
     "AGENTS.md",
     "docs/ai-code-copilot-overview.md",
+    "rules/commit-convention.md",
 ]
 
 def extract_markdown_section(text, heading, next_heading_pattern):
@@ -168,21 +169,42 @@ for rel, (heading, next_heading_pattern) in workflow_contract_sections.items():
         raise SystemExit(f"{rel} workflow contract section missing: " + ", ".join(missing_markers))
 
 
-def invalid_closes_targets(text):
-    targets = re.findall(r"Closes\s+#(?P<target><[^>\n]+>|\d+|[A-Za-z][A-Za-z0-9_-]*)", text)
-    return [target for target in targets if target != "<workIssue>"]
+closing_reference_pattern = re.compile(
+    r"(?P<keyword>Closes|Fixes|Resolves)\s+#(?P<target><[^>\n]+>|\d+|[A-Za-z][A-Za-z0-9_-]*)",
+    re.IGNORECASE,
+)
+negative_contract_markers = [
+    "不得", "禁止", "废弃", "忽略", "never use", "must not", "do not use", "obsolete", "ignored",
+]
 
 
-negative_closes_examples = ["Closes #123", "Closes #<parentIssue>", "Closes #ID"]
+def invalid_closing_references(text, allow_negative_context=False):
+    invalid = []
+    for line in text.splitlines():
+        matches = list(closing_reference_pattern.finditer(line))
+        if allow_negative_context and any(marker in line.lower() for marker in negative_contract_markers):
+            continue
+        invalid.extend(
+            f"{match.group('keyword')} #{match.group('target')}"
+            for match in matches
+            if match.group("target") != "<workIssue>"
+        )
+    return invalid
+
+
+negative_closes_examples = ["Closes #123", "Fixes #<parentIssue>", "Resolves #ID"]
 for example in negative_closes_examples:
-    if invalid_closes_targets(example) != [example.removeprefix("Closes #")]:
+    if invalid_closing_references(example) != [example]:
         raise SystemExit(f"Closes target validator failed negative fixture: {example}")
-if invalid_closes_targets("Closes #<workIssue>"):
+if invalid_closing_references("Closes #<workIssue>"):
     raise SystemExit("Closes target validator rejected the workIssue target")
 for rel in workflow_docs:
-    invalid_targets = invalid_closes_targets((root / rel).read_text(encoding="utf-8"))
-    if invalid_targets:
-        raise SystemExit(f"{rel} contains forbidden Closes targets: " + ", ".join(invalid_targets))
+    invalid_references = invalid_closing_references(
+        (root / rel).read_text(encoding="utf-8"),
+        allow_negative_context=True,
+    )
+    if invalid_references:
+        raise SystemExit(f"{rel} contains forbidden closing references: " + ", ".join(invalid_references))
 
 compact_eligibility_markers = {
     "README.md": ["executable verification", "direct rollback"],
