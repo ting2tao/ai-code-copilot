@@ -256,6 +256,20 @@ for rel, markers in adaptive_quick_markers.items():
     if missing:
         raise SystemExit(f"{rel} missing adaptive Quick markers: {missing}")
 
+compact_evidence_markers = {
+    "agents/spec-reviewer.md": [
+        "compact Quick", "Execution record", "Commit record", "Review record",
+    ],
+    "agents/copilot-prompt.md": [
+        "closeTarget: workIssue", "parentIssue 永不自动关闭", "workIssue: pending",
+    ],
+}
+for rel, markers in compact_evidence_markers.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    missing = [marker for marker in markers if marker not in text]
+    if missing:
+        raise SystemExit(f"{rel} missing compact evidence marker: {missing}")
+
 def section_between(text, start, end):
     try:
         return text.split(start, 1)[1].split(end, 1)[0]

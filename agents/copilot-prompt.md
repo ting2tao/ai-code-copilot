@@ -59,6 +59,7 @@
 - **Quick Compact**：仅当预计不超过 2 个文件、单一目的、单 commit、不改 API/DB/依赖/CI/部署/generated artifact，不涉及资金/权限/认证/安全/敏感信息/状态机/跨模块业务规则，并且有可执行验证与直接回滚时使用。`quick-card.md` front matter 必须写 `recordMode: compact`。
 - **Quick Full**：任一 Compact 条件不满足或无法确认时使用。`quick-card.md` front matter 必须写 `recordMode: full`，并补齐 `log.md` 与 `summary.md`。
 - Compact 是最小记录模式，不是低标准模式；确认范围、Agent Harness、Goal Contract、风险/回滚、验证证据和 commit 证据仍必须可审查。
+- Quick 合同初始化必须显式写入 `workIssue: pending` 与 `closeTarget: workIssue`；确认后解析并持久化 work Issue。`parentIssue 永不自动关闭`，只允许在 PR 中使用 `Refs` 引用。
 
 不确定档位时，默认 Standard。
 
@@ -404,9 +405,9 @@ Quick Compact 全部 task 完成后，回填 quick-card.md 的 Execution record�
 1. 修改代码
 2. 执行编译检查（project-context.md 中的命令）→ 展示输出
 3. 执行相关测试 → 展示输出
-4. 将验证证据写入记录源（Quick Compact 写入 quick-card.md；Quick Full/Standard/Complex 写入 `log.md ## Verification log`，command + exit code + output 摘要）；未写入则不得声明修复完成
+4. 将验证证据写入记录源（Quick Compact 把 command、exit code、output 摘要和 Loop Evidence 追加到 quick-card.md 的 `Execution record`；Quick Full/Standard/Complex 写入 `log.md ## Verification log`）；未写入则不得声明修复完成
 5. 同步更新 spec.md / tasks.md / test-spec.md / log.md（Quick Compact 同步 quick-card.md；Quick Full 同步 quick-card.md / log.md / summary.md）
-6. git commit
+6. git commit；Quick Compact 立即把 hash 和完整 message 追加到 quick-card.md 的 `Commit record`，Quick Full/Standard/Complex 写入 tasks.md 或 log.md
 7. 此时才可说"修复完成"
 
 ### /fix-ci <变更名> — CI 失败修复闭环
@@ -509,7 +510,7 @@ Step 5 · 验证与记录
 ```
 
 审查完成后（无论 PASS/FAIL / NEEDS_INFO）：
-  将审查结论写入记录源：Quick Compact 写入 .ai_code_copilot/changes/<变更名>/quick-card.md 的 Review record；Quick Full/Standard/Complex 写入 log.md 的 ## Review outcomes 章节：
+  将审查结论写入记录源：Quick Compact 把 Spec Compliance、Code Quality、GitHub Readiness 和 open risks 追加到 .ai_code_copilot/changes/<变更名>/quick-card.md 的 Review record；Quick Full/Standard/Complex 写入 log.md 的 ## Review outcomes 章节：
   - Spec Compliance：结论（PASS/FAIL）+ 问题列表
   - Code Quality：结论（PASS/FAIL）+ Critical/Important 问题列表
   - GitHub Readiness：READY / NEEDS_INFO + 缺失字段列表
@@ -592,7 +593,7 @@ Codex 兼容入口：在 Codex 中优先输入 `finish <变更名>`、`完成收
    - AI Collaboration
    - `Closes #<workIssue>`，且唯一 closeTarget 为 workIssue
    - parentIssue 非 none 时追加 `Refs #<parentIssue>`；parentIssue 永不使用 closing keyword
-6. 将 PR URL、parentIssue、workIssue、issueRelationship、closeTarget、验证命令、验证结果、分支、远端写入当前记录源：compact Quick 写回 quick-card.md ## Finish record；Quick Full/Standard/Complex 写回 log.md `## /finish 记录`
+6. 将 PR URL、parentIssue、workIssue、issueRelationship、closeTarget、验证命令、验证结果、分支、远端写入当前记录源：compact Quick 写回并追加到 quick-card.md `## Finish record`；Quick Full/Standard/Complex 写回 log.md `## /finish 记录`
 7. 更新运行时状态：Quick Compact 更新 quick-card.md front matter/status 与 `## Finish record`；Quick Full/Standard/Complex 更新 `summary.md`：`status: finished`，保留 spec-hash/goal/scope/open-risks/loaded-knowledge；SessionStart 看到 finished 后不再注入为 active change
 8. 轻量知识提取（不等同于完整归档）：
    - Quick Compact 若 quick-card.md 无 durable knowledge/open risk，记录跳过；若存在则先 Runtime promotion，再扫描 log.md

@@ -9,7 +9,7 @@
 
 1. Standard/Complex：读取 `.ai_code_copilot/changes/<变更名>/spec.md`
 2. Quick：读取 `.ai_code_copilot/changes/<变更名>/quick-card.md`，先检查 front matter 的 `recordMode`
-   - `recordMode: compact`：按 compact Quick 审查，quick-card.md 是唯一证据源；从 quick-card.md 读取 execution/commit/review/Loop Evidence、目标、涉及文件、非目标、验收方式、Agent Harness、Goal Contract、Domain Check（如适用）、风险与回滚
+   - `recordMode: compact`：按 compact Quick 审查，quick-card.md 是唯一证据源；从 quick-card.md 的 `Execution record`、`Commit record`、`Review record` 和 Loop Evidence 读取执行、提交、审查与循环证据，同时核验目标、涉及文件、非目标、验收方式、Agent Harness、Goal Contract、Domain Check（如适用）、风险与回滚
    - `recordMode: full`：按 full Quick 审查；从 quick-card.md 读取目标与范围，从 log.md 读取 execution/commit/review/Loop Evidence 和验证记录
 3. 检查 compact Quick 的 Runtime promotion 生命周期：对照实际 diff、commit、quick-card 记录和本次审查发现；若实际或预计改动文件数超过 2 个文件、出现第二个目的或第二个 commit、发现 Compact 排除风险（API/DB/依赖/CI/部署/generated artifact、资金/权限/认证/安全/敏感信息/状态机/跨模块业务规则）、Reverse Sync 扩大已确认范围、review 需要 Important/Critical correction、出现 durable knowledge 或 open risk，必须先 promotion，未升级仍保持 `recordMode: compact` 时判定 FAIL
    - 检查 Runtime promotion 证据与顺序，至少与主提示词一致：`stop edits -> create log.md and summary.md -> copy existing evidence from quick-card.md -> set recordMode: full -> recompute confirmation hash -> request confirmation if hash changed -> resume only after the full record is valid`

@@ -77,21 +77,28 @@ branch: "type/scope"
 ## Execution record
 
 > compact 模式这些表是唯一证据源；full 模式证据写入 log.md 和 summary.md，Quick Card 只保留索引与摘要。
+> 每次 `/apply` 或 `/fix` 都追加实际 command、exit code、output summary 与对应 Loop Evidence。
 
 | command | exit code | output summary | Loop Evidence |
 |---|---:|---|---|
 
 ## Commit record
 
+> 每次提交后立即追加实际 hash 与完整的 `type(scope): description` message。
+
 | hash | message |
 |---|---|
 
 ## Review record
 
+> `/review` 追加 Spec Compliance、Code Quality、GitHub Readiness 与未解决风险；compact 收尾要求前两项均为 PASS。
+
 | Spec Compliance | Code Quality | GitHub Readiness | open risks |
 |---|---|---|---|
 
 ## Finish record
+
+> `/finish` 追加 PR、验证结果、分支/远端和 closing statement；只允许 `Closes #workIssue`，parentIssue 仅使用 `Refs`。
 
 | PR | base | remote | closing statement | parent reference | final validation |
 |---|---|---|---|---|---|
