@@ -180,7 +180,7 @@ output:
 
 ## /finish 记录
 
-> `/finish` 用于 GitHub 收尾：验证、push、创建 PR，并用 `Closes #workIssue` 关闭工作 Issue；父 Issue 只用 `Refs` 引用。
+> `/finish` 用于 GitHub 收尾：验证、push、创建 PR，并用 `Closes #<workIssue>` 关闭工作 Issue；父 Issue 只用 `Refs #<parentIssue>` 引用。
 
 | 字段 | 内容 |
 |------|------|
@@ -193,8 +193,8 @@ output:
 | 远端 | origin |
 | PR | {PR URL 或"未创建"} |
 | Base branch | main |
-| closing statement | {Closes #workIssue} |
-| parent reference | {Refs #parentIssue 或"none"} |
+| closing statement | {Closes #<workIssue>} |
+| parent reference | {Refs #<parentIssue> 或"none"} |
 | 验证命令 | `{command}` |
 | 验证结果 | {实际输出摘要 + exit code} |
 

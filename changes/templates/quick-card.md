@@ -98,7 +98,7 @@ branch: "type/scope"
 
 ## Finish record
 
-> `/finish` 追加 PR、验证结果、分支/远端和 closing statement；只允许 `Closes #workIssue`，parentIssue 仅使用 `Refs`。
+> `/finish` 追加 PR、验证结果、分支/远端和 closing statement；只允许 `Closes #<workIssue>`，parentIssue 仅使用 `Refs #<parentIssue>`。
 
 | PR URL | base | remote | Closes workIssue | Refs parentIssue | final validation |
 |---|---|---|---|---|---|

@@ -566,6 +566,25 @@ for rel, markers in issue_contract_markers.items():
     if missing:
         raise SystemExit(f"{rel} missing Issue lifecycle contract markers: {missing}")
 
+template_contracts = {
+    "changes/templates/quick-card.md": ["Closes #<workIssue>", "Refs #<parentIssue>"],
+    "changes/templates/log.md": ["Closes #<workIssue>", "Refs #<parentIssue>"],
+}
+for rel, markers in template_contracts.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    missing = [marker for marker in markers if marker not in text]
+    if missing:
+        raise SystemExit(f"{rel} missing exact finish Issue references: {missing}")
+    vague = [marker for marker in ["Closes #workIssue", "Refs #parentIssue"] if marker in text]
+    if vague:
+        raise SystemExit(f"{rel} contains vague finish Issue references: {vague}")
+
+tasks_text = (root / "changes/templates/tasks.md").read_text(encoding="utf-8")
+if "parentIssue 存在时，workIssue 必须是 native sub-issue" not in tasks_text:
+    raise SystemExit("changes/templates/tasks.md must require native sub-issue when parentIssue exists")
+if "standalone 仅在 parentIssue=none 时合法" not in tasks_text:
+    raise SystemExit("changes/templates/tasks.md must restrict standalone to parentIssue=none")
+
 for command, section in [("/brainstorm", brainstorm_section), ("/propose", propose_section)]:
     parent_discovery_rules = {
         "asks at most once when parent is absent": re.compile(
