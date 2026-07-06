@@ -135,7 +135,7 @@ flowchart LR
 
 ### Quick 记录模式与 Issue 合同
 
-- **Quick Compact** 只适用于不超过 2 个文件、单一目的、单 commit，且不改 API/DB/依赖/CI/部署/generated artifact，不涉及安全、权限、认证、敏感信息、状态机或跨模块规则的变更；`quick-card.md` 是唯一记录源。执行中任一条件不再满足时，必须自动升级为 Quick Full 后再继续。
+- **Quick Compact** 只适用于不超过 2 个文件、单一目的、单 commit，且不改 API/DB/依赖/CI/部署/generated artifact，不涉及安全、权限、认证、敏感信息、状态机或跨模块规则，并具备可执行验证与直接回滚的变更；`quick-card.md` 是唯一记录源。执行中任一条件不再满足时，必须自动升级为 Quick Full 后再继续。
 - **Quick Full** 用于不满足或无法确认 Compact 条件的 Quick；记录集固定为 `quick-card.md` + `log.md` + `summary.md`。
 - 需求开始时解析或只询问一次 `parentIssue`；存在时先读取整体需求，并在 GitHub 能力可用时把本次工作关联为 native sub-issue。
 - Quick Card/Spec 确认后，必须自动创建唯一 `workIssue`；若已记录则校验并复用仍 open 的 `workIssue`。这是强制流程，不依赖配置。
@@ -202,7 +202,7 @@ AI：好的，我来提两个方案...
 
 **Git 规范：** 分支严格使用 `type/scope`；commit message 严格使用 `type(scope): description`。Issue 信息放在正文或 PR。
 
-**PR 规范：** PR 必须使用 `Closes #ID` 关联 Issue，并触发 CodeQL 静态审查与 CI 编译自动化审查。PR 信息按 `.github/PULL_REQUEST_TEMPLATE.md` 填写，便于 GitHub 统计 issue、测试、CI 和风险数据。
+**PR 规范：** PR 必须使用 `Closes #<workIssue>` 关闭工作 Issue，存在父级时使用 `Refs #<parentIssue>` 引用，并触发 CodeQL 静态审查与 CI 编译自动化审查。PR 信息按 `.github/PULL_REQUEST_TEMPLATE.md` 填写，便于 GitHub 统计 issue、测试、CI 和风险数据。
 
 ### 4. /review — 双阶段审查 + GitHub Readiness
 
@@ -227,8 +227,8 @@ Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再
 - 缺配置时首次触发会询问并写入配置
 - `finishMode=ask` 每次执行前确认，`auto-pr` 自动 push + PR，`manual` 只输出命令和 PR body；三者只控制 PR handoff，不控制 Issue 创建
 - PR body 自动包含 Summary、Test Evidence、Risk、AI Collaboration、`Closes #<workIssue>`，有父 Issue 时再加 `Refs #<parentIssue>`
-- Quick Compact 的收尾结果回填 `quick-card.md`；Quick Full/Standard/Complex 写入 `log.md`
-- 仅在记录模式包含 `summary.md` 时更新为 `status: finished`；Quick Compact 不要求 `log.md` 或 `summary.md`
+- Quick Compact 的收尾结果回填 `quick-card.md`；Quick Full 把收尾证据写入 `log.md`，并将 `summary.md` 更新为 `status: finished`；Standard/Complex 使用完整记录集
+- Quick Compact 不要求 `log.md` 或 `summary.md`
 - 如果 `log.md` 中存在 `Knowledge candidates`，询问是否现在写入 `knowledge/`、跳过，或继续归档
 - Complex 子项目在 `/finish` 时生成 `log.summary.md`，下游会话不必等待 `/archive`
 
@@ -254,7 +254,7 @@ Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再
 | `/review` | 帮我看看代码、review 一下 | 先查有没有按 spec 实现，再查代码质量 | 审查报告 |
 | `/fix` | 修 bug、改一下 xxx、排查问题 | review 发现问题就修，修完再审 | 修复代码 |
 | `/fix-ci` | CI 报错、Actions 失败、流水线失败、修 CI | 基于 CI 日志做最小修复，并验证失败命令重新通过 | 修复代码 + `log.md` |
-| `/finish` | 完成收尾、开 PR、发 PR | 验证、push、创建 PR，并用 `Closes #ID` 关闭 Issue | PR + `log.md` |
+| `/finish` | 完成收尾、开 PR、发 PR | 验证、push、创建 PR，关闭 `workIssue` 并引用 `parentIssue` | PR + 当前模式记录源 |
 | `/test` | 写测试、补单测、跑测试、测覆盖率 | Red/Green 循环，覆盖率 ≥ 80% | 测试用例 |
 | `/archive` | 归档、沉淀知识、整理变更 | 把踩过的坑沉淀成知识，下次自动加载 | `knowledge/` |
 

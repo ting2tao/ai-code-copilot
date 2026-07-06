@@ -56,7 +56,7 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 
 - **No Spec/Quick Card, No Code** — Standard/Complex 没有 spec 不准写代码；Quick 没有 quick-card 不准写代码
 - **渐进式复杂度** — Quick（≤1天，<5文件）/ Standard / Complex（>5天，跨3+模块）
-- **Quick 双模式** — Quick Compact 仅限 ≤2 文件、单一目的、单 commit 和低风险边界，`quick-card.md` 是唯一记录源；条件失效时自动升级 Quick Full。Quick Full 使用 `quick-card.md` + `log.md` + `summary.md`
+- **Quick 双模式** — Quick Compact 仅限 ≤2 文件、单一目的、单 commit、低风险边界且具备可执行验证与直接回滚，`quick-card.md` 是唯一记录源；条件失效时自动升级 Quick Full。Quick Full 使用 `quick-card.md` + `log.md` + `summary.md`
 - **Issue 自动化** — 开始时解析/询问 `parentIssue` 并读取整体需求；Quick Card/Spec 确认后自动创建或校验复用 `workIssue`，可用时建立 native sub-issue
 - **Git 硬合同** — 分支必须是 `type/scope`，commit 必须是 `type(scope): description`
 - **安全收尾** — PR 只用 `Closes #<workIssue>` 关闭工作 Issue，父级只用 `Refs #<parentIssue>`；`finishMode` 只控制 PR handoff

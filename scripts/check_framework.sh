@@ -179,6 +179,63 @@ for rel in workflow_docs:
                 f"{rel} missing {contract} contract: " + ", ".join(missing_markers)
             )
 
+compact_eligibility_markers = {
+    "README.md": ["executable verification", "direct rollback"],
+    "README-CN.md": ["可执行验证", "直接回滚"],
+    "AGENTS.md": ["可执行验证", "直接回滚"],
+    "docs/ai-code-copilot-overview.md": ["可执行验证", "直接回滚"],
+}
+for rel, markers in compact_eligibility_markers.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    missing_markers = [marker for marker in markers if marker not in text]
+    if missing_markers:
+        raise SystemExit(
+            f"{rel} missing Quick Compact verification/rollback eligibility: "
+            + ", ".join(missing_markers)
+        )
+
+overview_text = (root / "docs/ai-code-copilot-overview.md").read_text(encoding="utf-8")
+apply_row = next((line for line in overview_text.splitlines() if "**/apply**" in line), "")
+if "Quick Compact" not in apply_row or "quick-card.md" not in apply_row or "Quick Full" not in apply_row or "log.md" not in apply_row:
+    raise SystemExit("overview /apply output must distinguish Quick Compact quick-card.md from Quick Full log.md")
+if re.search(r"\|\s*代码 \+ `log\.md`\s*\|$", apply_row):
+    raise SystemExit("overview /apply must not claim that every record mode outputs log.md")
+
+finish_record_markers = {
+    "README.md": [
+        "Closes #<workIssue>", "Refs #<parentIssue>",
+        "Quick Compact", "quick-card.md", "Quick Full", "log.md", "summary.md",
+    ],
+    "README-CN.md": [
+        "Closes #<workIssue>", "Refs #<parentIssue>",
+        "Quick Compact", "quick-card.md", "Quick Full", "log.md", "summary.md",
+    ],
+}
+for rel, markers in finish_record_markers.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    finish_match = re.search(r"^### 6\..*?/finish.*?$(?P<body>.*?)(?=^### 7\.)", text, re.MULTILINE | re.DOTALL)
+    if not finish_match:
+        raise SystemExit(f"{rel} missing /finish documentation section")
+    body = finish_match.group("body")
+    missing_markers = [marker for marker in markers if marker not in body]
+    if missing_markers:
+        raise SystemExit(f"{rel} /finish missing mode-aware record contract: " + ", ".join(missing_markers))
+
+for rel in workflow_docs:
+    text = (root / rel).read_text(encoding="utf-8")
+    if "Closes #ID" in text:
+        raise SystemExit(f"{rel} must not retain generic Closes #ID under the workIssue contract")
+
+obsolete_log_claims = {
+    "README.md": ["each change keeps `log.md`", "Record finish results in `log.md`"],
+    "README-CN.md": ["每次变更都有 log.md", "收尾结果写入 log.md"],
+}
+for rel, claims in obsolete_log_claims.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    found = [claim for claim in claims if claim in text]
+    if found:
+        raise SystemExit(f"{rel} retains all-modes-log.md claims: " + ", ".join(found))
+
 project_config = json.loads((root / "config" / "project-config.json").read_text(encoding="utf-8"))
 github_workflow = project_config.get("githubWorkflow", {})
 if "issueWhenMissing" in github_workflow:

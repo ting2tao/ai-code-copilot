@@ -137,7 +137,7 @@ When uncertain, the framework defaults to Standard.
 
 ### Quick record modes and Issue contract
 
-- **Quick Compact** is limited to a single-purpose, single-commit change touching at most two files, with no API, database, dependency, CI, deployment, generated-artifact, security, permission, authentication, sensitive-data, state-machine, or cross-module rule impact. It uses `quick-card.md` as its single record source. If any condition stops being true at runtime, it automatically upgrades to Quick Full before work continues.
+- **Quick Compact** is limited to a single-purpose, single-commit change touching at most two files, with no API, database, dependency, CI, deployment, generated-artifact, security, permission, authentication, sensitive-data, state-machine, or cross-module rule impact, and it must have executable verification plus direct rollback. It uses `quick-card.md` as its single record source. If any condition stops being true at runtime, it automatically upgrades to Quick Full before work continues.
 - **Quick Full** is the default when Compact eligibility is uncertain or unmet. Its record set is `quick-card.md` + `log.md` + `summary.md`.
 - At the start, the workflow parses or asks once for `parentIssue`, reads its overall requirement when present, and links the work as a native sub-issue when GitHub supports the relationship.
 - After a Quick Card or Spec is confirmed, the workflow must automatically create one `workIssue`, or validate and reuse the recorded open `workIssue`. This is mandatory and does not depend on configuration.
@@ -202,7 +202,7 @@ Goal: implement task by task, with evidence after each step.
 
 Branches use the strict `type/scope` form. Commit messages use the strict Conventional Commits form `type(scope): description`. Put Issue references in the body or PR.
 
-PRs must use `Closes #ID` to link the Issue, trigger CodeQL and CI, and follow `.github/PULL_REQUEST_TEMPLATE.md` so GitHub can collect issue, test, CI, and risk data.
+PRs must use `Closes #<workIssue>` to close the work Issue and, when present, `Refs #<parentIssue>` for the parent. They must trigger CodeQL and CI and follow `.github/PULL_REQUEST_TEMPLATE.md` so GitHub can collect issue, test, CI, and risk data.
 
 ### 4. `/review` - Two-Stage Review and GitHub Readiness
 
@@ -231,8 +231,8 @@ Goal: verify, push, create a PR, and close only the work Issue with `Closes #<wo
 - `finishMode=auto-pr`: push and create PR automatically.
 - `finishMode=manual`: output commands and PR body only. These modes control PR handoff only, not Issue creation.
 - PR body includes Summary, Test Evidence, Risk, AI Collaboration, `Closes #<workIssue>`, and, when present, `Refs #<parentIssue>`.
-- Record finish results in `quick-card.md` for Quick Compact; use `log.md` for Quick Full/Standard/Complex.
-- Update `summary.md` to `status: finished` only where that file belongs; Quick Compact does not require `log.md` or `summary.md`.
+- Record finish results in `quick-card.md` for Quick Compact. Quick Full writes finish evidence to `log.md` and updates `summary.md` to `status: finished`; Standard/Complex use their full record set.
+- Quick Compact does not require `log.md` or `summary.md`.
 - If `Knowledge candidates` exist in `log.md`, ask whether to write them to `knowledge/` now, skip, or continue into archive.
 - For Complex sub-projects, generate `log.summary.md` during `/finish` so downstream sessions can start without waiting for `/archive`.
 
@@ -256,7 +256,7 @@ Goal: verify, push, create a PR, and close only the work Issue with `Closes #<wo
 | `/review` | review this, check code | Check spec compliance and code quality | review report |
 | `/fix` | fix bug, change this, investigate issue | Fix review findings or bugs, then review again | code fix |
 | `/fix-ci` | CI failed, Actions failed, fix CI | Repair CI failures with local reproduction where possible | code fix + `log.md` |
-| `/finish` | finish, open PR, create PR | Verify, push, open PR, and close the Issue | PR + `log.md` |
+| `/finish` | finish, open PR, create PR | Verify, push, open PR, close `workIssue`, and reference `parentIssue` | PR + mode-specific record source |
 | `/test` | write tests, add unit tests, run coverage | Red/Green testing with coverage gate | tests |
 | `/archive` | archive, capture knowledge | Save lessons and archive the change | `knowledge/` |
 
