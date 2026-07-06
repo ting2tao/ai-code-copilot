@@ -23,6 +23,8 @@ Git / Issue 合同核验：
 - 对照合同中记录的 `branch` 与当前活跃分支，确认二者一致且都符合 `type/scope`；检查 `Commit record`（compact Quick）或 tasks.md/log.md（full Quick/Standard/Complex）中的每个 commit hash 和完整 message，确认实际 commit 存在、属于当前变更，且 message 符合 `type(scope): description`。
 - 活跃分支、记录 commit 与实际 Git 历史不一致，或 branch/commit 证据格式错误时，至少记为 **Important**；不得仅凭工作区 diff 推断 Git 合同已满足。
 - `workIssue` 仍为 pending/缺失、`issueRelationship` 未解决，或 `closeTarget` 不是 `workIssue` 时，结论标记 **NEEDS_INFO**；不得创建替代 Issue，也不得把 parentIssue 当关闭目标。
+- **硬门控**：任一 Git contract Important 都直接 FAIL，不受“Important 问题 ≥ 3 个”的普通质量阈值影响。
+- **信息门控**：任一 unresolved Issue/closeTarget NEEDS_INFO 都禁止 PASS；必须补齐信息后重审，不能以风险接受代替合同解析。
 
 ## 审查分级
 
@@ -71,10 +73,11 @@ Git / Issue 合同核验：
 - 活跃分支与记录 commits：{一致/不一致，证据}
 - Issue / close-target：{已解决/缺口}
 
-**结论：✅ PASS / ❌ FAIL**
+**结论：✅ PASS / ❌ FAIL / ⚠️ NEEDS_INFO**
 ```
 
-FAIL 条件：有任何 Critical 问题，或 Important 问题 ≥ 3 个。
+FAIL 条件：有任何 Critical 问题、任一 Git contract Important，或普通 Important 问题 ≥ 3 个。
+NEEDS_INFO 条件：存在任一 unresolved Issue/closeTarget；NEEDS_INFO 禁止 PASS，补齐信息后必须重新审查。
 PASS 后附建议：Minor 问题在下次迭代处理。
 
 ## 工具权限

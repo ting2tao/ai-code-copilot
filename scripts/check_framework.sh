@@ -152,6 +152,26 @@ for marker in ["## Execution record", "## Commit record", "## Review record", "#
     if marker not in quick_card:
         raise SystemExit(f"quick-card.md missing compact marker: {marker}")
 
+compact_record_headers = {
+    "Execution record": ["command", "exit code", "output", "Loop Evidence"],
+    "Commit record": ["hash", "message"],
+    "Review record": ["Spec Compliance", "Code Quality", "GitHub Readiness"],
+    "Finish record": ["PR URL", "Closes workIssue", "Refs parentIssue", "final validation"],
+}
+for heading, fields in compact_record_headers.items():
+    section_match = re.search(
+        rf"^## {re.escape(heading)}\n(?P<body>.*?)(?=^## |\Z)",
+        quick_card,
+        re.MULTILINE | re.DOTALL,
+    )
+    if not section_match:
+        raise SystemExit(f"quick-card.md missing compact record section: {heading}")
+    header_lines = [line for line in section_match.group("body").splitlines() if line.startswith("|")]
+    table_header = header_lines[0] if header_lines else ""
+    missing = [field for field in fields if field not in table_header]
+    if missing:
+        raise SystemExit(f"quick-card.md {heading} missing semantic fields: {missing}")
+
 front_matter_match = re.match(r"\A---\n(.*?)\n---(?:\n|\Z)", quick_card, re.DOTALL)
 if not front_matter_match:
     raise SystemExit("quick-card.md must start with YAML front matter")
@@ -269,6 +289,16 @@ for rel, markers in compact_evidence_markers.items():
     missing = [marker for marker in markers if marker not in text]
     if missing:
         raise SystemExit(f"{rel} missing compact evidence marker: {missing}")
+
+code_quality_text = (root / "agents/code-quality-reviewer.md").read_text(encoding="utf-8")
+reviewer_gate_markers = [
+    "任一 Git contract Important 都直接 FAIL",
+    "任一 unresolved Issue/closeTarget NEEDS_INFO 都禁止 PASS",
+    "补齐信息后重审",
+]
+missing = [marker for marker in reviewer_gate_markers if marker not in code_quality_text]
+if missing:
+    raise SystemExit(f"agents/code-quality-reviewer.md missing hard review gate semantics: {missing}")
 
 def section_between(text, start, end):
     try:
