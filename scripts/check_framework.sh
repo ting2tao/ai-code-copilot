@@ -108,6 +108,77 @@ for rel in ["agents/copilot-prompt.md", "hooks/session-start", "README.md", "REA
     if "/archive" in text and "不要输入 /archive" not in text:
         raise SystemExit(f"{rel} must warn Codex users not to type /archive")
 
+workflow_docs = [
+    "README.md",
+    "README-CN.md",
+    "AGENTS.md",
+    "docs/ai-code-copilot-overview.md",
+]
+workflow_doc_markers = [
+    "Quick Compact",
+    "Quick Full",
+    "type/scope",
+    "type(scope): description",
+    "parentIssue",
+    "workIssue",
+    "Closes #<workIssue>",
+    "Refs #<parentIssue>",
+    "finishMode",
+    "issueWhenMissing",
+]
+for rel in workflow_docs:
+    text = (root / rel).read_text(encoding="utf-8")
+    missing_markers = [marker for marker in workflow_doc_markers if marker not in text]
+    if missing_markers:
+        raise SystemExit(
+            f"{rel} missing adaptive Quick/Issue workflow markers: "
+            + ", ".join(missing_markers)
+        )
+
+workflow_doc_contracts = {
+    "README.md": {
+        "compact record source": ["Quick Compact", "quick-card.md", "single record source"],
+        "full record sources": ["Quick Full", "quick-card.md", "log.md", "summary.md"],
+        "mandatory work issue": ["confirmed", "workIssue", "automatically create", "reuse"],
+        "parent issue discovery": ["parentIssue", "overall requirement", "sub-issue"],
+        "finish policy": ["Closes #<workIssue>", "Refs #<parentIssue>", "finishMode"],
+        "obsolete issue policy": ["issueWhenMissing", "obsolete", "ignored"],
+    },
+    "README-CN.md": {
+        "compact record source": ["Quick Compact", "quick-card.md", "唯一记录源"],
+        "full record sources": ["Quick Full", "quick-card.md", "log.md", "summary.md"],
+        "mandatory work issue": ["确认", "workIssue", "自动创建", "复用"],
+        "parent issue discovery": ["parentIssue", "整体需求", "sub-issue"],
+        "finish policy": ["Closes #<workIssue>", "Refs #<parentIssue>", "finishMode"],
+        "obsolete issue policy": ["issueWhenMissing", "废弃", "忽略"],
+    },
+    "AGENTS.md": {
+        "compact record source": ["Quick Compact", "quick-card.md", "唯一记录源"],
+        "full record sources": ["Quick Full", "quick-card.md", "log.md", "summary.md"],
+        "mandatory work issue": ["确认", "workIssue", "自动创建", "复用"],
+        "parent issue discovery": ["parentIssue", "整体需求", "sub-issue"],
+        "finish policy": ["Closes #<workIssue>", "Refs #<parentIssue>", "finishMode"],
+        "obsolete issue policy": ["issueWhenMissing", "废弃", "忽略"],
+    },
+    "docs/ai-code-copilot-overview.md": {
+        "compact record source": ["Quick Compact", "quick-card.md", "唯一记录源"],
+        "full record sources": ["Quick Full", "quick-card.md", "log.md", "summary.md"],
+        "mandatory work issue": ["确认", "workIssue", "自动创建", "复用"],
+        "parent issue discovery": ["parentIssue", "整体需求", "sub-issue"],
+        "finish policy": ["Closes #<workIssue>", "Refs #<parentIssue>", "finishMode"],
+        "obsolete issue policy": ["issueWhenMissing", "废弃", "忽略"],
+    },
+}
+for rel in workflow_docs:
+    text = (root / rel).read_text(encoding="utf-8")
+    lowered = text.lower()
+    for contract, markers in workflow_doc_contracts[rel].items():
+        missing_markers = [marker for marker in markers if marker.lower() not in lowered]
+        if missing_markers:
+            raise SystemExit(
+                f"{rel} missing {contract} contract: " + ", ".join(missing_markers)
+            )
+
 project_config = json.loads((root / "config" / "project-config.json").read_text(encoding="utf-8"))
 github_workflow = project_config.get("githubWorkflow", {})
 if "issueWhenMissing" in github_workflow:

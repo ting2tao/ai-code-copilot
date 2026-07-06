@@ -29,7 +29,7 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 - `rules/coding-style.md` — 项目级编码规范（覆盖全局）
 - `rules/commit-convention.md` — Issue、分支、commit message、PR 与自动化审查规范
 - `rules/domain-rules.md` — 业务约束（用户手动填写）
-- `changes/<变更名>/` — 活跃变更目录，含 design-brief/spec/tasks/test-spec/quick-card/roadmap/log
+- `changes/<变更名>/` — 活跃变更目录；Quick Compact 仅含 `quick-card.md`，Quick Full 含 `quick-card.md` + `log.md` + `summary.md`，Standard/Complex 按流程使用 spec/tasks/test-spec 等文件
 
 ## 修改框架时的关键文件
 
@@ -56,6 +56,11 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 
 - **No Spec/Quick Card, No Code** — Standard/Complex 没有 spec 不准写代码；Quick 没有 quick-card 不准写代码
 - **渐进式复杂度** — Quick（≤1天，<5文件）/ Standard / Complex（>5天，跨3+模块）
+- **Quick 双模式** — Quick Compact 仅限 ≤2 文件、单一目的、单 commit 和低风险边界，`quick-card.md` 是唯一记录源；条件失效时自动升级 Quick Full。Quick Full 使用 `quick-card.md` + `log.md` + `summary.md`
+- **Issue 自动化** — 开始时解析/询问 `parentIssue` 并读取整体需求；Quick Card/Spec 确认后自动创建或校验复用 `workIssue`，可用时建立 native sub-issue
+- **Git 硬合同** — 分支必须是 `type/scope`，commit 必须是 `type(scope): description`
+- **安全收尾** — PR 只用 `Closes #<workIssue>` 关闭工作 Issue，父级只用 `Refs #<parentIssue>`；`finishMode` 只控制 PR handoff
+- **配置迁移** — `workIssue` 自动创建无需配置；旧 `issueWhenMissing` 已废弃并忽略
 - **Evidence Before Claims** — 每个 task 完成必须展示可验证的命令输出
 - **Harness Enables** — 规格、测试、日志、review、规则和知识沉淀共同构成 Agent 可见反馈循环
 - **Loop Engineering** — 每个变更都要声明简洁的 Goal Contract：Goal、Done Signal、Guardrails、Fallback、Memory
@@ -72,7 +77,7 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 |------|------|
 | `/init` | 检测技术栈，创建项目级 `.ai_code_copilot/` |
 | `/brainstorm` | 苏格拉底式设计探索，输出 `design-brief.md` |
-| `/propose` | Standard/Complex：生成 `spec.md` + `tasks.md` + `test-spec.md` + `log.md`；Quick：生成 `quick-card.md` + `log.md` |
+| `/propose` | Standard/Complex：生成 spec/tasks/test-spec/log/summary；Quick Compact：仅 `quick-card.md`；Quick Full：`quick-card.md` + `log.md` + `summary.md` |
 | `/apply` | 逐 task 执行编码，每步需证据验证 |
 | `/fix` | review 后的增量修正 |
 | `/review` | 双阶段审查：Standard/Complex 做完整 Spec Compliance + Code Quality；Quick 做轻量合规检查（对照 quick-card）+ Code Quality |

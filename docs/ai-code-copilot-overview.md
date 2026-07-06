@@ -58,9 +58,18 @@ flowchart LR
 | --- | --- | --- |
 | **/init** | 自动识别你的项目，配置协作环境 | `.ai_code_copilot/` 目录 |
 | **/brainstorm** | 先聊清楚再动手，避免写错方向 | `design-brief.md` |
-| **/propose** | 写规格说明书，明确改什么、怎么改 | Standard/Complex：`spec.md` + `tasks.md` + `test-spec.md`；Quick：`quick-card.md` |
+| **/propose** | 写规格说明书，明确改什么、怎么改 | Standard/Complex：spec/tasks/test-spec；Quick Compact：仅 `quick-card.md`；Quick Full：`quick-card.md` + `log.md` + `summary.md` |
 | **/apply** | 按 spec 逐个 task 编码，每个都有证据验证 | 代码 + `log.md` |
 | **/review** | 先查有没有按 spec 实现，再查代码质量 | 审查报告 |
 | **/fix** | review 发现问题就修，修完再审 | 修复代码 |
 | **/test** | Red/Green 循环，覆盖率 ≥ 80% | 测试用例 |
 | **/archive** | 把踩过的坑沉淀成知识，下次自动加载 | `knowledge/` |
+
+## Quick 与 GitHub 合同
+
+- **Quick Compact**：仅限 ≤2 文件、单一目的、单 commit 且无 API/DB/依赖/CI/部署/generated artifact、安全、权限、认证、敏感信息、状态机或跨模块规则影响；`quick-card.md` 是唯一记录源。条件变化时自动升级为 Quick Full。
+- **Quick Full**：Compact 条件不满足或无法确认时使用，记录集为 `quick-card.md` + `log.md` + `summary.md`。
+- 开始时解析或询问 `parentIssue` 并读取整体需求；Quick Card/Spec 确认后自动创建唯一 `workIssue`，或校验并复用已记录的 open work Issue。GitHub 支持时建立 native sub-issue。
+- 分支固定为 `type/scope`，commit 固定为 `type(scope): description`。
+- `/finish` 只用 `Closes #<workIssue>` 关闭工作 Issue；父级仅使用 `Refs #<parentIssue>`。
+- `finishMode` 只控制 PR handoff。旧 `issueWhenMissing` 已废弃并忽略，不能关闭 mandatory Issue 自动化。

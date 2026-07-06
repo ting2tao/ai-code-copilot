@@ -31,7 +31,7 @@ ai-code-copilot 是一个兼容 **Codex** 与 **Claude Code** 的 AI 编码协�
 - **上下文预算策略** — SessionStart 只注入 L0 安全和摘要；各命令按需加载 rules、packs 和 knowledge
 - **双阶段审查** — 先查有没有按 spec 实现，再查代码质量
 - **知识飞轮** — 每个项目的经验沉淀成知识库，AI 自动加载
-- **全程可审计** — 每次变更都有 log.md，记录决策、踩坑、review 结论
+- **全程可审计** — Quick Compact 在 `quick-card.md` 留证；其他模式使用 `log.md` 和摘要
 - **安全红线** — 资金/权限/状态变更必须人工确认
 
 Harness Engineering 和 Loop Engineering 的框架内定义见 [`docs/harness-engineering.md`](docs/harness-engineering.md) 与 [`docs/loop-engineering.md`](docs/loop-engineering.md)。
@@ -59,7 +59,7 @@ ai-code-copilot 不把所有语言规则揉成一套。通用流程和安全红�
 | Templates | `changes/templates/*.md` | 长期文档结构和 review gate | 运行时事实 |
 | State | `.ai_code_copilot/.copilot-state.json` | 框架 commit、命中 packs、同步时间、context 新鲜度 | 用户工作流偏好 |
 
-如果 `summary.md` 缺失或字段不完整，SessionStart 会给出 fallback 提示，具体命令阶段再读取完整变更文档。Log 压缩阈值放在 `.ai_code_copilot/config.json` 的 `logCompression` 下。建议安装 Python 3；没有 Python 时 hook 仍会注入 L0 安全规则，但会跳过 context freshness 和 active change 摘要。
+Quick Compact 的 SessionStart 状态来自经过校验的 `quick-card.md` metadata，其他模式使用 `summary.md`。当前模式对应的记录源缺失或字段不完整时，SessionStart 会给出 fallback 提示，具体命令阶段再读取完整变更文档。Log 压缩阈值放在 `.ai_code_copilot/config.json` 的 `logCompression` 下。建议安装 Python 3；没有 Python 时 hook 仍会注入 L0 安全规则，但会跳过 context freshness 和 active change 摘要。
 
 **Codex 输入提示：** 在 Codex 里请用不带斜杠的命令名，例如 `finish <变更名>`、`archive <变更名>`，也可以直接说中文自然语言。不要输入 /archive，因为 Codex 客户端会先把它当成“归档当前会话”，ai-code-copilot 收不到这条消息；如果 `/finish` 被拦截或无效，也请改用 `finish <变更名>`。
 
@@ -133,6 +133,16 @@ flowchart LR
 
 不确定时默认 Standard。
 
+### Quick 记录模式与 Issue 合同
+
+- **Quick Compact** 只适用于不超过 2 个文件、单一目的、单 commit，且不改 API/DB/依赖/CI/部署/generated artifact，不涉及安全、权限、认证、敏感信息、状态机或跨模块规则的变更；`quick-card.md` 是唯一记录源。执行中任一条件不再满足时，必须自动升级为 Quick Full 后再继续。
+- **Quick Full** 用于不满足或无法确认 Compact 条件的 Quick；记录集固定为 `quick-card.md` + `log.md` + `summary.md`。
+- 需求开始时解析或只询问一次 `parentIssue`；存在时先读取整体需求，并在 GitHub 能力可用时把本次工作关联为 native sub-issue。
+- Quick Card/Spec 确认后，必须自动创建唯一 `workIssue`；若已记录则校验并复用仍 open 的 `workIssue`。这是强制流程，不依赖配置。
+- 分支严格使用 `type/scope`；commit 严格使用 `type(scope): description`。
+- `/finish` 的 PR body 只用 `Closes #<workIssue>` 关闭工作 Issue；`parentIssue` 只允许 `Refs #<parentIssue>`，绝不由子变更关闭。
+- `finishMode` 只控制 PR handoff（`ask`、`auto-pr`、`manual`）。旧 `issueWhenMissing` 已废弃并忽略。
+
 ---
 
 ## Standard 流程详解
@@ -190,7 +200,7 @@ AI：好的，我来提两个方案...
 - 实时写入 log.md（决策、踩坑、知识发现）
 - 自动 git commit：`feat(scope): 中文简述` / `fix(scope): 中文简述`
 
-**commit message 规范：** 使用 Conventional Commits：`<type>[optional scope]: <description>`。Issue 信息不要放在前缀，推荐 `fix(org-search): 支持按组织名称查询服务范围 (#7)` 或在正文/PR 中写 `Refs #7`、`Closes #7`。
+**Git 规范：** 分支严格使用 `type/scope`；commit message 严格使用 `type(scope): description`。Issue 信息放在正文或 PR。
 
 **PR 规范：** PR 必须使用 `Closes #ID` 关联 Issue，并触发 CodeQL 静态审查与 CI 编译自动化审查。PR 信息按 `.github/PULL_REQUEST_TEMPLATE.md` 填写，便于 GitHub 统计 issue、测试、CI 和风险数据。
 
@@ -210,15 +220,15 @@ Spec Compliance 或 Code Quality 任一阶段 FAIL → 回到 /fix → 修完再
 
 ### 6. /finish — GitHub 收尾
 
-**目的：验证、push、创建 PR，并用 `Closes #ID` 关闭关联 Issue。**
+**目的：验证、push、创建 PR，并只用 `Closes #<workIssue>` 关闭工作 Issue。**
 
 - 在 Codex 中请用 `finish <变更名>`、`开 PR <变更名>` 或自然语言触发，不依赖 `/finish` slash 命令
 - 默认读取 `.ai_code_copilot/config.json` 的 `githubWorkflow`
 - 缺配置时首次触发会询问并写入配置
-- `finishMode=ask` 每次执行前确认，`auto-pr` 自动 push + PR，`manual` 只输出命令和 PR body
-- PR body 自动包含 Summary、Test Evidence、Risk、AI Collaboration 和 `Closes #ID`
-- 收尾结果写入 log.md 的 `/finish 记录`
-- 将 `summary.md` 更新为 `status: finished`；SessionStart 不再把 finished 变更当作 active change 注入
+- `finishMode=ask` 每次执行前确认，`auto-pr` 自动 push + PR，`manual` 只输出命令和 PR body；三者只控制 PR handoff，不控制 Issue 创建
+- PR body 自动包含 Summary、Test Evidence、Risk、AI Collaboration、`Closes #<workIssue>`，有父 Issue 时再加 `Refs #<parentIssue>`
+- Quick Compact 的收尾结果回填 `quick-card.md`；Quick Full/Standard/Complex 写入 `log.md`
+- 仅在记录模式包含 `summary.md` 时更新为 `status: finished`；Quick Compact 不要求 `log.md` 或 `summary.md`
 - 如果 `log.md` 中存在 `Knowledge candidates`，询问是否现在写入 `knowledge/`、跳过，或继续归档
 - Complex 子项目在 `/finish` 时生成 `log.summary.md`，下游会话不必等待 `/archive`
 
@@ -360,12 +370,13 @@ ai_code_copilot/
 │   └── index.md                # 知识索引（/archive 维护）
 └── changes/
     └── <变更名>/
-        ├── design-brief.md     # /brainstorm 产出
-        ├── spec.md             # 需求合同
-        ├── tasks.md            # 执行计划
-        ├── log.md              # 当前决策、风险、验证和 review 结论
-        ├── log.archive.md      # 压缩后的过程性记录（按需）
-        └── summary.md          # 轻量活跃变更摘要
+        ├── quick-card.md       # Quick Compact 唯一记录源；Quick Full 也包含
+        ├── log.md              # 仅 Quick Full/Standard/Complex
+        ├── summary.md          # Quick Full/Standard/Complex 活跃摘要
+        ├── design-brief.md     # Standard/Complex 的 /brainstorm 产出
+        ├── spec.md             # Standard/Complex 需求合同
+        ├── tasks.md            # Standard/Complex 执行计划
+        └── log.archive.md      # 可选的压缩过程记录
 ```
 
 ---
@@ -378,7 +389,7 @@ ai_code_copilot/
 - 涉及资金 / 状态流转 / 权限变更：强制高亮提醒
 - 禁止硬编码密钥；禁止日志打印敏感信息
 - 当 `.copilot-state.json` 显示 `project-context.md` 过期时软提醒执行同步
-- 若只有一个进行中变更，只注入 `summary.md` 摘要；完整 spec、pack rules 和 knowledge 由命令阶段按需加载
+- 若只有一个进行中变更，Quick Compact 注入经校验的 `quick-card.md` metadata，其他模式注入 `summary.md`；完整文档、pack rules 和 knowledge 按需加载
 
 ---
 
