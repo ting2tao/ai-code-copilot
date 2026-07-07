@@ -33,7 +33,7 @@ The framework helps you build a human-agent engineering loop: clarify the goal f
 - **Context-budget policy**: SessionStart injects only L0 safety and summaries; commands load rules, packs, and knowledge on demand.
 - **Two-stage review**: first check implementation against the spec, then review code quality.
 - **Knowledge flywheel**: project experience is archived into knowledge files and reused later.
-- **Audit trail**: each change keeps `log.md` for decisions, issues, review results, and evidence.
+- **Audit trail**: Quick Compact records evidence in `quick-card.md`; other modes use `log.md` and summaries.
 - **Safety rails**: money, permission, and state-transition changes require human confirmation.
 
 The framework definitions are in [`docs/harness-engineering.md`](docs/harness-engineering.md) and [`docs/loop-engineering.md`](docs/loop-engineering.md).
@@ -61,7 +61,7 @@ The context-budget policy is split across four layers:
 | Templates | `changes/templates/*.md` | Long-lived document structure and review gates | Runtime facts |
 | State | `.ai_code_copilot/.copilot-state.json` | Framework commit, matched packs, sync timestamps, context freshness | User workflow preferences |
 
-If `summary.md` is missing or malformed, SessionStart falls back to a warning and the command flow reads the full change documents later. Log compression thresholds are configurable in `.ai_code_copilot/config.json` under `logCompression`. Python 3 is recommended for the hook's JSON/date helpers; without it, the hook still injects L0 safety rules but skips freshness and active-change summaries.
+For Quick Compact, SessionStart reads validated metadata from `quick-card.md`; other modes use `summary.md`. If the applicable source is malformed, SessionStart falls back to a warning and the command flow reads the full change documents later. Log compression thresholds are configurable in `.ai_code_copilot/config.json` under `logCompression`. Python 3 is recommended for the hook's JSON/date helpers; without it, the hook still injects L0 safety rules but skips freshness and active-change summaries.
 
 **Codex input note:** type command names without a leading slash, such as `finish <change>` or `archive <change>`. 不要输入 /archive in Codex: the client treats it as "archive this session" before ai-code-copilot can handle it. If `/finish` is intercepted or ignored, use `finish <change>` instead.
 
@@ -135,6 +135,16 @@ Every request is classified before work begins:
 
 When uncertain, the framework defaults to Standard.
 
+### Quick record modes and Issue contract
+
+- **Quick Compact** is limited to a single-purpose, single-commit change touching at most two files, with no API, database, dependency, CI, deployment, generated-artifact, security, permission, authentication, sensitive-data, state-machine, or cross-module rule impact, and it must have executable verification plus direct rollback. It uses `quick-card.md` as its single record source. If any condition stops being true at runtime, it automatically upgrades to Quick Full before work continues.
+- **Quick Full** is the default when Compact eligibility is uncertain or unmet. Its record set is `quick-card.md` + `log.md` + `summary.md`.
+- At the start, the workflow parses or asks once for `parentIssue`, reads its overall requirement when present, and links the work as a native sub-issue when GitHub supports the relationship.
+- After a Quick Card or Spec is confirmed, the workflow must automatically create one `workIssue`, or validate and reuse the recorded open `workIssue`. This is mandatory and does not depend on configuration.
+- Branches must use `type/scope`; commits must use `type(scope): description`.
+- `/finish` puts `Closes #<workIssue>` in the PR body. A `parentIssue` is referenced only with `Refs #<parentIssue>` and is never closed by the child change.
+- `finishMode` controls only PR handoff (`ask`, `auto-pr`, or `manual`). The old `issueWhenMissing` setting is obsolete and ignored.
+
 ## Standard Workflow
 
 The Standard flow is the common path for feature work. Example: "Add an order cancellation API."
@@ -170,7 +180,7 @@ Goal: write the contract for what will change and how.
   - current code and feature list
   - change scope and risks
   - technical decisions and open questions
-- Produce:
+- Produce five files:
   - `spec.md`: requirement contract
   - `tasks.md`: implementation plan with file paths and function signatures
   - `test-spec.md`: P0/P1/P2 test strategy and verification commands
@@ -187,12 +197,12 @@ Goal: implement task by task, with evidence after each step.
 - Execute tasks one by one, or in a controlled batch when requested.
 - After each task, show verifiable evidence such as build output, test output, or curl results.
 - Avoid evidence-free claims such as "should be fine".
-- Keep `log.md` updated with decisions, issues, and knowledge discoveries.
+- Write decisions, issues, and knowledge discoveries to the current record source: Quick Compact uses `quick-card.md`; Quick Full/Standard/Complex use `log.md` and `summary.md`.
 - Create commits such as `feat(scope): concise description` or `fix(scope): concise description`.
 
-Commit messages use Conventional Commits: `<type>[optional scope]: <description>`. Put Issue references in the body or PR, for example `Refs #7` or `Closes #7`.
+Branches use the strict `type/scope` form. Commit messages use the strict Conventional Commits form `type(scope): description`. Put Issue references in the body or PR.
 
-PRs must use `Closes #ID` to link the Issue, trigger CodeQL and CI, and follow `.github/PULL_REQUEST_TEMPLATE.md` so GitHub can collect issue, test, CI, and risk data.
+PRs must use `Closes #<workIssue>` to close the work Issue and, when present, `Refs #<parentIssue>` for the parent. They must trigger CodeQL and CI and follow `.github/PULL_REQUEST_TEMPLATE.md` so GitHub can collect issue, test, CI, and risk data.
 
 ### 4. `/review` - Two-Stage Review and GitHub Readiness
 
@@ -212,24 +222,24 @@ When GitHub Actions, CodeQL, lint, type checks, tests, or builds fail, paste the
 
 ### 6. `/finish` - GitHub Handoff
 
-Goal: verify, push, create a PR, and close the linked Issue with `Closes #ID`.
+Goal: verify, push, create a PR, and close only the work Issue with `Closes #<workIssue>`.
 
 - In Codex, trigger this flow with `finish <change>`, `open PR <change>`, or natural language instead of relying on `/finish`.
 - Read `.ai_code_copilot/config.json` for `githubWorkflow`.
 - Ask and write config on first use when missing.
 - `finishMode=ask`: confirm each time.
 - `finishMode=auto-pr`: push and create PR automatically.
-- `finishMode=manual`: output commands and PR body only.
-- PR body includes Summary, Test Evidence, Risk, AI Collaboration, and `Closes #ID`.
-- Record finish results in `log.md`.
-- Update `summary.md` to `status: finished`; finished changes are no longer injected as active changes by SessionStart.
+- `finishMode=manual`: output commands and PR body only. These modes control PR handoff only, not Issue creation.
+- PR body includes Summary, Test Evidence, Risk, AI Collaboration, `Closes #<workIssue>`, and, when present, `Refs #<parentIssue>`.
+- Record finish results in `quick-card.md` for Quick Compact. Quick Full writes finish evidence to `log.md` and updates `summary.md` to `status: finished`; Standard/Complex use their full record set.
+- Quick Compact does not require `log.md` or `summary.md`.
 - If `Knowledge candidates` exist in `log.md`, ask whether to write them to `knowledge/` now, skip, or continue into archive.
 - For Complex sub-projects, generate `log.summary.md` during `/finish` so downstream sessions can start without waiting for `/archive`.
 
 ### 7. `/archive` - Knowledge Capture
 
 - In Codex, trigger this flow with `archive <change>` or natural language. 不要输入 /archive because Codex uses that slash command to archive the current session.
-- Extract knowledge entries from `log.md`.
+- Select the source by `recordMode`: extract from `quick-card.md` for Quick Compact, or from `log.md` for Quick Full/Standard/Complex.
 - Confirm each entry before writing it to `knowledge/`.
 - Move the change directory to `changes/archives/`.
 - Load relevant knowledge automatically in future proposals.
@@ -242,11 +252,11 @@ Goal: verify, push, create a PR, and close the linked Issue with `Closes #ID`.
 | `/init` | initialize project, analyze structure, setup | Detect the project and configure collaboration context | `.ai_code_copilot/` |
 | `/brainstorm` | discuss first, analyze options, design exploration | Clarify direction before writing specs | `design-brief.md` |
 | `/propose` | implement this, add feature, add API, optimize, refactor | Define what changes and how | `spec.md` + `tasks.md` |
-| `/apply` | start coding, continue implementation | Implement task by task with verification evidence | code + `log.md` |
+| `/apply` | start coding, continue implementation | Implement task by task with verification evidence | Quick Compact: code + `quick-card.md`; Quick Full/Standard/Complex: code + `log.md`/`summary.md` |
 | `/review` | review this, check code | Check spec compliance and code quality | review report |
 | `/fix` | fix bug, change this, investigate issue | Fix review findings or bugs, then review again | code fix |
 | `/fix-ci` | CI failed, Actions failed, fix CI | Repair CI failures with local reproduction where possible | code fix + `log.md` |
-| `/finish` | finish, open PR, create PR | Verify, push, open PR, and close the Issue | PR + `log.md` |
+| `/finish` | finish, open PR, create PR | Verify, push, open PR, close `workIssue`, and reference `parentIssue` | PR + mode-specific record source |
 | `/test` | write tests, add unit tests, run coverage | Red/Green testing with coverage gate | tests |
 | `/archive` | archive, capture knowledge | Save lessons and archive the change | `knowledge/` |
 
@@ -259,7 +269,7 @@ Goal: verify, push, create a PR, and close the linked Issue with `Closes #ID`.
 5. **Two-stage review**: spec reviewer checks requirement compliance; code-quality reviewer checks implementation quality.
 6. **Evidence before claims**: `/fix` and `/apply` must show build/test output before claiming success.
 7. **GitHub-measurable work**: `/finish`, PR templates, and GitHub metrics rules make issues, tests, CI, and risk data collectible.
-8. **Continuous log**: `log.md` tracks decisions, discoveries, review results, and open issues.
+8. **Current-mode record source**: Quick Compact keeps decisions, evidence, and review results in `quick-card.md`; Quick Full/Standard/Complex use `log.md`/`summary.md`.
 9. **Knowledge flywheel**: `/finish` can capture knowledge candidates early; `/archive` remains the recommended cleanup and deeper knowledge path.
 
 ## Quick Start
@@ -357,12 +367,13 @@ Project layer, created at `<project>/.ai_code_copilot/`:
 │   └── index.md                # knowledge index maintained by /archive
 └── changes/
     └── <change-name>/
-        ├── design-brief.md     # produced by /brainstorm
-        ├── spec.md             # requirement contract
-        ├── tasks.md            # implementation plan
-        ├── log.md              # active decisions, risks, verification, review results
-        ├── log.archive.md      # compressed process notes when needed
-        └── summary.md          # lightweight active-change summary
+        ├── quick-card.md       # Quick Compact only record; also present in Quick Full
+        ├── log.md              # Quick Full/Standard/Complex only
+        ├── summary.md          # Quick Full/Standard/Complex active summary
+        ├── design-brief.md     # Standard/Complex, produced by /brainstorm
+        ├── spec.md             # Standard/Complex requirement contract
+        ├── tasks.md            # Standard/Complex implementation plan
+        └── log.archive.md      # optional compressed process notes
 ```
 
 ## Hooks
@@ -373,7 +384,7 @@ The installer registers a SessionStart hook in the matching platform `settings.j
 - Money, state-transition, or permission changes require explicit human confirmation.
 - No hardcoded secrets; no sensitive data in logs.
 - Optional project-context freshness warning when `.copilot-state.json` is older than the configured threshold.
-- Optional active-change summary when exactly one change is in progress; full specs, packs, and knowledge are loaded later by the command flow.
+- Optional active-change metadata when exactly one change is in progress: validated `quick-card.md` metadata for Quick Compact, otherwise `summary.md`.
 
 ## Initialization and Sync
 

@@ -438,10 +438,36 @@ for pack_dir, manifest in read_manifests():
 
 events = []
 
-config_status, config_dest = write_project_owned(
-    config_path,
-    (copilot_home / "config" / "project-config.json").read_text(encoding="utf-8"),
-)
+obsolete_issue_config = False
+config_inspection_warning = None
+existing_config_text = None
+config_path_present = config_path.exists() or config_path.is_symlink()
+if config_path_present:
+    try:
+        existing_config_text = config_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        config_inspection_warning = f"unable to read existing config: {exc}"
+    else:
+        try:
+            existing_config = json.loads(existing_config_text)
+        except json.JSONDecodeError as exc:
+            config_inspection_warning = f"existing config contains invalid JSON: {exc}"
+        else:
+            if not isinstance(existing_config, dict):
+                config_inspection_warning = "existing config root must be a JSON object"
+            else:
+                github_workflow = existing_config.get("githubWorkflow", {})
+                if not isinstance(github_workflow, dict):
+                    config_inspection_warning = "existing config githubWorkflow must be a JSON object"
+                else:
+                    obsolete_issue_config = "issueWhenMissing" in github_workflow
+
+framework_config_text = (copilot_home / "config" / "project-config.json").read_text(encoding="utf-8")
+if config_path_present:
+    config_status = "unchanged" if existing_config_text == framework_config_text else "preserved-project-owned"
+    config_dest = config_path
+else:
+    config_status, config_dest = write_project_owned(config_path, framework_config_text)
 events.append((config_status, config_dest))
 
 for src in sorted((copilot_home / "rules").glob("*.md")):
@@ -494,6 +520,10 @@ for status, path in events:
         print(f"{status}: {path.relative_to(project_dir)}")
 if any(status == "candidate" for status, _ in events) and not dry_run:
     print("note: .new files were generated for existing files that differ; review and merge them manually.")
+if config_inspection_warning:
+    print(f"warning: could not check obsolete githubWorkflow.issueWhenMissing: {config_inspection_warning}; project-owned config was preserved.")
+if obsolete_issue_config:
+    print("migration-note: githubWorkflow.issueWhenMissing is obsolete and ignored; project-owned config was preserved.")
 if dry_run:
     if any(status == "candidate" for status, _ in events):
         print("note: candidates listed only; no files were written.")

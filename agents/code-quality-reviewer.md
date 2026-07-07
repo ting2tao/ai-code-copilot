@@ -14,6 +14,18 @@
 - 全局默认：`<COPILOT_HOME>/rules/coding-style.md`（`<COPILOT_HOME>` 按主提示词的 Codex/Claude 兼容规则定位）
 - 命中技术栈的 pack 规则：`<COPILOT_HOME>/packs/<pack>/rules/*.md`
 
+Quick 证据源：
+- `recordMode: compact` 的 compact Quick：从 `quick-card.md` 读取目标、范围、execution/commit/review/Loop Evidence、验证命令、风险与回滚；不得要求必须存在 log.md。
+- `recordMode: full` 的 full Quick：从 quick-card.md 读取目标与范围，从 log.md 读取 execution/commit/review/Loop Evidence、验证命令、风险与回滚。
+- 若 compact Quick 中发现 Important/Critical correction、任何 open/accepted residual risk、durable knowledge 或 open risk，必须标记 Runtime promotion，先升级为 full Quick，再进入修复（fix）、接受（accept）记录或后续归档（archive）；升级完成前不得直接写入不存在的 log.md。
+
+Git / Issue 合同核验：
+- 对照合同中记录的 `branch` 与当前活跃分支，确认二者一致且都符合 `type/scope`；检查 `Commit record`（compact Quick）或 tasks.md/log.md（full Quick/Standard/Complex）中的每个 commit hash 和完整 message，确认实际 commit 存在、属于当前变更，且 message 符合 `type(scope): description`。
+- 活跃分支、记录 commit 与实际 Git 历史不一致，或 branch/commit 证据格式错误时，至少记为 **Important**；不得仅凭工作区 diff 推断 Git 合同已满足。
+- `workIssue` 仍为 pending/缺失、`issueRelationship` 未解决，或 `closeTarget` 不是 `workIssue` 时，结论标记 **NEEDS_INFO**；不得创建替代 Issue，也不得把 parentIssue 当关闭目标。
+- **硬门控**：任一 Git contract Important 都直接 FAIL，不受“Important 问题 ≥ 3 个”的普通质量阈值影响。
+- **信息门控**：任一 unresolved Issue/closeTarget NEEDS_INFO 都禁止 PASS；必须补齐信息后重审，不能以风险接受代替合同解析。
+
 ## 审查分级
 
 - **Critical**（阻塞发布）：安全漏洞、资金逻辑错误、并发安全问题、数据丢失风险、空 catch 吞掉关键异常
@@ -57,10 +69,15 @@
 **Domain Check：**
 - ✅/⚠️ {业务不变量、状态流转和领域边界是否清晰；不适用则说明原因}
 
-**结论：✅ PASS / ❌ FAIL**
+**Git / Issue 合同：READY / NEEDS_INFO**
+- 活跃分支与记录 commits：{一致/不一致，证据}
+- Issue / close-target：{已解决/缺口}
+
+**结论：✅ PASS / ❌ FAIL / ⚠️ NEEDS_INFO**
 ```
 
-FAIL 条件：有任何 Critical 问题，或 Important 问题 ≥ 3 个。
+FAIL 条件：有任何 Critical 问题、任一 Git contract Important，或普通 Important 问题 ≥ 3 个。
+NEEDS_INFO 条件：存在任一 unresolved Issue/closeTarget；NEEDS_INFO 禁止 PASS，补齐信息后必须重新审查。
 PASS 后附建议：Minor 问题在下次迭代处理。
 
 ## 工具权限

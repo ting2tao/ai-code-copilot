@@ -2,9 +2,15 @@
 change: {change-name}
 status: proposed
 spec-hash: {sha256:...}
+parentIssue: none | #123 | URL
+workIssue: pending | #456 | URL
+issueRelationship: pending | sub-issue | standalone
+closeTarget: workIssue
+branch: type/scope
 goal: {one-line goal}
 scope: {modules/files/classes}
 open-risks: {key risks or "none"}
 loaded-knowledge: {K### list or "none"}
 
-<!-- Required fields: change, status, spec-hash, goal, scope, open-risks, loaded-knowledge. -->
+<!-- Required fields: change, status, spec-hash, parentIssue, workIssue, issueRelationship, closeTarget, branch, goal, scope, open-risks, loaded-knowledge. -->
+<!-- Standard/full Quick keeps summary.md and log.md; compact Quick records execution/commit/review/finish in quick-card.md. -->

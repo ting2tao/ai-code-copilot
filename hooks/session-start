@@ -55,29 +55,183 @@ PY
 )"
 
     ACTIVE_CHANGE_CONTEXT="$(python3 - <<'PY' 2>/dev/null || true
+import ast
+import json
+import re
+import unicodedata
 from pathlib import Path
 
 changes_dir = Path.cwd() / ".ai_code_copilot" / "changes"
 if not changes_dir.is_dir():
     raise SystemExit(0)
 
-def summary_status(change):
-    summary = change / "summary.md"
-    if not summary.exists():
+def summary_metadata(path):
+    if not path.exists():
         return None
     try:
-        for line in summary.read_text(encoding="utf-8").splitlines():
-            if line.strip().startswith("status:"):
-                return line.split(":", 1)[1].strip().split()[0]
-    except Exception:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError):
         return None
-    return None
+    fields = []
+    seen_keys = set()
+    metadata_started = False
+    in_leading_comment = False
+    for line in lines:
+        stripped = line.strip()
+        if not metadata_started:
+            if in_leading_comment:
+                if "-->" in stripped:
+                    in_leading_comment = False
+                continue
+            if not stripped:
+                continue
+            if stripped.startswith("<!--"):
+                in_leading_comment = "-->" not in stripped
+                continue
+        elif not stripped or stripped.startswith(("#", "<!--")):
+            break
+        key, separator, raw_value = stripped.partition(":")
+        if (
+            not separator
+            or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,63}", key)
+        ):
+            break
+        if not raw_value.strip():
+            return None
+        if key in seen_keys:
+            return None
+        normalized = summary_scalar_value(raw_value.strip())
+        if normalized is None:
+            return None
+        fields.append((key, normalized))
+        seen_keys.add(key)
+        metadata_started = True
+    status_values = [value for key, value in fields if key == "status"]
+    if status_values and not re.fullmatch(r"[a-z][a-z0-9-]*", status_values[0]):
+        return None
+    return fields if fields else None
+
+def has_control_characters(value):
+    return any(unicodedata.category(character).startswith("C") for character in value)
+
+def scalar_value(raw_value):
+    if not raw_value or len(raw_value) > 256 or has_control_characters(raw_value):
+        return None
+    if raw_value[0] in {'"', "'"}:
+        quote = raw_value[0]
+        escaped = False
+        closing = None
+        for index, character in enumerate(raw_value[1:], start=1):
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == quote:
+                closing = index
+                break
+        if closing is None:
+            return None
+        token = raw_value[:closing + 1]
+        suffix = raw_value[closing + 1:].strip()
+        if suffix and not suffix.startswith("#"):
+            return None
+        try:
+            value = json.loads(token) if quote == '"' else ast.literal_eval(token)
+        except (ValueError, SyntaxError):
+            return None
+        if not isinstance(value, str) or not value or len(value) > 256 or has_control_characters(value):
+            return None
+        return value
+    value = re.split(r"\s+#", raw_value, maxsplit=1)[0].strip()
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:/@+\-]*", value):
+        return None
+    return value
+
+def summary_scalar_value(raw_value):
+    if not raw_value or len(raw_value) > 512 or has_control_characters(raw_value):
+        return None
+    if raw_value[0] in {'"', "'"}:
+        quote = raw_value[0]
+        escaped = False
+        closing = None
+        for index, character in enumerate(raw_value[1:], start=1):
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == quote:
+                closing = index
+                break
+        if closing is None:
+            return None
+        token = raw_value[:closing + 1]
+        suffix = raw_value[closing + 1:].strip()
+        if suffix and not suffix.startswith("#"):
+            return None
+        try:
+            value = json.loads(token) if quote == '"' else ast.literal_eval(token)
+        except (ValueError, SyntaxError):
+            return None
+    else:
+        value = re.split(r"\s+#(?!\d)", raw_value, maxsplit=1)[0].strip()
+    if not value or len(value) > 512 or has_control_characters(value):
+        return None
+    return value
+
+def quick_front_matter(path):
+    if not path.exists():
+        return None
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError):
+        return None
+    if not lines or lines[0].strip() != "---":
+        return None
+    fields = {}
+    closed = False
+    for line in lines[1:]:
+        stripped = line.strip()
+        if stripped == "---":
+            closed = True
+            break
+        if not stripped or stripped.startswith("#"):
+            continue
+        key, separator, raw_value = stripped.partition(":")
+        if (
+            not separator
+            or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,63}", key)
+            or key in fields
+        ):
+            return None
+        normalized = scalar_value(raw_value.strip())
+        if normalized is None:
+            return None
+        fields[key] = normalized
+    return fields if closed else None
+
+def canonical_metadata_line(key, value):
+    if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:/@+\-]*", value):
+        rendered = value
+    else:
+        rendered = json.dumps(value, ensure_ascii=False)
+        rendered = rendered.replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
+    return f"{key}: {rendered}"
+
+def change_status(change):
+    summary = change / "summary.md"
+    if summary.exists():
+        metadata = summary_metadata(summary)
+        if metadata is None:
+            return None
+        return next((value for key, value in metadata if key == "status"), None)
+    fields = quick_front_matter(change / "quick-card.md")
+    return fields.get("status") if fields is not None else None
 
 all_changes = sorted(
     p for p in changes_dir.iterdir()
     if p.is_dir() and p.name not in {"archives", "templates"} and not p.name.startswith(".")
 )
-active = [p for p in all_changes if summary_status(p) != "finished"]
+active = [p for p in all_changes if change_status(p) != "finished"]
 if not active:
     raise SystemExit(0)
 
@@ -87,7 +241,7 @@ if len(active) > 1:
     print(
         "<active-change-context>\n"
         "检测到多个进行中变更；仅列名称，不加载 spec/log 全文。请在命令中明确变更名。\n"
-        f"changes: {names}{suffix}\n"
+        f"{canonical_metadata_line('changes', names + suffix)}\n"
         "</active-change-context>"
     )
     raise SystemExit(0)
@@ -97,21 +251,41 @@ summary = change / "summary.md"
 required_fields = ["change:", "status:", "spec-hash:", "goal:", "scope:", "open-risks:", "loaded-knowledge:"]
 print("<active-change-context>")
 print("检测到 1 个进行中变更；SessionStart 只注入摘要，完整 spec/tasks/test-spec 由命令阶段按需加载。")
-print(f"path: .ai_code_copilot/changes/{change.name}")
+print(canonical_metadata_line("path", f".ai_code_copilot/changes/{change.name}"))
 if summary.exists():
-    lines = [line.rstrip() for line in summary.read_text(encoding="utf-8").splitlines()]
-    useful = [line for line in lines if line.strip() and not line.lstrip().startswith("<!--")]
-    missing = [
-        field for field in required_fields
-        if not any(line.strip().startswith(field) for line in useful)
-    ]
-    if missing:
-        print("summary-validation: invalid summary.md; missing fields: " + ", ".join(missing))
-        print("fallback: 命令阶段将读取完整变更文档；请在 /propose 或 /fix 后修复 summary.md。")
-    for line in useful[:8]:
-        print(line)
+    metadata = summary_metadata(summary)
+    if metadata is None:
+        print("summary-validation: invalid summary metadata; content omitted.")
+    else:
+        present_keys = {key for key, _ in metadata}
+        missing = [field for field in required_fields if field[:-1] not in present_keys]
+        if missing:
+            print("summary-validation: invalid summary.md; missing fields: " + ", ".join(missing))
+            print("fallback: 命令阶段将读取完整变更文档；请在 /propose 或 /fix 后修复 summary.md。")
+        for key, value in metadata[:8]:
+            print(canonical_metadata_line(key, value))
 else:
-    print("summary: missing summary.md; 命令阶段再读取完整变更文档。")
+    quick_card = change / "quick-card.md"
+    quick_fields = [
+        "change",
+        "status",
+        "recordMode",
+        "specHash",
+        "parentIssue",
+        "workIssue",
+        "issueRelationship",
+        "branch",
+    ]
+    quick_metadata = quick_front_matter(quick_card)
+    if quick_metadata is None:
+        if quick_card.exists():
+            print("quick-card-validation: invalid quick-card metadata; content omitted.")
+        else:
+            print("quick-card-validation: missing quick-card.md; metadata omitted.")
+    else:
+        for key in quick_fields:
+            if key in quick_metadata:
+                print(canonical_metadata_line(key, quick_metadata[key]))
 print("</active-change-context>")
 PY
 )"

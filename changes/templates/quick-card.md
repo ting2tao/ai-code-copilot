@@ -1,8 +1,24 @@
+---
+change: "{change-name}"
+status: proposed
+recordMode: compact # compact | full
+specHash: "{sha256}"
+parentIssue: none # none | "#123" | URL
+workIssue: pending # pending | "#456" | URL
+issueRelationship: pending # pending | sub-issue | standalone
+closeTarget: workIssue
+branch: "type/scope"
+---
+
 # Quick 变更卡：{变更名}
 
 > **状态**：[ ] 草稿 / [ ] 已确认 / [ ] 实施中 / [ ] 已完成
 > **创建时间**：{YYYY-MM-DD}
-> **关联 Issue**：{Issue ID 或 URL，必填；严禁无票开发}
+> **父 Issue（parentIssue）**：{none / #123 / URL；已有父需求时填写}
+> **工作 Issue（workIssue）**：{pending / #456 / URL；Quick Card 确认后必须创建或绑定}
+> **Issue 关系（issueRelationship）**：{pending / sub-issue / standalone}
+> **关闭目标（closeTarget）**：workIssue（PR closing keyword 只关闭 workIssue）
+> **分支（branch）**：{type/scope；例如 feat/issue-workflow}
 > **确认时间**：{YYYY-MM-DD HH:mm 或"未确认"}
 > **确认人**：{用户/姓名}
 > **确认范围 Hash**：{quick-card.md 内容摘要}
@@ -57,3 +73,32 @@
 - 风险：{风险点；无则填"无明显风险"}
 - 人工确认项：{涉及资金/状态/权限/敏感信息则必须列出；无则填"无"}
 - 回滚方案：{代码/配置/数据回滚方式}
+
+## Execution record
+
+> compact 模式这些表是唯一证据源；full 模式证据写入 log.md 和 summary.md，Quick Card 只保留索引与摘要。
+> 每次 `/apply` 或 `/fix` 都追加实际 command、exit code、output summary 与对应 Loop Evidence。
+
+| command | exit code | output summary | Loop Evidence |
+|---|---:|---|---|
+
+## Commit record
+
+> 每次提交后立即追加实际 hash 与完整的 `type(scope): description` message。
+
+| hash | message |
+|---|---|
+
+## Review record
+
+> `/review` 追加 Spec Compliance、Code Quality、GitHub Readiness 与未解决风险；compact 收尾要求前两项均为 PASS。
+
+| Spec Compliance | Code Quality | GitHub Readiness | open risks |
+|---|---|---|---|
+
+## Finish record
+
+> `/finish` 追加 PR、验证结果、分支/远端和 closing statement；只允许 `Closes #<workIssue>`，parentIssue 仅使用 `Refs #<parentIssue>`。
+
+| PR URL | base | remote | Closes workIssue | Refs parentIssue | final validation |
+|---|---|---|---|---|---|
