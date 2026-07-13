@@ -15,9 +15,11 @@
 - 命中技术栈的 pack 规则：`<COPILOT_HOME>/packs/<pack>/rules/*.md`
 
 Quick 证据源：
+- Inline SDD 收到 auditable review 请求时必须先完成 `Inline -> Compact`；升级完成前不得假设 quick-card/log 已存在，也不得直接给出持久化 PASS。
 - `recordMode: compact` 的 compact Quick：从 `quick-card.md` 读取目标、范围、execution/commit/review/Loop Evidence、验证命令、风险与回滚；不得要求必须存在 log.md。
 - `recordMode: full` 的 full Quick：从 quick-card.md 读取目标与范围，从 log.md 读取 execution/commit/review/Loop Evidence、验证命令、风险与回滚。
 - 若 compact Quick 中发现 Important/Critical correction、任何 open/accepted residual risk、durable knowledge 或 open risk，必须标记 Runtime promotion，先升级为 full Quick，再进入修复（fix）、接受（accept）记录或后续归档（archive）；升级完成前不得直接写入不存在的 log.md。
+- promotion 审查必须核验 `promotedFrom`、previous contract、evidence copied、material confirmation 和单向顺序；活动变更不得自动降级。
 
 Git / Issue 合同核验：
 - 对照合同中记录的 `branch` 与当前活跃分支，确认二者一致且都符合 `type/scope`；检查 `Commit record`（compact Quick）或 tasks.md/log.md（full Quick/Standard/Complex）中的每个 commit hash 和完整 message，确认实际 commit 存在、属于当前变更，且 message 符合 `type(scope): description`。

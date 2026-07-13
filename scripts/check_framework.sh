@@ -418,6 +418,7 @@ expected_quick_card_front_matter = {
     "change": '"{change-name}"',
     "status": "proposed",
     "recordMode": "compact",
+    "promotedFrom": "none",
     "specHash": '"{sha256}"',
     "parentIssue": "none",
     "workIssue": "pending",
@@ -1148,7 +1149,7 @@ import sys
 
 context = json.loads(open(sys.argv[1], encoding="utf-8").read())["hookSpecificOutput"]["additionalContext"]
 active = context.split("<active-change-context>\n", 1)[1].split("\n</active-change-context>", 1)[0]
-allowed = {"change", "status", "recordMode", "specHash", "parentIssue", "workIssue", "issueRelationship", "branch"}
+allowed = {"change", "status", "recordMode", "promotedFrom", "specHash", "parentIssue", "workIssue", "issueRelationship", "branch"}
 metadata = [line for line in active.splitlines() if line.partition(":")[0] in allowed]
 raise SystemExit(0 if not metadata else 1)
 PY
@@ -1427,7 +1428,7 @@ import sys
 
 context = json.loads(open(sys.argv[1], encoding="utf-8").read())["hookSpecificOutput"]["additionalContext"]
 active = context.split("<active-change-context>\n", 1)[1].split("\n</active-change-context>", 1)[0]
-allowed = {"change", "status", "recordMode", "specHash", "parentIssue", "workIssue", "issueRelationship", "branch"}
+allowed = {"change", "status", "recordMode", "promotedFrom", "specHash", "parentIssue", "workIssue", "issueRelationship", "branch"}
 metadata = [line for line in active.splitlines() if line.partition(":")[0] in allowed]
 raise SystemExit(0 if not metadata else 1)
 PY
@@ -1525,6 +1526,7 @@ PY
 change: tiny-doc-fix
 status: in-apply
 recordMode: compact
+promotedFrom: inline
 specHash: sha256:test
 parentIssue: none
 workIssue: "#42"
@@ -1542,12 +1544,13 @@ import sys
 
 context = json.loads(open(sys.argv[1], encoding="utf-8").read())["hookSpecificOutput"]["additionalContext"]
 active = context.split("<active-change-context>\n", 1)[1].split("\n</active-change-context>", 1)[0]
-allowed = ["change", "status", "recordMode", "specHash", "parentIssue", "workIssue", "issueRelationship", "branch"]
+allowed = ["change", "status", "recordMode", "promotedFrom", "specHash", "parentIssue", "workIssue", "issueRelationship", "branch"]
 metadata = [line for line in active.splitlines() if line.partition(":")[0] in allowed]
 expected = [
     "change: tiny-doc-fix",
     "status: in-apply",
     "recordMode: compact",
+    "promotedFrom: inline",
     "specHash: sha256:test",
     "parentIssue: none",
     'workIssue: "#42"',

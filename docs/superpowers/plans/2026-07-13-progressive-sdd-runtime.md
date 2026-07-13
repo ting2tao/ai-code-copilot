@@ -437,7 +437,7 @@ git commit -m "feat(progressive-sdd): 增加模块化运行时路由"
 - Modify: `scripts/check_progressive_sdd.py`
 - Modify: `scripts/check_framework.sh`
 
-- [ ] **Step 1: Add failing promotion contract assertions**
+- [x] **Step 1: Add failing promotion contract assertions**
 
 Extend `scripts/check_progressive_sdd.py`:
 
@@ -452,13 +452,13 @@ Extend `scripts/check_progressive_sdd.py`:
             fail(f"spec reviewer missing progressive SDD marker: {marker}")
 ```
 
-- [ ] **Step 2: Run Red**
+- [x] **Step 2: Run Red**
 
 Run `python3 scripts/check_progressive_sdd.py .`.
 
 Expected: non-zero exit naming the first missing promotion marker.
 
-- [ ] **Step 3: Extend the Quick Card metadata and record**
+- [x] **Step 3: Extend the Quick Card metadata and record**
 
 Add to the front matter:
 
@@ -477,7 +477,7 @@ Add:
 
 Update `summary.md` with optional `promoted-from: none | inline | compact` documentation while retaining all existing required fields.
 
-- [ ] **Step 4: Update promotion and review modules**
+- [x] **Step 4: Update promotion and review modules**
 
 Require exact ordering:
 
@@ -487,15 +487,15 @@ stop edits -> capture contract/diff/evidence -> create target record -> copy evi
 
 Define mechanical Reverse Sync as path/symbol/command/implementation-detail correction without behavior or risk change. Define material Reverse Sync as Goal/Scope/Acceptance/Guardrails/risk/external-action change.
 
-- [ ] **Step 5: Update both reviewers**
+- [x] **Step 5: Update both reviewers**
 
 The Spec reviewer must verify both promotion paths, provenance, evidence preservation, and material-confirmation decisions. The Code Quality reviewer must require Inline work to promote before an auditable persisted review and must not require nonexistent log files before promotion completes.
 
-- [ ] **Step 6: Update bounded SessionStart metadata**
+- [x] **Step 6: Update bounded SessionStart metadata**
 
 Allow `promotedFrom` in validated Quick front matter and include it only in the existing bounded metadata list. Do not include Promotion record bodies.
 
-- [ ] **Step 7: Run checks and commit**
+- [x] **Step 7: Run checks and commit**
 
 Run:
 

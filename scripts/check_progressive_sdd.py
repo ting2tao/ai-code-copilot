@@ -94,6 +94,26 @@ def main() -> None:
         fail("skill must load agents/router.md")
     if "agents/copilot-prompt.md" not in skill:
         fail("skill must retain the legacy prompt fallback")
+
+    quick_card = read_text(root / "changes/templates/quick-card.md")
+    for marker in [
+        "promotedFrom:",
+        "Promotion record",
+        "previous contract",
+        "evidence copied",
+        "material confirmation",
+    ]:
+        if marker not in quick_card:
+            fail(f"quick-card missing promotion marker: {marker}")
+    spec_reviewer = read_text(root / "agents/spec-reviewer.md")
+    for marker in [
+        "Inline -> Compact",
+        "Inline -> Full",
+        "mechanical Reverse Sync",
+        "material Reverse Sync",
+    ]:
+        if marker not in spec_reviewer:
+            fail(f"spec reviewer missing progressive SDD marker: {marker}")
     print("progressive-sdd: policy and module checks passed")
 
 

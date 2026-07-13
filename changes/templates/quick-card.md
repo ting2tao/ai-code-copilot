@@ -2,6 +2,7 @@
 change: "{change-name}"
 status: proposed
 recordMode: compact # compact | full
+promotedFrom: none # none | inline
 specHash: "{sha256}"
 parentIssue: none # none | "#123" | URL
 workIssue: pending # pending | "#456" | URL
@@ -81,6 +82,13 @@ branch: "type/scope"
 
 | command | exit code | output summary | Loop Evidence |
 |---|---:|---|---|
+
+## Promotion record
+
+> 升级必须先停止新增编辑，再保留 previous contract 与已有证据。只有 Goal、Scope、Acceptance、Guardrails、风险或外部动作发生实质变化时才需要 material confirmation。
+
+| promoted at | from | trigger | previous contract | evidence copied | material confirmation |
+|---|---|---|---|---|---|
 
 ## Commit record
 

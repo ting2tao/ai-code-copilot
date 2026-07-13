@@ -270,6 +270,7 @@ else:
         "change",
         "status",
         "recordMode",
+        "promotedFrom",
         "specHash",
         "parentIssue",
         "workIssue",
