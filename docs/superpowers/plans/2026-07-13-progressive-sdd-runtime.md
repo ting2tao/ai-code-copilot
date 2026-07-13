@@ -749,7 +749,7 @@ git add docs/superpowers/specs/2026-07-13-progressive-sdd-runtime-design.md docs
 git commit -m "docs(progressive-sdd): 记录升级验证证据"
 ```
 
-- [ ] **Step 7: Run the complete verification again after the final commit**
+- [x] **Step 7: Run the complete verification again after the final commit**
 
 Run:
 
