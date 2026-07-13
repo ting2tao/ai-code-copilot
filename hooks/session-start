@@ -270,6 +270,7 @@ else:
         "change",
         "status",
         "recordMode",
+        "promotedFrom",
         "specHash",
         "parentIssue",
         "workIssue",
@@ -296,14 +297,16 @@ SAFETY_CONTENT='<ai-code-copilot-safety-rules>
 
 框架根目录：'"$PLUGIN_ROOT"'
 兼容平台：Codex / Claude Code
-完整提示词位置：'"$PLUGIN_ROOT"'/agents/copilot-prompt.md
+轻量路由位置：'"$PLUGIN_ROOT"'/agents/router.md
+按需模块目录：'"$PLUGIN_ROOT"'/agents/workflows/
+Legacy fallback：'"$PLUGIN_ROOT"'/agents/copilot-prompt.md
 SessionStart 注入层级：仅 L0 安全规则、框架路径、命令菜单、上下文新鲜度提醒和活跃变更摘要；不在启动时加载 pack rules、knowledge 全文或 spec.md 全文。
 
 <HARD-GATE>
-Standard/Complex 档：/propose 未完成且用户未确认前，禁止任何编码动作。
-Quick 档：必须先生成 quick-card.md（目标/文件/非目标/验收/风险），用户确认后才执行。
-任何档位：涉及资金/状态流转/权限变更，必须高亮提醒，等待人工确认后才能继续。
-不确定档位时，默认走 Standard。
+Inline SDD 仅在全部低风险条件明确满足且 Goal/Scope/Done Signal/Verify 可见时允许编辑。
+Compact SDD 必须有有效 quick-card.md；Full SDD 必须有已确认 Spec。
+涉及资金/状态流转/权限/安全/生产风险必须进入 Full 并等待人工确认。
+不确定时使用 Compact；活动变更只允许 Inline -> Compact -> Full 或 Inline -> Full，不自动降级。
 </HARD-GATE>
 
 安全红线（始终生效）：

@@ -439,6 +439,7 @@ for pack_dir, manifest in read_manifests():
 events = []
 
 obsolete_issue_config = False
+missing_issue_policy = False
 config_inspection_warning = None
 existing_config_text = None
 config_path_present = config_path.exists() or config_path.is_symlink()
@@ -461,6 +462,7 @@ if config_path_present:
                     config_inspection_warning = "existing config githubWorkflow must be a JSON object"
                 else:
                     obsolete_issue_config = "issueWhenMissing" in github_workflow
+                    missing_issue_policy = "issuePolicy" not in github_workflow
 
 framework_config_text = (copilot_home / "config" / "project-config.json").read_text(encoding="utf-8")
 if config_path_present:
@@ -524,6 +526,8 @@ if config_inspection_warning:
     print(f"warning: could not check obsolete githubWorkflow.issueWhenMissing: {config_inspection_warning}; project-owned config was preserved.")
 if obsolete_issue_config:
     print("migration-note: githubWorkflow.issueWhenMissing is obsolete and ignored; project-owned config was preserved.")
+if missing_issue_policy:
+    print("migration-note: githubWorkflow.issuePolicy is missing; runtime uses legacy default always; project-owned config was preserved.")
 if dry_run:
     if any(status == "candidate" for status, _ in events):
         print("note: candidates listed only; no files were written.")

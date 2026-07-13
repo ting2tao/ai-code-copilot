@@ -25,6 +25,14 @@
 9. 检查 Domain Check：涉及领域复杂度时，Language、Boundary、Invariants、State Transitions、Owner 是否已记录，且实现没有绕过业务不变量或状态流转
 10. 输出审查报告
 
+## Progressive SDD 审查
+
+- Inline 本身不进入持久化审查；收到 auditable review 请求时必须先完成 `Inline -> Compact`。
+- 核验 `Inline -> Compact` 和 `Inline -> Full` 是否遵循：`stop edits -> capture contract/diff/evidence -> create target record -> copy evidence -> update tier/recordMode -> recompute hash -> request confirmation only for material change -> resume`。
+- `mechanical Reverse Sync` 仅允许修正路径、符号、命令或不改变行为/风险的实现细节，可自动记录。
+- `material Reverse Sync` 改变 Goal、Scope、Acceptance、Guardrails、风险或外部动作，必须停止并重新确认。
+- promotion 必须在继续编辑前发生；`promotedFrom`、previous contract、evidence copied 和 material confirmation 结论缺失时判定 FAIL/NEEDS_INFO。
+
 ## 审查维度
 
 1. **缺失实现**：spec 要求了但代码没做的

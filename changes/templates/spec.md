@@ -4,9 +4,9 @@
 > **复杂度档位**：[ ] Quick / [ ] Standard / [ ] Complex
 > **创建时间**：{YYYY-MM-DD}
 > **父 Issue（parentIssue）**：{none / #123 / URL；已有父需求时填写}
-> **工作 Issue（workIssue）**：{pending / #456 / URL；Spec 确认后必须创建或绑定}
-> **Issue 关系（issueRelationship）**：{pending / sub-issue / standalone}
-> **关闭目标（closeTarget）**：workIssue（PR closing keyword 只关闭 workIssue）
+> **工作 Issue（workIssue）**：{pending / #456 / URL；manual 且未提供 Issue 时填 none}
+> **Issue 关系（issueRelationship）**：{pending / sub-issue / standalone；manual/no-Issue 时填 none}
+> **关闭目标（closeTarget）**：{workIssue；manual/no-Issue 时为 none，且省略 closing keyword}
 > **分支（branch）**：{type/scope；例如 feat/issue-workflow}
 > **确认时间**：{YYYY-MM-DD HH:mm 或"未确认"}
 > **确认人**：{用户/姓名}

@@ -123,6 +123,24 @@ flowchart LR
     class I1,I2,I3 init
 ```
 
+## Progressive SDD Runtime
+
+The Codex skill first loads the small [`agents/router.md`](agents/router.md), then loads only the needed file under `agents/workflows/`. The former monolithic prompt remains a compatibility fallback for older or incomplete installations.
+
+Inline SDD, Compact SDD, and Full SDD are persistence tiers for the same engineering standard—not three quality levels:
+
+| Tier | Record cost | Use when |
+|------|-------------|----------|
+| **Inline SDD** | Conversation-only `Goal / Scope / Done Signal / Verify` | Clear, low-risk, directly reversible local work touching at most two files |
+| **Compact SDD** | One `quick-card.md` | The change needs persistence, a commit/PR, handoff, or auditable review |
+| **Full SDD** | design/spec/tasks/test/log/summary as needed | Public contracts, databases, security, deployment, cross-module rules, multiple goals, or residual risk |
+
+Promotion is monotonic: `Inline -> Compact -> Full`, or directly `Inline -> Full`; an active change never auto-downgrades. Existing `recordMode: compact` Quick Cards remain Compact SDD, and existing Quick Full/Standard/Complex records remain Full SDD.
+
+New projects default `githubWorkflow.issuePolicy` to `on-publish`: local edits and commits may proceed, but the work Issue must be resolved before push/PR. Existing configurations without `issuePolicy` retain legacy `always` behavior. Supported policies are `always`, `on-commit`, `on-publish`, and `manual`.
+
+ai-code-copilot is the default delivery orchestrator. Superpowers is an explicit specialist library for focused debugging, verification, review, high-risk TDD, worktree isolation, or intentional parallelism; it is not loaded as a second default workflow stack.
+
 ## Progressive Complexity
 
 Every request is classified before work begins:
@@ -140,10 +158,10 @@ When uncertain, the framework defaults to Standard.
 - **Quick Compact** is limited to a single-purpose, single-commit change touching at most two files, with no API, database, dependency, CI, deployment, generated-artifact, security, permission, authentication, sensitive-data, state-machine, or cross-module rule impact, and it must have executable verification plus direct rollback. It uses `quick-card.md` as its single record source. If any condition stops being true at runtime, it automatically upgrades to Quick Full before work continues.
 - **Quick Full** is the default when Compact eligibility is uncertain or unmet. Its record set is `quick-card.md` + `log.md` + `summary.md`.
 - At the start, the workflow parses or asks once for `parentIssue`, reads its overall requirement when present, and links the work as a native sub-issue when GitHub supports the relationship.
-- After a Quick Card or Spec is confirmed, the workflow must automatically create one `workIssue`, or validate and reuse the recorded open `workIssue`. This is mandatory and does not depend on configuration.
+- At the lifecycle gate selected by `issuePolicy`, the workflow must automatically create one `workIssue`, or validate and reuse the recorded open `workIssue`. New projects use `on-publish`; a missing legacy policy means `always`; `manual` never auto-creates.
 - Branches must use `type/scope`; commits must use `type(scope): description`.
-- `/finish` puts `Closes #<workIssue>` in the PR body. A `parentIssue` is referenced only with `Refs #<parentIssue>` and is never closed by the child change.
-- `finishMode` controls only PR handoff (`ask`, `auto-pr`, or `manual`). The old `issueWhenMissing` setting is obsolete and ignored.
+- When a work Issue exists, `/finish` puts `Closes #<workIssue>` in the PR body. Under `manual` with no supplied Issue, it records an explicit no-Issue delivery and omits closing keywords. A `parentIssue` is referenced only with `Refs #<parentIssue>` and is never closed by the child change.
+- `finishMode` controls only PR handoff (`ask`, `auto-pr`, or `manual`). The old `issueWhenMissing` setting is obsolete and ignored; it does not replace `issuePolicy`.
 
 ## Standard Workflow
 
@@ -193,7 +211,7 @@ Hard gate: no confirmed spec and tasks, no implementation.
 
 Goal: implement task by task, with evidence after each step.
 
-- No ticketless development: `spec.md` or `quick-card.md` must record an Issue ID or URL.
+- Follow `issuePolicy`: record an Issue ID/URL by its lifecycle gate, or an explicit no-Issue contract under `manual`.
 - Execute tasks one by one, or in a controlled batch when requested.
 - After each task, show verifiable evidence such as build output, test output, or curl results.
 - Avoid evidence-free claims such as "should be fine".
@@ -202,7 +220,7 @@ Goal: implement task by task, with evidence after each step.
 
 Branches use the strict `type/scope` form. Commit messages use the strict Conventional Commits form `type(scope): description`. Put Issue references in the body or PR.
 
-PRs must use `Closes #<workIssue>` to close the work Issue and, when present, `Refs #<parentIssue>` for the parent. They must trigger CodeQL and CI and follow `.github/PULL_REQUEST_TEMPLATE.md` so GitHub can collect issue, test, CI, and risk data.
+When a work Issue exists, PRs must use `Closes #<workIssue>` and, when present, `Refs #<parentIssue>` for the parent. Manual/no-Issue PRs omit closing keywords. All PRs must trigger CodeQL and CI and follow `.github/PULL_REQUEST_TEMPLATE.md` so GitHub can collect issue, test, CI, and risk data.
 
 ### 4. `/review` - Two-Stage Review and GitHub Readiness
 
@@ -222,7 +240,7 @@ When GitHub Actions, CodeQL, lint, type checks, tests, or builds fail, paste the
 
 ### 6. `/finish` - GitHub Handoff
 
-Goal: verify, push, create a PR, and close only the work Issue with `Closes #<workIssue>`.
+Goal: verify, push, create a PR, and—when a work Issue exists—close only it with `Closes #<workIssue>`.
 
 - In Codex, trigger this flow with `finish <change>`, `open PR <change>`, or natural language instead of relying on `/finish`.
 - Read `.ai_code_copilot/config.json` for `githubWorkflow`.
@@ -230,7 +248,7 @@ Goal: verify, push, create a PR, and close only the work Issue with `Closes #<wo
 - `finishMode=ask`: confirm each time.
 - `finishMode=auto-pr`: push and create PR automatically.
 - `finishMode=manual`: output commands and PR body only. These modes control PR handoff only, not Issue creation.
-- PR body includes Summary, Test Evidence, Risk, AI Collaboration, `Closes #<workIssue>`, and, when present, `Refs #<parentIssue>`.
+- PR body includes Summary, Test Evidence, Risk, and AI Collaboration. It includes `Closes #<workIssue>` only when a work Issue exists, and `Refs #<parentIssue>` when a parent exists.
 - Record finish results in `quick-card.md` for Quick Compact. Quick Full writes finish evidence to `log.md` and updates `summary.md` to `status: finished`; Standard/Complex use their full record set.
 - Quick Compact does not require `log.md` or `summary.md`.
 - If `Knowledge candidates` exist in `log.md`, ask whether to write them to `knowledge/` now, skip, or continue into archive.

@@ -3,14 +3,16 @@ change: {change-name}
 status: proposed
 spec-hash: {sha256:...}
 parentIssue: none | #123 | URL
-workIssue: pending | #456 | URL
-issueRelationship: pending | sub-issue | standalone
-closeTarget: workIssue
+workIssue: pending | #456 | URL | none (manual only)
+issueRelationship: pending | sub-issue | standalone | none (manual only)
+closeTarget: workIssue | none (manual only)
 branch: type/scope
 goal: {one-line goal}
 scope: {modules/files/classes}
 open-risks: {key risks or "none"}
 loaded-knowledge: {K### list or "none"}
+promoted-from: none | inline | compact # optional promotion provenance
 
 <!-- Required fields: change, status, spec-hash, parentIssue, workIssue, issueRelationship, closeTarget, branch, goal, scope, open-risks, loaded-knowledge. -->
 <!-- Standard/full Quick keeps summary.md and log.md; compact Quick records execution/commit/review/finish in quick-card.md. -->
+<!-- promoted-from is optional for legacy records; new promoted Full records should preserve it. -->

@@ -5,6 +5,7 @@
     "fixThresholdLines": 200
   },
   "githubWorkflow": {
+    "issuePolicy": "on-publish",
     "finishMode": "ask",
     "createPrAfterReviewPass": false,
     "defaultBaseBranch": "main",

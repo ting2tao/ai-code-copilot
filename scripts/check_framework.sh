@@ -24,6 +24,8 @@ need_file agents/copilot-prompt.md
 need_file agents/spec-reviewer.md
 need_file agents/code-quality-reviewer.md
 need_file config/project-config.json
+need_file config/workflow-policy.json
+need_file scripts/check_progressive_sdd.py
 need_file docs/harness-engineering.md
 need_file docs/loop-engineering.md
 need_file hooks/session-start
@@ -43,6 +45,8 @@ bash -n install.sh
 bash -n install-wsl.sh
 bash -n hooks/session-start
 bash -n scripts/init_project.sh
+
+python3 scripts/check_progressive_sdd.py "$ROOT"
 
 python3 - "$ROOT" <<'PY'
 import json
@@ -167,6 +171,21 @@ for rel, (heading, next_heading_pattern) in workflow_contract_sections.items():
     missing_markers = [marker for marker in workflow_section_markers[rel] if marker not in section]
     if missing_markers:
         raise SystemExit(f"{rel} workflow contract section missing: " + ", ".join(missing_markers))
+
+progressive_sdd_doc_markers = {
+    "README.md": ["agents/router.md", "Inline SDD", "Compact SDD", "Full SDD", "issuePolicy", "Promotion is monotonic", "Superpowers"],
+    "README-CN.md": ["agents/router.md", "Inline SDD", "Compact SDD", "Full SDD", "issuePolicy", "升级是单向", "Superpowers"],
+    "AGENTS.md": ["agents/router.md", "agents/workflows/", "workflow-policy.json", "Inline SDD", "单向升级", "Superpowers 边界"],
+    "docs/ai-code-copilot-overview.md": ["Inline SDD", "Compact SDD", "Full SDD", "issuePolicy", "Superpowers"],
+    "docs/ai-code-copilot-flow.md": ["agents/router.md", "Inline SDD", "单向升级"],
+    "docs/harness-engineering.md": ["Spec 档位", "Acceptance", "Done Signal", "Guardrails", "Fallback"],
+    "docs/loop-engineering.md": ["Inline SDD", "Compact SDD", "Full SDD", "单向升级"],
+}
+for rel, markers in progressive_sdd_doc_markers.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    missing_markers = [marker for marker in markers if marker not in text]
+    if missing_markers:
+        raise SystemExit(f"{rel} progressive SDD documentation missing: " + ", ".join(missing_markers))
 
 
 closing_reference_pattern = re.compile(
@@ -332,6 +351,7 @@ if "issueWhenMissing" in github_workflow:
     raise SystemExit("project config must not configure mandatory Issue creation")
 expected_config = {
     "projectContextStaleAfterDays": 30,
+    "issuePolicy": "on-publish",
     "finishMode": "ask",
     "createPrAfterReviewPass": False,
     "defaultBaseBranch": "main",
@@ -361,6 +381,8 @@ for marker in [
     "existing config root must be a JSON object",
     "existing config githubWorkflow must be a JSON object",
     "warning: could not check obsolete githubWorkflow.issueWhenMissing",
+    "missing_issue_policy = \"issuePolicy\" not in github_workflow",
+    "migration-note: githubWorkflow.issuePolicy is missing; runtime uses legacy default always; project-owned config was preserved.",
 ]:
     if marker not in init_project_text:
         raise SystemExit(f"init_project.sh missing config migration check: {marker}")
@@ -414,6 +436,7 @@ expected_quick_card_front_matter = {
     "change": '"{change-name}"',
     "status": "proposed",
     "recordMode": "compact",
+    "promotedFrom": "none",
     "specHash": '"{sha256}"',
     "parentIssue": "none",
     "workIssue": "pending",
@@ -1144,7 +1167,7 @@ import sys
 
 context = json.loads(open(sys.argv[1], encoding="utf-8").read())["hookSpecificOutput"]["additionalContext"]
 active = context.split("<active-change-context>\n", 1)[1].split("\n</active-change-context>", 1)[0]
-allowed = {"change", "status", "recordMode", "specHash", "parentIssue", "workIssue", "issueRelationship", "branch"}
+allowed = {"change", "status", "recordMode", "promotedFrom", "specHash", "parentIssue", "workIssue", "issueRelationship", "branch"}
 metadata = [line for line in active.splitlines() if line.partition(":")[0] in allowed]
 raise SystemExit(0 if not metadata else 1)
 PY
@@ -1423,7 +1446,7 @@ import sys
 
 context = json.loads(open(sys.argv[1], encoding="utf-8").read())["hookSpecificOutput"]["additionalContext"]
 active = context.split("<active-change-context>\n", 1)[1].split("\n</active-change-context>", 1)[0]
-allowed = {"change", "status", "recordMode", "specHash", "parentIssue", "workIssue", "issueRelationship", "branch"}
+allowed = {"change", "status", "recordMode", "promotedFrom", "specHash", "parentIssue", "workIssue", "issueRelationship", "branch"}
 metadata = [line for line in active.splitlines() if line.partition(":")[0] in allowed]
 raise SystemExit(0 if not metadata else 1)
 PY
@@ -1521,6 +1544,7 @@ PY
 change: tiny-doc-fix
 status: in-apply
 recordMode: compact
+promotedFrom: inline
 specHash: sha256:test
 parentIssue: none
 workIssue: "#42"
@@ -1538,12 +1562,13 @@ import sys
 
 context = json.loads(open(sys.argv[1], encoding="utf-8").read())["hookSpecificOutput"]["additionalContext"]
 active = context.split("<active-change-context>\n", 1)[1].split("\n</active-change-context>", 1)[0]
-allowed = ["change", "status", "recordMode", "specHash", "parentIssue", "workIssue", "issueRelationship", "branch"]
+allowed = ["change", "status", "recordMode", "promotedFrom", "specHash", "parentIssue", "workIssue", "issueRelationship", "branch"]
 metadata = [line for line in active.splitlines() if line.partition(":")[0] in allowed]
 expected = [
     "change: tiny-doc-fix",
     "status: in-apply",
     "recordMode: compact",
+    "promotedFrom: inline",
     "specHash: sha256:test",
     "parentIssue: none",
     'workIssue: "#42"',
@@ -1568,6 +1593,7 @@ if [ -d tests/fixtures ]; then
     grep -q '"projectContextSyncedAt":' "$tmpdir/.ai_code_copilot/.copilot-state.json" || fail "fixture state missing projectContextSyncedAt: $fixture"
     grep -q '"projectContextStaleAfterDays": 30' "$tmpdir/.ai_code_copilot/.copilot-state.json" || fail "fixture state missing projectContextStaleAfterDays: $fixture"
     test -f "$tmpdir/.ai_code_copilot/config.json" || fail "fixture missing project config: $fixture"
+    grep -q '"issuePolicy": "on-publish"' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing issuePolicy on-publish: $fixture"
     grep -q '"finishMode": "ask"' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing finishMode ask: $fixture"
     ! grep -q '"issueWhenMissing":' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config must omit obsolete issueWhenMissing: $fixture"
     grep -q '"projectContextStaleAfterDays": 30' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing projectContextStaleAfterDays: $fixture"
@@ -1634,6 +1660,7 @@ if [ -d tests/fixtures ]; then
     grep -q '"finishMode":"manual"' "$tmpdir/.ai_code_copilot/config.json" || fail "sync overwrote project-owned config: $fixture"
     grep -q '"issueWhenMissing":"ask"' "$tmpdir/.ai_code_copilot/config.json" || fail "sync did not preserve obsolete project-owned issueWhenMissing config: $fixture"
     grep -q 'migration-note: githubWorkflow.issueWhenMissing is obsolete and ignored; project-owned config was preserved.' "$sync_output" || fail "sync missing obsolete issueWhenMissing migration note: $fixture"
+    grep -q 'migration-note: githubWorkflow.issuePolicy is missing; runtime uses legacy default always; project-owned config was preserved.' "$sync_output" || fail "sync missing legacy issuePolicy migration note: $fixture"
     test ! -f "$tmpdir/.ai_code_copilot/rules/project-context.md.new" || fail "sync generated project-context.md.new for project-owned rule: $fixture"
     test ! -f "$tmpdir/.ai_code_copilot/rules/domain-rules.md.new" || fail "sync generated domain-rules.md.new for project-owned rule: $fixture"
     test ! -f "$tmpdir/.ai_code_copilot/config.json.new" || fail "sync generated config.json.new for project-owned config: $fixture"
