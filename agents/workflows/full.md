@@ -2,6 +2,18 @@
 
 Full SDD 用于高风险、跨模块、超过五文件、多目标或需要完整审计的变更。
 
+## Issue lifecycle
+
+```text
+always     -> resolve workIssue before implementation
+on-commit  -> local edits allowed; resolve workIssue before first commit
+on-publish -> local edits and commits allowed; resolve workIssue before push/PR
+manual     -> never auto-create; validate supplied Issue when present
+missing    -> legacy default always
+```
+
+全量记录从提案开始保存 Issue 状态，但只在策略门禁到达时执行创建。已存在的 open work Issue 必须复用；部分成功后不得创建替代票；`closeTarget` 永远是 workIssue，parent 永不由子变更关闭。
+
 ## Record set
 
 - `design-brief.md`: 需求理解、现状、2-3 方案、风险、YAGNI 和确认。

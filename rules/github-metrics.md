@@ -35,11 +35,13 @@ alwaysApply: true
 
 ### Work closure 与 parent progress
 
+- 统计必须记录 `issuePolicy`（`always`、`on-commit`、`on-publish`、`manual`）；缺失配置单列为 legacy `always`，避免把生命周期差异误判为流程失败。
 - `workIssue` 是一个已确认变更的交付单元；其 closure/关闭由合并 PR 中的 `Closes #<workIssue>` 统计。
 - `parentIssue` 是整体需求；work Issue closure/关闭与 parent requirement progress 必须分开统计，后者按 native sub-issue 的完成数/总数和 acceptance checklist 进度计算。
 - 每个变更的 `closeTarget` 必须固定为 `workIssue`。`parentIssue` 只能用 `Refs #<parentIssue>` 关联，不能因单个 work Issue 合并而自动关闭。
 - `issueRelationship: sub-issue` 必须由 GitHub native relationship 验证；`standalone` 单独统计，`pending` 不计为可开工或可完成样本。
 - 同一 confirmed contract 重复创建的 Issue 不得计入产出；应标记 duplicate 并调查流程违规。
+- `manual` 且未提供 Issue 的交付不得伪造 closure 数据；应单独统计为 explicit no-Issue，而不是计入重复票或流程失败。
 
 ## 3. PR Body 必填信号
 

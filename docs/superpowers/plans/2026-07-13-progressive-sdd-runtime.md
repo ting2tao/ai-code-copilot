@@ -529,7 +529,7 @@ git commit -m "feat(progressive-sdd): 记录单向升级与审查证据"
 - Modify: `scripts/check_progressive_sdd.py`
 - Modify: `scripts/check_framework.sh`
 
-- [ ] **Step 1: Add failing policy-lifecycle assertions**
+- [x] **Step 1: Add failing policy-lifecycle assertions**
 
 Add to `scripts/check_progressive_sdd.py`:
 
@@ -543,13 +543,13 @@ Add to `scripts/check_progressive_sdd.py`:
             fail(f"finish module missing issue policy marker: {marker}")
 ```
 
-- [ ] **Step 2: Run Red**
+- [x] **Step 2: Run Red**
 
 Run `python3 scripts/check_progressive_sdd.py .`.
 
 Expected: non-zero exit stating that project config lacks `issuePolicy=on-publish`.
 
-- [ ] **Step 3: Add the new-project default**
+- [x] **Step 3: Add the new-project default**
 
 Update `config/project-config.json`:
 
@@ -564,7 +564,7 @@ Update `config/project-config.json`:
 }
 ```
 
-- [ ] **Step 4: Implement lifecycle gates in workflow modules and rules**
+- [x] **Step 4: Implement lifecycle gates in workflow modules and rules**
 
 Use this exact table:
 
@@ -578,11 +578,11 @@ missing    -> legacy default always
 
 Whenever an Issue exists, keep `closeTarget=workIssue`, reuse an existing open Issue, never create a replacement after partial success, and never close the parent Issue.
 
-- [ ] **Step 5: Preserve old project configuration**
+- [x] **Step 5: Preserve old project configuration**
 
 Keep `scripts/init_project.sh` byte-preserving behavior for existing `.ai_code_copilot/config.json`. Add a migration note for a missing `issuePolicy` explaining that runtime uses legacy `always`; do not rewrite or generate `.new` for the project-owned config.
 
-- [ ] **Step 6: Extend fixture checks**
+- [x] **Step 6: Extend fixture checks**
 
 In `scripts/check_framework.sh`:
 
@@ -591,7 +591,7 @@ In `scripts/check_framework.sh`:
 - Assert sync output contains the legacy-default migration note.
 - Keep obsolete `issueWhenMissing` preservation and warning coverage.
 
-- [ ] **Step 7: Run checks and commit**
+- [x] **Step 7: Run checks and commit**
 
 Run:
 

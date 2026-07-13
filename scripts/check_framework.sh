@@ -336,6 +336,7 @@ if "issueWhenMissing" in github_workflow:
     raise SystemExit("project config must not configure mandatory Issue creation")
 expected_config = {
     "projectContextStaleAfterDays": 30,
+    "issuePolicy": "on-publish",
     "finishMode": "ask",
     "createPrAfterReviewPass": False,
     "defaultBaseBranch": "main",
@@ -365,6 +366,8 @@ for marker in [
     "existing config root must be a JSON object",
     "existing config githubWorkflow must be a JSON object",
     "warning: could not check obsolete githubWorkflow.issueWhenMissing",
+    "missing_issue_policy = \"issuePolicy\" not in github_workflow",
+    "migration-note: githubWorkflow.issuePolicy is missing; runtime uses legacy default always; project-owned config was preserved.",
 ]:
     if marker not in init_project_text:
         raise SystemExit(f"init_project.sh missing config migration check: {marker}")
@@ -1575,6 +1578,7 @@ if [ -d tests/fixtures ]; then
     grep -q '"projectContextSyncedAt":' "$tmpdir/.ai_code_copilot/.copilot-state.json" || fail "fixture state missing projectContextSyncedAt: $fixture"
     grep -q '"projectContextStaleAfterDays": 30' "$tmpdir/.ai_code_copilot/.copilot-state.json" || fail "fixture state missing projectContextStaleAfterDays: $fixture"
     test -f "$tmpdir/.ai_code_copilot/config.json" || fail "fixture missing project config: $fixture"
+    grep -q '"issuePolicy": "on-publish"' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing issuePolicy on-publish: $fixture"
     grep -q '"finishMode": "ask"' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing finishMode ask: $fixture"
     ! grep -q '"issueWhenMissing":' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config must omit obsolete issueWhenMissing: $fixture"
     grep -q '"projectContextStaleAfterDays": 30' "$tmpdir/.ai_code_copilot/config.json" || fail "fixture config missing projectContextStaleAfterDays: $fixture"
@@ -1641,6 +1645,7 @@ if [ -d tests/fixtures ]; then
     grep -q '"finishMode":"manual"' "$tmpdir/.ai_code_copilot/config.json" || fail "sync overwrote project-owned config: $fixture"
     grep -q '"issueWhenMissing":"ask"' "$tmpdir/.ai_code_copilot/config.json" || fail "sync did not preserve obsolete project-owned issueWhenMissing config: $fixture"
     grep -q 'migration-note: githubWorkflow.issueWhenMissing is obsolete and ignored; project-owned config was preserved.' "$sync_output" || fail "sync missing obsolete issueWhenMissing migration note: $fixture"
+    grep -q 'migration-note: githubWorkflow.issuePolicy is missing; runtime uses legacy default always; project-owned config was preserved.' "$sync_output" || fail "sync missing legacy issuePolicy migration note: $fixture"
     test ! -f "$tmpdir/.ai_code_copilot/rules/project-context.md.new" || fail "sync generated project-context.md.new for project-owned rule: $fixture"
     test ! -f "$tmpdir/.ai_code_copilot/rules/domain-rules.md.new" || fail "sync generated domain-rules.md.new for project-owned rule: $fixture"
     test ! -f "$tmpdir/.ai_code_copilot/config.json.new" || fail "sync generated config.json.new for project-owned config: $fixture"

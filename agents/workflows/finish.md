@@ -1,17 +1,18 @@
 # Workflow Module: finish / commit / publish
 
-读取项目 `.ai_code_copilot/config.json`。`issuePolicy` 缺失时使用 legacy default `always`；允许 `always / on-commit / on-publish / manual`。`finishMode` 只控制 PR handoff。
+读取项目 `.ai_code_copilot/config.json`。`issuePolicy` 缺失时使用 `legacy default: always`；允许 `always / on-commit / on-publish / manual`。`finishMode` 只控制 PR handoff。
 
 ## Issue lifecycle
 
 ```text
-always:     implementation 前解析或复用 workIssue
-on-commit:  可本地编辑；首次 commit 前解析或复用 workIssue
-on-publish: 可本地编辑和 commit；push/PR 前解析或复用 workIssue
-manual:     不自动创建；提供 Issue 时校验
+always     -> resolve workIssue before implementation
+on-commit  -> local edits allowed; resolve workIssue before first commit
+on-publish -> local edits and commits allowed; resolve workIssue before push/PR
+manual     -> never auto-create; validate supplied Issue when present
+missing    -> legacy default always
 ```
 
-Issue 创建成功后立即持久化。parent 存在时建立 native sub-issue；无 parent 时 standalone。关联失败保留原 work Issue 并阻塞所需阶段，不得创建替代 Issue。
+Issue 创建成功后立即持久化。已有 open Issue 先校验再复用；parent 存在时建立 native sub-issue；无 parent 时 standalone。关联失败保留原 work Issue 并阻塞所需阶段，不得创建替代 Issue。任何已解析 Issue 都保持 `closeTarget=workIssue`。
 
 ## Commit gate
 

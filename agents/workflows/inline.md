@@ -36,6 +36,20 @@ Verify: 至少一个可执行 targeted command
 
 Inline 不创建 `quick-card.md`、`log.md`、`summary.md` 或 Issue。
 
+## Issue lifecycle
+
+按项目 `issuePolicy` 决定何时解析唯一 work Issue：
+
+```text
+always     -> resolve workIssue before implementation
+on-commit  -> local edits allowed; resolve workIssue before first commit
+on-publish -> local edits and commits allowed; resolve workIssue before push/PR
+manual     -> never auto-create; validate supplied Issue when present
+missing    -> legacy default always
+```
+
+因此 Inline 仅能在 `on-commit`、`on-publish` 或 `manual` 下开始本地编辑。请求 commit 时先升级 Compact；`always` 或缺失配置直接进入持久化层并先解析 Issue。
+
 ## Runtime promotion
 
 出现 policy `inlineToCompact` trigger 时，停止新增编辑并执行 `Inline -> Compact`。发现 full risk、material Reverse Sync 或高风险人工门禁时直接执行 `Inline -> Full`。

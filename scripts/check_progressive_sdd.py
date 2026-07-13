@@ -114,6 +114,22 @@ def main() -> None:
     ]:
         if marker not in spec_reviewer:
             fail(f"spec reviewer missing progressive SDD marker: {marker}")
+
+    project_config = json.loads(read_text(root / "config/project-config.json"))
+    if project_config.get("githubWorkflow", {}).get("issuePolicy") != "on-publish":
+        fail("new project config must default issuePolicy to on-publish")
+    finish = read_text(root / "agents/workflows/finish.md")
+    for marker in [
+        "always",
+        "on-commit",
+        "on-publish",
+        "manual",
+        "legacy default: always",
+        "Closes #<workIssue>",
+        "Refs #<parentIssue>",
+    ]:
+        if marker not in finish:
+            fail(f"finish module missing issue policy marker: {marker}")
     print("progressive-sdd: policy and module checks passed")
 
 

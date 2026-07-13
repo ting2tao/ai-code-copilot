@@ -21,28 +21,36 @@ GitHub 指标统计口径见 `github-metrics.md`；本文件只定义协作、co
 
 ### 项目约定，不冒充 GitHub 官方标准
 
-- "严禁无票开发"是本项目协作策略，不是 GitHub 官方强制。
+- "严禁无票开发"是本项目按 `issuePolicy` 生命周期执行的协作策略，不是 GitHub 官方强制。
 - CodeQL 和 CI 是本项目 PR 门禁；仓库未配置时必须明示缺口。
 
 ## 1. 开工前门禁
 
-### 必须
+### 生命周期策略
 
-- 严禁无票开发只认 `workIssue` confirmed/resolved；只有 `parentIssue` 不够，父需求不能代替当前变更的工作票。
-- 所有代码、规则、配置、脚本、测试、文档变更都必须关联唯一 work Issue。
-- Standard/Complex 变更必须在 `spec.md` 写明 `parentIssue`、`workIssue`、`issueRelationship`、`closeTarget` 和 branch。
-- Quick 变更必须在 `quick-card.md` 写明同一组合同字段。
-- `tasks.md` 的 Preflight 必须确认 `workIssue` 已解析、open、可读且属于当前仓库，`issueRelationship` 为 `sub-issue` 或 `standalone`，`closeTarget: workIssue`。
+```text
+always     -> resolve workIssue before implementation
+on-commit  -> local edits allowed; resolve workIssue before first commit
+on-publish -> local edits and commits allowed; resolve workIssue before push/PR
+manual     -> never auto-create; validate supplied Issue when present
+missing    -> legacy default always
+```
+
+- 新项目默认 `on-publish`；已有项目缺少 `issuePolicy` 时按 legacy `always` 运行，不静默改写项目配置。
+- 严禁无票开发只认策略要求阶段前 `workIssue` confirmed/resolved；只有 `parentIssue` 不够，父需求不能代替本次工作票。
+- `manual` 不自动创建 Issue；用户提供 Issue 时仍须验证 open、可读、同仓库及关系。
+- Standard/Complex 在 `spec.md`，Quick Compact/Full 在 `quick-card.md` 记录 `parentIssue`、`workIssue`、`issueRelationship`、`closeTarget` 和 branch；到达策略门禁前允许 `workIssue: pending`。
+- 到达 commit/publish 门禁时，Preflight 必须确认 `workIssue` 已解析、open、可读且属于当前仓库，`issueRelationship` 为 `sub-issue` 或 `standalone`，`closeTarget: workIssue`。`manual` 且未提供 Issue 时记录豁免，不伪造 Issue。
 - 当前分支不得是 `master` 或 `main`。
 
 ### Issue 生命周期
 
 - `parentIssue` 表示整体需求，可为 `none`；`workIssue` 表示本次已确认合同的唯一执行单元。
-- 用户确认合同后，框架从合同自动创建并立即记录唯一 `workIssue`；已有 resolved workIssue 必须先验证后复用，不得重复创建。
+- 到达 `issuePolicy` 对应门禁后，框架从合同自动创建并立即记录唯一 `workIssue`；已有 resolved workIssue 必须先验证后复用，不得重复创建。
 - 有 parent 时，work Issue 必须成为 GitHub native sub-issue；无 parent 时记录 `issueRelationship: standalone`。
-- native 关联失败时保留原 work Issue，记录 `issueRelationship: pending` 并阻塞开发；禁止为绕过关联错误新建替代 Issue。
-- `workIssue` resolved 且关系验证成功后，才能由合同 derive `type/scope` 并创建或校验分支。
-- 紧急修复也不能空缺 work Issue；可以自动创建故障/Hotfix work Issue，但必须先确认合同并持久化。
+- native 关联失败时保留原 work Issue，记录 `issueRelationship: pending` 并阻塞当前策略要求的 commit/publish 阶段；禁止为绕过关联错误新建替代 Issue。
+- `workIssue` resolved 且关系验证成功后，才能通过当前策略要求的 commit/publish 门禁。
+- 紧急修复仍遵循明确的 `issuePolicy`；`manual` 以外可在相应门禁自动创建故障/Hotfix work Issue，但必须先确认合同并持久化。
 
 ## 2. 分支管理
 
@@ -53,7 +61,7 @@ GitHub 指标统计口径见 `github-metrics.md`；本文件只定义协作、co
 - type 仅允许：`feat`、`fix`、`docs`、`refactor`、`test`、`chore`、`perf`、`ci`、`build`。
 - scope 必须是描述模块或能力的小写 kebab-case；Issue 编号不是 scope。
 - 分支冲突时停止并询问复用或人工处理，禁止静默添加时间戳。
-- 分支必须与当前 `workIssue` 的 confirmed contract 派生出的 `type/scope` 一致；`parentIssue` 不参与 branch scope，也不能作为开工凭据。
+- 分支必须与 confirmed contract 派生出的 `type/scope` 一致；到达 Issue 门禁后再与 `workIssue` 交叉校验。`parentIssue` 不参与 branch scope，也不能作为 Issue 门禁凭据。
 
 ## 3. Commit Message
 
@@ -114,7 +122,7 @@ GitHub 指标统计口径见 `github-metrics.md`；本文件只定义协作、co
 
 ### 必须
 
-- PR 必须关联合同中已经 resolved 的 `workIssue`。
+- 除 `manual` 且未提供 Issue 的明确豁免外，PR 必须关联合同中已经 resolved 的 `workIssue`。
 - PR body 必须使用 `Closes #<workIssue>`；`closeTarget` 必须为 workIssue。
 - `parentIssue` 非 none 时必须添加 `Refs #<parentIssue>`，不得使用 closing keyword。
 - PR 必须列出验证命令和实际结果，不能只写"已测试"。
