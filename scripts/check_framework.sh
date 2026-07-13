@@ -172,6 +172,21 @@ for rel, (heading, next_heading_pattern) in workflow_contract_sections.items():
     if missing_markers:
         raise SystemExit(f"{rel} workflow contract section missing: " + ", ".join(missing_markers))
 
+progressive_sdd_doc_markers = {
+    "README.md": ["agents/router.md", "Inline SDD", "Compact SDD", "Full SDD", "issuePolicy", "Promotion is monotonic", "Superpowers"],
+    "README-CN.md": ["agents/router.md", "Inline SDD", "Compact SDD", "Full SDD", "issuePolicy", "升级是单向", "Superpowers"],
+    "AGENTS.md": ["agents/router.md", "agents/workflows/", "workflow-policy.json", "Inline SDD", "单向升级", "Superpowers 边界"],
+    "docs/ai-code-copilot-overview.md": ["Inline SDD", "Compact SDD", "Full SDD", "issuePolicy", "Superpowers"],
+    "docs/ai-code-copilot-flow.md": ["agents/router.md", "Inline SDD", "单向升级"],
+    "docs/harness-engineering.md": ["Spec 档位", "Acceptance", "Done Signal", "Guardrails", "Fallback"],
+    "docs/loop-engineering.md": ["Inline SDD", "Compact SDD", "Full SDD", "单向升级"],
+}
+for rel, markers in progressive_sdd_doc_markers.items():
+    text = (root / rel).read_text(encoding="utf-8")
+    missing_markers = [marker for marker in markers if marker not in text]
+    if missing_markers:
+        raise SystemExit(f"{rel} progressive SDD documentation missing: " + ", ".join(missing_markers))
+
 
 closing_reference_pattern = re.compile(
     r"(?P<keyword>Closes|Fixes|Resolves)\s+#(?P<target><[^>\n]+>|\d+|[A-Za-z][A-Za-z0-9_-]*)",

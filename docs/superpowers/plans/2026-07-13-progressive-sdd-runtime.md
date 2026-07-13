@@ -624,7 +624,7 @@ git commit -m "feat(issue-policy): 按交付阶段解析工作 Issue"
 - Modify: `scripts/check_progressive_sdd.py`
 - Modify: `scripts/check_framework.sh`
 
-- [ ] **Step 1: Add failing documentation markers**
+- [x] **Step 1: Add failing documentation markers**
 
 Extend the focused checker with synchronized markers:
 
@@ -642,13 +642,13 @@ Extend the focused checker with synchronized markers:
                 fail(f"{relative} missing documentation marker: {marker}")
 ```
 
-- [ ] **Step 2: Run Red**
+- [x] **Step 2: Run Red**
 
 Run `python3 scripts/check_progressive_sdd.py .`.
 
 Expected: non-zero exit naming the first missing README marker.
 
-- [ ] **Step 3: Update the public documentation**
+- [x] **Step 3: Update the public documentation**
 
 Document the same behavior in both READMEs:
 
@@ -659,11 +659,11 @@ Document the same behavior in both READMEs:
 - New projects default `issuePolicy` to `on-publish`; missing legacy config means `always`.
 - Superpowers is a specialist library, not the default orchestrator.
 
-- [ ] **Step 4: Update architecture and methodology docs**
+- [x] **Step 4: Update architecture and methodology docs**
 
 Update `AGENTS.md` to name the router/modules/policy as key files. Update the flow chart with Inline -> Compact -> Full. Update Harness and Loop docs so Goal Contract is embedded in the Spec tier and Harness derives validation signals from Acceptance/Done Signal/Guardrails/Fallback.
 
-- [ ] **Step 5: Run checks and commit**
+- [x] **Step 5: Run checks and commit**
 
 Run:
 

@@ -130,6 +130,34 @@ def main() -> None:
     ]:
         if marker not in finish:
             fail(f"finish module missing issue policy marker: {marker}")
+
+    docs = {
+        "README.md": [
+            "Inline SDD",
+            "Compact SDD",
+            "Full SDD",
+            "issuePolicy",
+            "agents/router.md",
+        ],
+        "README-CN.md": [
+            "Inline SDD",
+            "Compact SDD",
+            "Full SDD",
+            "issuePolicy",
+            "agents/router.md",
+        ],
+        "AGENTS.md": ["agents/router.md", "agents/workflows/", "Inline SDD", "单向升级"],
+        "docs/ai-code-copilot-overview.md": [
+            "Inline SDD",
+            "Compact SDD",
+            "Full SDD",
+        ],
+    }
+    for relative, markers in docs.items():
+        content = read_text(root / relative)
+        for marker in markers:
+            if marker not in content:
+                fail(f"{relative} missing documentation marker: {marker}")
     print("progressive-sdd: policy and module checks passed")
 
 

@@ -121,6 +121,24 @@ flowchart LR
     class I1,I2,I3 init
 ```
 
+## 渐进式 SDD 运行时
+
+Codex Skill 首先加载小型 [`agents/router.md`](agents/router.md)，再按需加载 `agents/workflows/` 下的单个模块。原来的单体主提示词仅作为旧安装或模块缺失时的兼容回退。
+
+Inline SDD、Compact SDD、Full SDD 是同一工程质量标准下的记录持久化档位，不是三套质量标准：
+
+| 档位 | 记录成本 | 适用场景 |
+|------|----------|----------|
+| **Inline SDD** | 会话内 `Goal / Scope / Done Signal / Verify` | 目标明确、低风险、可直接回滚且最多两文件的本地改动 |
+| **Compact SDD** | 一个 `quick-card.md` | 需要持久化、commit/PR、交接或可审计 review |
+| **Full SDD** | 按需使用 design/spec/tasks/test/log/summary | 公共合同、数据库、安全、部署、跨模块规则、多目标或残余风险 |
+
+升级是单向的：`Inline -> Compact -> Full`，也可直接 `Inline -> Full`；活动变更不会自动降级。已有 `recordMode: compact` Quick Card 继续作为 Compact SDD，已有 Quick Full/Standard/Complex 记录继续作为 Full SDD。
+
+新项目的 `githubWorkflow.issuePolicy` 默认是 `on-publish`：本地编辑和 commit 可以先执行，但 push/PR 前必须解析工作 Issue。旧项目配置缺少 `issuePolicy` 时继续使用 legacy `always`。支持 `always`、`on-commit`、`on-publish`、`manual`。
+
+ai-code-copilot 是默认交付编排器。Superpowers 降级为显式使用的专项库，用于困难调试、完成前验证、review、高风险 TDD、worktree 隔离或明确需要的并行工作，不再作为第二套默认工作流加载。
+
 ## 渐进式复杂度
 
 任务进来后，先判断规模，自动匹配流程：
@@ -138,10 +156,10 @@ flowchart LR
 - **Quick Compact** 只适用于不超过 2 个文件、单一目的、单 commit，且不改 API/DB/依赖/CI/部署/generated artifact，不涉及安全、权限、认证、敏感信息、状态机或跨模块规则，并具备可执行验证与直接回滚的变更；`quick-card.md` 是唯一记录源。执行中任一条件不再满足时，必须自动升级为 Quick Full 后再继续。
 - **Quick Full** 用于不满足或无法确认 Compact 条件的 Quick；记录集固定为 `quick-card.md` + `log.md` + `summary.md`。
 - 需求开始时解析或只询问一次 `parentIssue`；存在时先读取整体需求，并在 GitHub 能力可用时把本次工作关联为 native sub-issue。
-- Quick Card/Spec 确认后，必须自动创建唯一 `workIssue`；若已记录则校验并复用仍 open 的 `workIssue`。这是强制流程，不依赖配置。
+- 到达 `issuePolicy` 指定的生命周期门禁时，必须自动创建唯一 `workIssue`，或校验并复用已记录的 open `workIssue`。新项目默认 `on-publish`；旧配置缺失时按 `always`；`manual` 从不自动创建。
 - 分支严格使用 `type/scope`；commit 严格使用 `type(scope): description`。
 - `/finish` 的 PR body 只用 `Closes #<workIssue>` 关闭工作 Issue；`parentIssue` 只允许 `Refs #<parentIssue>`，绝不由子变更关闭。
-- `finishMode` 只控制 PR handoff（`ask`、`auto-pr`、`manual`）。旧 `issueWhenMissing` 已废弃并忽略。
+- `finishMode` 只控制 PR handoff（`ask`、`auto-pr`、`manual`）。旧 `issueWhenMissing` 已废弃并忽略，不能替代 `issuePolicy`。
 
 ---
 

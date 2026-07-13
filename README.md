@@ -123,6 +123,24 @@ flowchart LR
     class I1,I2,I3 init
 ```
 
+## Progressive SDD Runtime
+
+The Codex skill first loads the small [`agents/router.md`](agents/router.md), then loads only the needed file under `agents/workflows/`. The former monolithic prompt remains a compatibility fallback for older or incomplete installations.
+
+Inline SDD, Compact SDD, and Full SDD are persistence tiers for the same engineering standard—not three quality levels:
+
+| Tier | Record cost | Use when |
+|------|-------------|----------|
+| **Inline SDD** | Conversation-only `Goal / Scope / Done Signal / Verify` | Clear, low-risk, directly reversible local work touching at most two files |
+| **Compact SDD** | One `quick-card.md` | The change needs persistence, a commit/PR, handoff, or auditable review |
+| **Full SDD** | design/spec/tasks/test/log/summary as needed | Public contracts, databases, security, deployment, cross-module rules, multiple goals, or residual risk |
+
+Promotion is monotonic: `Inline -> Compact -> Full`, or directly `Inline -> Full`; an active change never auto-downgrades. Existing `recordMode: compact` Quick Cards remain Compact SDD, and existing Quick Full/Standard/Complex records remain Full SDD.
+
+New projects default `githubWorkflow.issuePolicy` to `on-publish`: local edits and commits may proceed, but the work Issue must be resolved before push/PR. Existing configurations without `issuePolicy` retain legacy `always` behavior. Supported policies are `always`, `on-commit`, `on-publish`, and `manual`.
+
+ai-code-copilot is the default delivery orchestrator. Superpowers is an explicit specialist library for focused debugging, verification, review, high-risk TDD, worktree isolation, or intentional parallelism; it is not loaded as a second default workflow stack.
+
 ## Progressive Complexity
 
 Every request is classified before work begins:
@@ -140,10 +158,10 @@ When uncertain, the framework defaults to Standard.
 - **Quick Compact** is limited to a single-purpose, single-commit change touching at most two files, with no API, database, dependency, CI, deployment, generated-artifact, security, permission, authentication, sensitive-data, state-machine, or cross-module rule impact, and it must have executable verification plus direct rollback. It uses `quick-card.md` as its single record source. If any condition stops being true at runtime, it automatically upgrades to Quick Full before work continues.
 - **Quick Full** is the default when Compact eligibility is uncertain or unmet. Its record set is `quick-card.md` + `log.md` + `summary.md`.
 - At the start, the workflow parses or asks once for `parentIssue`, reads its overall requirement when present, and links the work as a native sub-issue when GitHub supports the relationship.
-- After a Quick Card or Spec is confirmed, the workflow must automatically create one `workIssue`, or validate and reuse the recorded open `workIssue`. This is mandatory and does not depend on configuration.
+- At the lifecycle gate selected by `issuePolicy`, the workflow must automatically create one `workIssue`, or validate and reuse the recorded open `workIssue`. New projects use `on-publish`; a missing legacy policy means `always`; `manual` never auto-creates.
 - Branches must use `type/scope`; commits must use `type(scope): description`.
 - `/finish` puts `Closes #<workIssue>` in the PR body. A `parentIssue` is referenced only with `Refs #<parentIssue>` and is never closed by the child change.
-- `finishMode` controls only PR handoff (`ask`, `auto-pr`, or `manual`). The old `issueWhenMissing` setting is obsolete and ignored.
+- `finishMode` controls only PR handoff (`ask`, `auto-pr`, or `manual`). The old `issueWhenMissing` setting is obsolete and ignored; it does not replace `issuePolicy`.
 
 ## Standard Workflow
 

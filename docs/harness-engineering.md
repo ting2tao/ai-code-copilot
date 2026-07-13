@@ -8,6 +8,12 @@ Harness Engineering 是 ai-code-copilot 对 “Context First, Code Follows” �
 
 Loop Engineering 是 Harness 之上的动态控制模型：Harness 回答 Agent 能看见什么，Loop 回答 Agent 如何基于这些信号循环执行、调整、停止和沉淀。框架内定义见 [`docs/loop-engineering.md`](loop-engineering.md)，核心产物是轻量的 Goal Contract。
 
+## Harness 随 Spec 档位增长
+
+Goal Contract 嵌入当前 Spec 持久化档位，不另建一套平行文档：Inline SDD 在会话中保留最小 Goal/Scope/Done Signal/Verify；Compact SDD 写入 `quick-card.md`；Full SDD 写入 `spec.md` 并由 tasks/test-spec/log/summary 扩展。三档的质量标准相同，只有 Harness 的持久化深度不同。
+
+Harness 信号必须从合同派生：Acceptance 和 Done Signal 决定成功验证，Guardrails 防止通过删测试或绕过检查“假完成”，Fallback 决定失败后的降级、停止或人工门禁。升级时复制已有命令和真实结果，不为补文档虚构或重复成功证据。
+
 ## 核心原则
 
 1. **人类掌舵，Agent 执行**
@@ -41,7 +47,7 @@ Loop Engineering 是 Harness 之上的动态控制模型：Harness 回答 Agent 
 - 失败时 Agent 应先查哪里？
 - 关键日志、指标、trace、截图或 CI 入口在哪里？
 - 哪些信息不可见，需要人工补充？
-- 这个变更的 Goal Contract 是什么：Goal、Done Signal、Guardrails、Fallback、Memory？
+- 当前 Spec 档位中的 Goal Contract 是什么：Goal、Done Signal、Guardrails、Fallback、Memory？Acceptance/Done Signal/Guardrails/Fallback 分别派生了哪些验证、反作弊和失败处理信号？
 - 这次经验是否应写入 `knowledge/` 或升级为机械规则？
 
 ## 不照搬的部分

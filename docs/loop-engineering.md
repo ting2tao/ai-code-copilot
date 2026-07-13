@@ -27,6 +27,10 @@ Loop Engineering 是 ai-code-copilot 对 Agent 工作方式的动态建模：
 
 `Done Signal` 不能孤立存在。只写“测试通过”会诱导 Agent 针对验证器投机，例如删除失败测试、降低断言或绕过 lint。`Guardrails` 要和完成标准一起定义，防止 Goodhart 风险。
 
+Goal Contract 不创建独立的流程文档，而是嵌入当前 Spec 档位：Inline SDD 在会话中保存 Goal/Scope/Done Signal/Verify；Compact SDD 写入 `quick-card.md`；Full SDD 写入 `spec.md`。Acceptance 与 Done Signal 生成正向验证，Guardrails 生成不得绕过的反向检查，Fallback 生成失败后的退出或人工门禁，Memory 决定是否进入 knowledge。
+
+活动变更只允许 `Inline -> Compact -> Full` 或 `Inline -> Full` 单向升级。升级前停止新增编辑，复制合同、diff 和已有证据；机械 Reverse Sync 可直接记录，Goal、Scope、Acceptance、Guardrails、风险或外部动作变化则必须重新确认。
+
 ## Loop Runtime（可选）
 
 当变更需要更强的自主循环时，再启用 Runtime 五件套：
@@ -43,12 +47,13 @@ Loop Engineering 是 ai-code-copilot 对 Agent 工作方式的动态建模：
 
 ## 在现有流程中的落点
 
-1. `/brainstorm` 明确目标、边界和风险，避免循环朝错方向优化。
-2. `/propose` 生成 Goal Contract，说明完成信号、护栏、失败降级和沉淀位置。
-3. `/apply` 按 task 执行，每轮记录 Loop Evidence：命令输出、日志、截图、review 结果或人工确认项。
-4. `/review` 检查实现是否符合 spec，也检查 loop 是否可验证、可读、可停止。
-5. `/fix` 和 `/fix-ci` 是局部修正循环，必须先定位观察信号，再做最小调参。
-6. `/archive` 把有效的调参经验沉淀成 knowledge、rules、templates 或脚本检查。
+1. 路由器先选择 Inline/Compact/Full Spec 档位；不确定或风险扩大时单向升级。
+2. `/brainstorm` 在需要设计探索时明确目标、边界和风险，避免循环朝错方向优化。
+3. `/propose` 在持久化档位生成嵌入式 Goal Contract，说明完成信号、护栏、失败降级和沉淀位置。
+4. `/apply` 按 task 执行，每轮记录 Loop Evidence：命令输出、日志、截图、review 结果或人工确认项。
+5. `/review` 检查实现是否符合 spec，也检查 loop 是否可验证、可读、可停止。
+6. `/fix` 和 `/fix-ci` 是局部修正循环，必须先定位观察信号，再做最小调参。
+7. `/archive` 把有效的调参经验沉淀成 knowledge、rules、templates 或脚本检查。
 
 ## 不照搬的部分
 
