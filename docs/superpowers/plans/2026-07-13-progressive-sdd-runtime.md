@@ -248,7 +248,7 @@ bash scripts/check_framework.sh
 
 Expected: focused checker prints `progressive-sdd: policy checks passed`; the full check reaches the existing suite without a new policy error.
 
-- [ ] **Step 6: Commit Task 1**
+- [x] **Step 6: Commit Task 1**
 
 ```bash
 git add config/workflow-policy.json scripts/check_progressive_sdd.py scripts/check_framework.sh
@@ -275,7 +275,7 @@ git commit -m "test(progressive-sdd): 固化分层与升级策略"
 - Modify: `hooks/session-start`
 - Modify: `scripts/check_progressive_sdd.py`
 
-- [ ] **Step 1: Extend the checker so the missing router fails**
+- [x] **Step 1: Extend the checker so the missing router fails**
 
 Add to `main()` in `scripts/check_progressive_sdd.py`:
 
@@ -304,7 +304,7 @@ Add to `main()` in `scripts/check_progressive_sdd.py`:
         fail("skill must retain the legacy prompt fallback")
 ```
 
-- [ ] **Step 2: Run the focused checker and verify Red**
+- [x] **Step 2: Run the focused checker and verify Red**
 
 Run:
 
@@ -314,7 +314,7 @@ python3 scripts/check_progressive_sdd.py .
 
 Expected: non-zero exit with `missing file: .../agents/router.md`.
 
-- [ ] **Step 3: Create `agents/router.md`**
+- [x] **Step 3: Create `agents/router.md`**
 
 The complete router must define:
 
@@ -358,7 +358,7 @@ Read project rules and code relevant to the current task. Read only the active c
 If a required modular file is absent, load `agents/copilot-prompt.md`, report that the installation is using the stricter legacy fallback, and recommend `init --sync` or framework upgrade. Do not silently weaken a missing policy or gate.
 ```
 
-- [ ] **Step 4: Create focused workflow modules**
+- [x] **Step 4: Create focused workflow modules**
 
 Write each module as an independently readable contract. Required sections and exact behavioral markers:
 
@@ -376,7 +376,7 @@ archive.md: persisted tiers only, knowledge/index.md selection, no forced durabl
 
 Copy command-specific safety and evidence semantics from the corresponding legacy prompt sections, but remove unrelated commands from each module.
 
-- [ ] **Step 5: Change `skill/SKILL.md` to load the router**
+- [x] **Step 5: Change `skill/SKILL.md` to load the router**
 
 Replace the current complete-prompt requirement with:
 
@@ -388,7 +388,7 @@ Replace the current complete-prompt requirement with:
 
 Update the hard gate so Inline needs a visible Inline contract, Compact needs a valid Quick Card, and Full needs a confirmed Spec. Full-risk work can never remain Inline or Compact.
 
-- [ ] **Step 6: Mark `agents/copilot-prompt.md` as the legacy compatibility fallback**
+- [x] **Step 6: Mark `agents/copilot-prompt.md` as the legacy compatibility fallback**
 
 Prepend:
 
@@ -398,11 +398,11 @@ Prepend:
 
 Do not delete the legacy body in this phase.
 
-- [ ] **Step 7: Update SessionStart L0 routing text**
+- [x] **Step 7: Update SessionStart L0 routing text**
 
 In `hooks/session-start`, replace the complete-prompt pointer and old Quick-only hard gate with router/module pointers and Inline/Compact/Full gates. Keep the active-change parser bounded and do not inject module bodies.
 
-- [ ] **Step 8: Run focused and full checks**
+- [x] **Step 8: Run focused and full checks**
 
 Run:
 

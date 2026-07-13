@@ -72,7 +72,29 @@ def main() -> None:
         actual = classify(policy, facts)
         if actual != expected:
             fail(f"classifier expected {expected}, got {actual}: {facts}")
-    print("progressive-sdd: policy checks passed")
+
+    required_modules = [
+        "init.md",
+        "inline.md",
+        "compact.md",
+        "full.md",
+        "debug.md",
+        "review.md",
+        "test.md",
+        "finish.md",
+        "archive.md",
+    ]
+    router = read_text(root / "agents/router.md")
+    for name in required_modules:
+        read_text(root / "agents/workflows" / name)
+        if f"agents/workflows/{name}" not in router:
+            fail(f"router missing module reference: {name}")
+    skill = read_text(root / "skill/SKILL.md")
+    if "agents/router.md" not in skill:
+        fail("skill must load agents/router.md")
+    if "agents/copilot-prompt.md" not in skill:
+        fail("skill must retain the legacy prompt fallback")
+    print("progressive-sdd: policy and module checks passed")
 
 
 if __name__ == "__main__":
