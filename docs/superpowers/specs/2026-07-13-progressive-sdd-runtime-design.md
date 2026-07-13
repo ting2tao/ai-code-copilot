@@ -1,9 +1,15 @@
 # Progressive SDD Runtime Design
 
-> Status: approved in conversation; pending written-spec review
+> Status: approved
 > Date: 2026-07-13
 > Scope: ai-code-copilot routing, SDD contracts, runtime promotion, GitHub policy, reviewers, templates, documentation, and framework checks
 > Parent Issue: none
+> Work Issue: https://github.com/ting2tao/ai-code-copilot/issues/32
+> Issue Relationship: standalone
+> Branch: `feat/progressive-sdd`
+> Confirmed By: user
+> Confirmed At: 2026-07-13 14:08:24 +0800
+> Confirmed Design Commit: `c493a2e`
 
 ## 1. Context
 
