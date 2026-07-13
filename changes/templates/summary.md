@@ -3,9 +3,9 @@ change: {change-name}
 status: proposed
 spec-hash: {sha256:...}
 parentIssue: none | #123 | URL
-workIssue: pending | #456 | URL
-issueRelationship: pending | sub-issue | standalone
-closeTarget: workIssue
+workIssue: pending | #456 | URL | none (manual only)
+issueRelationship: pending | sub-issue | standalone | none (manual only)
+closeTarget: workIssue | none (manual only)
 branch: type/scope
 goal: {one-line goal}
 scope: {modules/files/classes}

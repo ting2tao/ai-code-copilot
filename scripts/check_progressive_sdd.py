@@ -17,7 +17,14 @@ def read_text(path: Path) -> str:
 def classify(policy: dict, facts: dict) -> str:
     risks = set(facts.get("risks", []))
     full_risks = set(policy["tiers"]["full"]["riskCategories"])
-    if risks & full_risks or facts.get("acceptedResidualRisk", False):
+    compact = policy["tiers"]["compact"]
+    if (
+        risks & full_risks
+        or facts.get("acceptedResidualRisk", False)
+        or facts.get("files", 0) > compact["maxFiles"]
+        or facts.get("multipleDeliverableGoals", False)
+        or facts.get("multipleReviewUnits", False)
+    ):
         return "full"
     inline = policy["tiers"]["inline"]
     if (
@@ -41,6 +48,8 @@ def main() -> None:
         fail("new projects must default issuePolicy to on-publish")
     if policy["github"]["legacyDefault"] != "always":
         fail("legacy projects without issuePolicy must default to always")
+    if policy["github"].get("manualNoIssueCloseTarget") != "none":
+        fail("manual projects without an Issue must use closeTarget none")
     fixtures = [
         (
             {
@@ -60,6 +69,23 @@ def main() -> None:
         ),
         (
             {
+                "files": 6,
+                "executableVerification": True,
+                "directRollback": True,
+            },
+            "full",
+        ),
+        (
+            {
+                "files": 2,
+                "executableVerification": True,
+                "directRollback": True,
+                "multipleDeliverableGoals": True,
+            },
+            "full",
+        ),
+        (
+            {
                 "files": 1,
                 "executableVerification": True,
                 "directRollback": True,
@@ -72,6 +98,18 @@ def main() -> None:
         actual = classify(policy, facts)
         if actual != expected:
             fail(f"classifier expected {expected}, got {actual}: {facts}")
+    for risk in policy["tiers"]["full"]["riskCategories"]:
+        actual = classify(
+            policy,
+            {
+                "files": 1,
+                "executableVerification": True,
+                "directRollback": True,
+                "risks": [risk],
+            },
+        )
+        if actual != "full":
+            fail(f"full risk must classify as full: {risk}")
 
     required_modules = [
         "init.md",
@@ -127,9 +165,27 @@ def main() -> None:
         "legacy default: always",
         "Closes #<workIssue>",
         "Refs #<parentIssue>",
+        "workIssue: none",
+        "issueRelationship: none",
+        "closeTarget: none",
+        "省略所有 closing keyword",
     ]:
         if marker not in finish:
             fail(f"finish module missing issue policy marker: {marker}")
+
+    manual_no_issue_records = {
+        "changes/templates/quick-card.md": ["none (manual only)", "manual/no-Issue"],
+        "changes/templates/spec.md": ["manual/no-Issue", "none"],
+        "changes/templates/summary.md": ["none (manual only)"],
+        "changes/templates/tasks.md": ["manual/no-Issue", "closeTarget 为 none"],
+        "changes/templates/log.md": ["manual/no-Issue", "closing keyword"],
+        "rules/commit-convention.md": ["workIssue: none", "closeTarget: none"],
+    }
+    for relative, markers in manual_no_issue_records.items():
+        content = read_text(root / relative)
+        for marker in markers:
+            if marker not in content:
+                fail(f"{relative} missing manual/no-Issue marker: {marker}")
 
     docs = {
         "README.md": [

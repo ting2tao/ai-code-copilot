@@ -287,7 +287,7 @@ Whenever an Issue is used, existing contracts remain unchanged:
 
 - Reuse the recorded open work Issue and never create a duplicate.
 - Parent Issue is context only.
-- PR closes only `workIssue`.
+- When a work Issue exists, the PR closes only `workIssue`; `manual` with no Issue omits closing keywords and records `closeTarget: none`.
 - Parent is referenced only with `Refs`.
 - Pending or contradictory relationships block publish.
 
@@ -385,7 +385,7 @@ Phase 3 must not block the Phase 1/2 release. The Phase 1/2 implementation adds 
 - A promoted contract preserves existing evidence and asks for confirmation only for material changes.
 - Runtime activation loads the router and relevant modules rather than the complete monolithic prompt.
 - Existing compact/full changes and archived records continue to work.
-- Issue creation follows project policy without weakening legacy projects, and PRs still close only the work Issue.
+- Issue creation follows project policy without weakening legacy projects; PRs close only the work Issue when one exists, and manual/no-Issue delivery never closes the parent.
 - Framework self-check, shell syntax checks, and documentation alignment pass.
 
 ## 17. Phase 1/2 Implementation Evidence
@@ -396,13 +396,20 @@ Verified on 2026-07-13 against `feat/progressive-sdd`:
 |---|---|---|
 | Low-risk two-file work can remain Inline without artifacts or Issue under a compatible policy | `config/workflow-policy.json`, `agents/workflows/inline.md` | `python3 scripts/check_progressive_sdd.py .` classified the two-file executable/reversible fixture as Inline and passed |
 | Scope, uncertainty, lifecycle, or risk promotes before more edits | `agents/workflows/inline.md`, `agents/workflows/compact.md`, `agents/workflows/full.md` | Focused checker validated router modules and promotion contracts; full framework check passed |
-| Full-risk work cannot remain Inline or Compact | canonical `full.riskCategories` plus set-intersection routing in `scripts/check_progressive_sdd.py` | Focused public-API risk fixture classified Full and passed |
+| Full-risk work cannot remain Inline or Compact | canonical `full.riskCategories`, Compact `maxFiles`, and routing in `scripts/check_progressive_sdd.py` | Focused checks classified every canonical risk, a six-file change, and multiple deliverable goals as Full |
 | Promotion preserves evidence and confirms only material change | `changes/templates/quick-card.md`, `agents/spec-reviewer.md`, `agents/code-quality-reviewer.md` | Focused promotion-marker checks and bounded SessionStart fixture passed |
 | Activation loads router/modules instead of the monolith | `skill/SKILL.md`, `agents/router.md`, `agents/workflows/` | Focused module-reference check passed; legacy prompt remains conditional fallback |
 | Existing records and archives remain compatible | unchanged record identifiers, legacy fallback, existing templates, install/sync behavior | `bash scripts/check_framework.sh` passed all Java/Go/Python/Frontend/Monorepo fixtures |
-| Issue lifecycle is configurable without weakening legacy projects | `config/project-config.json`, `scripts/init_project.sh`, `agents/workflows/finish.md`, GitHub rules | fixtures preserved old config bytes and reported legacy `always`; disposable Python init produced `issuePolicy: on-publish` |
+| Issue lifecycle is configurable without weakening legacy projects | `config/project-config.json`, `scripts/init_project.sh`, `agents/workflows/finish.md`, templates, GitHub rules | fixtures preserved old config bytes and reported legacy `always`; disposable Python init produced `issuePolicy: on-publish`; manual/no-Issue uses three explicit `none` values and no closing keyword |
 | Syntax, framework, docs, and scope checks pass | synchronized README/AGENTS/overview/flow/Harness/Loop docs and mechanical checks | shell syntax, focused checker, full framework check, and `git diff --check origin/main...HEAD` all exited 0 |
 
 The disposable installation check used `init_project.sh --upgrade --dry-run`, confirmed that dry-run created no `.ai_code_copilot` directory, then performed a real initialization and found `"issuePolicy": "on-publish"` in the generated config.
 
 Phase 3 remains a post-adoption follow-up: measure prompt characters, turns before first edit, tier distribution, promotion quality, verification coverage, rework, token use, and cross-session recovery from real projects before removing additional legacy prose or retuning thresholds.
+
+## 18. Completion Review Corrections
+
+Final contract review found and corrected two inconsistencies before delivery:
+
+1. The mechanical classifier originally sent changes above five files to Compact. It now routes `files > compact.maxFiles`, multiple deliverable goals, multiple review units, every canonical full-risk category, and accepted residual risk to Full; focused regression checks cover these cases.
+2. `manual` without a supplied Issue originally conflicted with an unconditional PR closing statement. The runtime, templates, rules, metrics, and public docs now record `workIssue: none`, `issueRelationship: none`, and `closeTarget: none`, omit all closing keywords, and never promote the parent to a close target.

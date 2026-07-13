@@ -160,7 +160,7 @@ When uncertain, the framework defaults to Standard.
 - At the start, the workflow parses or asks once for `parentIssue`, reads its overall requirement when present, and links the work as a native sub-issue when GitHub supports the relationship.
 - At the lifecycle gate selected by `issuePolicy`, the workflow must automatically create one `workIssue`, or validate and reuse the recorded open `workIssue`. New projects use `on-publish`; a missing legacy policy means `always`; `manual` never auto-creates.
 - Branches must use `type/scope`; commits must use `type(scope): description`.
-- `/finish` puts `Closes #<workIssue>` in the PR body. A `parentIssue` is referenced only with `Refs #<parentIssue>` and is never closed by the child change.
+- When a work Issue exists, `/finish` puts `Closes #<workIssue>` in the PR body. Under `manual` with no supplied Issue, it records an explicit no-Issue delivery and omits closing keywords. A `parentIssue` is referenced only with `Refs #<parentIssue>` and is never closed by the child change.
 - `finishMode` controls only PR handoff (`ask`, `auto-pr`, or `manual`). The old `issueWhenMissing` setting is obsolete and ignored; it does not replace `issuePolicy`.
 
 ## Standard Workflow
@@ -211,7 +211,7 @@ Hard gate: no confirmed spec and tasks, no implementation.
 
 Goal: implement task by task, with evidence after each step.
 
-- No ticketless development: `spec.md` or `quick-card.md` must record an Issue ID or URL.
+- Follow `issuePolicy`: record an Issue ID/URL by its lifecycle gate, or an explicit no-Issue contract under `manual`.
 - Execute tasks one by one, or in a controlled batch when requested.
 - After each task, show verifiable evidence such as build output, test output, or curl results.
 - Avoid evidence-free claims such as "should be fine".
@@ -220,7 +220,7 @@ Goal: implement task by task, with evidence after each step.
 
 Branches use the strict `type/scope` form. Commit messages use the strict Conventional Commits form `type(scope): description`. Put Issue references in the body or PR.
 
-PRs must use `Closes #<workIssue>` to close the work Issue and, when present, `Refs #<parentIssue>` for the parent. They must trigger CodeQL and CI and follow `.github/PULL_REQUEST_TEMPLATE.md` so GitHub can collect issue, test, CI, and risk data.
+When a work Issue exists, PRs must use `Closes #<workIssue>` and, when present, `Refs #<parentIssue>` for the parent. Manual/no-Issue PRs omit closing keywords. All PRs must trigger CodeQL and CI and follow `.github/PULL_REQUEST_TEMPLATE.md` so GitHub can collect issue, test, CI, and risk data.
 
 ### 4. `/review` - Two-Stage Review and GitHub Readiness
 
@@ -240,7 +240,7 @@ When GitHub Actions, CodeQL, lint, type checks, tests, or builds fail, paste the
 
 ### 6. `/finish` - GitHub Handoff
 
-Goal: verify, push, create a PR, and close only the work Issue with `Closes #<workIssue>`.
+Goal: verify, push, create a PR, and—when a work Issue exists—close only it with `Closes #<workIssue>`.
 
 - In Codex, trigger this flow with `finish <change>`, `open PR <change>`, or natural language instead of relying on `/finish`.
 - Read `.ai_code_copilot/config.json` for `githubWorkflow`.
@@ -248,7 +248,7 @@ Goal: verify, push, create a PR, and close only the work Issue with `Closes #<wo
 - `finishMode=ask`: confirm each time.
 - `finishMode=auto-pr`: push and create PR automatically.
 - `finishMode=manual`: output commands and PR body only. These modes control PR handoff only, not Issue creation.
-- PR body includes Summary, Test Evidence, Risk, AI Collaboration, `Closes #<workIssue>`, and, when present, `Refs #<parentIssue>`.
+- PR body includes Summary, Test Evidence, Risk, and AI Collaboration. It includes `Closes #<workIssue>` only when a work Issue exists, and `Refs #<parentIssue>` when a parent exists.
 - Record finish results in `quick-card.md` for Quick Compact. Quick Full writes finish evidence to `log.md` and updates `summary.md` to `status: finished`; Standard/Complex use their full record set.
 - Quick Compact does not require `log.md` or `summary.md`.
 - If `Knowledge candidates` exist in `log.md`, ask whether to write them to `knowledge/` now, skip, or continue into archive.

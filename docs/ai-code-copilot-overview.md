@@ -87,5 +87,5 @@ Inline SDD  ->  Compact SDD  ->  Full SDD
 - **Quick Full**：Compact 条件不满足或无法确认时使用，记录集为 `quick-card.md` + `log.md` + `summary.md`。
 - 开始时解析或询问 `parentIssue` 并读取整体需求；到达 `issuePolicy` 门禁后自动创建唯一 `workIssue`，或校验并复用已记录的 open work Issue。GitHub 支持时建立 native sub-issue。
 - 分支固定为 `type/scope`，commit 固定为 `type(scope): description`。
-- `/finish` 只用 `Closes #<workIssue>` 关闭工作 Issue；父级仅使用 `Refs #<parentIssue>`。
+- 有工作 Issue 时 `/finish` 只用 `Closes #<workIssue>`；`manual`/no-Issue 省略 closing keyword；父级始终仅使用 `Refs #<parentIssue>`。
 - `finishMode` 只控制 PR handoff。新项目 `issuePolicy` 默认 `on-publish`，旧配置缺失时使用 `always`；旧 `issueWhenMissing` 已废弃并忽略。

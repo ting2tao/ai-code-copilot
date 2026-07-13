@@ -12,7 +12,7 @@ manual     -> never auto-create; validate supplied Issue when present
 missing    -> legacy default always
 ```
 
-全量记录从提案开始保存 Issue 状态，但只在策略门禁到达时执行创建。已存在的 open work Issue 必须复用；部分成功后不得创建替代票；`closeTarget` 永远是 workIssue，parent 永不由子变更关闭。
+全量记录从提案开始保存 Issue 状态，但只在策略门禁到达时执行创建。已存在的 open work Issue 必须复用；部分成功后不得创建替代票；有 work Issue 时 `closeTarget` 为 workIssue，manual/no-Issue 时为 none，parent 永不由子变更关闭。
 
 ## Record set
 

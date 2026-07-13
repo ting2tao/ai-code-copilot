@@ -65,7 +65,7 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 - **Quick 兼容** — 原 Quick Compact 对应 Compact SDD，`quick-card.md` 是唯一记录源；Quick Full 使用 `quick-card.md` + `log.md` + `summary.md`，Standard/Complex 对应 Full SDD；旧记录无需迁移
 - **Issue 自动化** — 开始时用 `parentIssue` 读取整体需求；`issuePolicy` 决定解析时机：新项目默认 `on-publish`，旧配置缺失时按 `always`；到达门禁后自动创建或校验复用 `workIssue`，可用时建立 native sub-issue
 - **Git 硬合同** — 分支必须是 `type/scope`，commit 必须是 `type(scope): description`
-- **安全收尾** — PR 只用 `Closes #<workIssue>` 关闭工作 Issue，父级只用 `Refs #<parentIssue>`；`finishMode` 只控制 PR handoff
+- **安全收尾** — 有工作 Issue 时 PR 只用 `Closes #<workIssue>`；`manual`/no-Issue 省略 closing keyword；父级始终只用 `Refs #<parentIssue>`；`finishMode` 只控制 PR handoff
 - **配置迁移** — 项目配置不自动改写；缺少 `issuePolicy` 时保持 legacy `always`，旧 `issueWhenMissing` 已废弃并忽略
 - **Evidence Before Claims** — 每个 task 完成必须展示可验证的命令输出
 - **Harness Enables** — 规格、测试、日志、review、规则和知识沉淀共同构成 Agent 可见反馈循环

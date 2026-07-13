@@ -5,9 +5,9 @@ recordMode: compact # compact | full
 promotedFrom: none # none | inline
 specHash: "{sha256}"
 parentIssue: none # none | "#123" | URL
-workIssue: pending # pending | "#456" | URL
-issueRelationship: pending # pending | sub-issue | standalone
-closeTarget: workIssue
+workIssue: pending # pending | "#456" | URL | none (manual only)
+issueRelationship: pending # pending | sub-issue | standalone | none (manual only)
+closeTarget: workIssue # workIssue | none (manual only)
 branch: "type/scope"
 ---
 
@@ -16,9 +16,9 @@ branch: "type/scope"
 > **状态**：[ ] 草稿 / [ ] 已确认 / [ ] 实施中 / [ ] 已完成
 > **创建时间**：{YYYY-MM-DD}
 > **父 Issue（parentIssue）**：{none / #123 / URL；已有父需求时填写}
-> **工作 Issue（workIssue）**：{pending / #456 / URL；Quick Card 确认后必须创建或绑定}
-> **Issue 关系（issueRelationship）**：{pending / sub-issue / standalone}
-> **关闭目标（closeTarget）**：workIssue（PR closing keyword 只关闭 workIssue）
+> **工作 Issue（workIssue）**：{pending / #456 / URL；manual 且未提供 Issue 时填 none}
+> **Issue 关系（issueRelationship）**：{pending / sub-issue / standalone；manual/no-Issue 时填 none}
+> **关闭目标（closeTarget）**：{workIssue；manual/no-Issue 时为 none，且省略 closing keyword}
 > **分支（branch）**：{type/scope；例如 feat/issue-workflow}
 > **确认时间**：{YYYY-MM-DD HH:mm 或"未确认"}
 > **确认人**：{用户/姓名}
@@ -106,7 +106,7 @@ branch: "type/scope"
 
 ## Finish record
 
-> `/finish` 追加 PR、验证结果、分支/远端和 closing statement；只允许 `Closes #<workIssue>`，parentIssue 仅使用 `Refs #<parentIssue>`。
+> `/finish` 追加 PR、验证结果、分支/远端和 closing statement；有 work Issue 时只允许 `Closes #<workIssue>`，manual/no-Issue 时省略 closing keyword，parentIssue 始终仅使用 `Refs #<parentIssue>`。
 
 | PR URL | base | remote | Closes workIssue | Refs parentIssue | final validation |
 |---|---|---|---|---|---|

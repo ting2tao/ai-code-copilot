@@ -17,5 +17,5 @@ Auditable review 需要持久合同。Inline 收到 review/commit/publish 请求
 
 - Compact 写 Review record；Full 写 log Review outcomes。
 - Important/Critical correction 或 residual risk 使 Compact 在修复/接受前升级 Full。
-- Issue lifecycle 只按 `issuePolicy` 当前阶段检查；publish 时始终校验 close target。
+- Issue lifecycle 只按 `issuePolicy` 当前阶段检查；publish 时校验 close target 为有票时 `workIssue`，或 `manual`/no-Issue 时 `none`，后者不得出现 closing keyword。
 - 没有新鲜证据不得 PASS。

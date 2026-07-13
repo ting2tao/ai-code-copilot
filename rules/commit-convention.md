@@ -10,9 +10,9 @@ GitHub 指标统计口径见 `github-metrics.md`；本文件只定义协作、co
 
 ### GitHub 官方可识别
 
-- closing keyword 只允许在 PR body 中用于当前合同的工作票，固定写作 `Closes #<workIssue>`；合并到默认分支时关闭该 work Issue。
+- 存在 work Issue 时，closing keyword 只允许在 PR body 中用于当前合同的工作票，固定写作 `Closes #<workIssue>`；合并到默认分支时关闭该 work Issue。
 - `parentIssue` 只能使用 `Refs #<parentIssue>` 引用，不得使用任何 closing keyword。
-- 当前合同不使用 `Fixes` 或 `Resolves`，也不允许用数字示例替代已解析的 `workIssue` 占位符。
+- 当前合同不使用 `Fixes` 或 `Resolves`，也不允许用数字示例替代已解析的 `workIssue` 占位符。`manual` 且未提供 Issue 时省略所有 closing keyword。
 
 ### 社区通用规范
 
@@ -38,9 +38,9 @@ missing    -> legacy default always
 
 - 新项目默认 `on-publish`；已有项目缺少 `issuePolicy` 时按 legacy `always` 运行，不静默改写项目配置。
 - 严禁无票开发只认策略要求阶段前 `workIssue` confirmed/resolved；只有 `parentIssue` 不够，父需求不能代替本次工作票。
-- `manual` 不自动创建 Issue；用户提供 Issue 时仍须验证 open、可读、同仓库及关系。
+- `manual` 不自动创建 Issue；用户提供 Issue 时仍须验证 open、可读、同仓库及关系。未提供时记录 `workIssue: none`、`issueRelationship: none`、`closeTarget: none`，不得把 parent 当作 close target。
 - Standard/Complex 在 `spec.md`，Quick Compact/Full 在 `quick-card.md` 记录 `parentIssue`、`workIssue`、`issueRelationship`、`closeTarget` 和 branch；到达策略门禁前允许 `workIssue: pending`。
-- 到达 commit/publish 门禁时，Preflight 必须确认 `workIssue` 已解析、open、可读且属于当前仓库，`issueRelationship` 为 `sub-issue` 或 `standalone`，`closeTarget: workIssue`。`manual` 且未提供 Issue 时记录豁免，不伪造 Issue。
+- 到达 commit/publish 门禁时，Preflight 必须确认 `workIssue` 已解析、open、可读且属于当前仓库，`issueRelationship` 为 `sub-issue` 或 `standalone`，`closeTarget: workIssue`。`manual` 且未提供 Issue 时记录三个 `none`，不伪造 Issue。
 - 当前分支不得是 `master` 或 `main`。
 
 ### Issue 生命周期
@@ -99,7 +99,7 @@ missing    -> legacy default always
 ### Issue 关联
 
 - 简单关联可放在 description 末尾，编号必须是 `workIssue`。
-- 自动关闭语义只放在 PR body：`Closes #<workIssue>`。
+- 有 work Issue 时，自动关闭语义只放在 PR body：`Closes #<workIssue>`；manual/no-Issue 时不写 closing keyword。
 - parentIssue 非 none 时，PR body 另加 `Refs #<parentIssue>`；parent 永远不用 `Closes`、`Fixes` 或 `Resolves`。
 - commit body/footer 可使用 `Refs #<workIssue>` 表示关联但不自动关闭；不在 commit 中提前关闭 Issue。
 
@@ -123,7 +123,7 @@ missing    -> legacy default always
 ### 必须
 
 - 除 `manual` 且未提供 Issue 的明确豁免外，PR 必须关联合同中已经 resolved 的 `workIssue`。
-- PR body 必须使用 `Closes #<workIssue>`；`closeTarget` 必须为 workIssue。
+- 有 work Issue 时，PR body 必须使用 `Closes #<workIssue>` 且 `closeTarget` 必须为 workIssue；`manual`/no-Issue 时 `closeTarget: none` 并省略所有 closing keyword。
 - `parentIssue` 非 none 时必须添加 `Refs #<parentIssue>`，不得使用 closing keyword。
 - PR 必须列出验证命令和实际结果，不能只写"已测试"。
 - 提交 PR 时必须触发：
@@ -159,11 +159,11 @@ Refs #<parentIssue>
 
 ## 6. 快速检查清单
 
-- [ ] confirmed/resolved `workIssue` 与可选 `parentIssue` 已写入 `spec.md` 或 `quick-card.md`
-- [ ] `issueRelationship` 已验证为 `sub-issue` 或 `standalone`，`closeTarget: workIssue`
+- [ ] confirmed/resolved `workIssue` 与可选 `parentIssue` 已写入记录源；或 `manual`/no-Issue 已显式记录三个 `none`
+- [ ] `issueRelationship` 已验证为 `sub-issue` 或 `standalone`、`closeTarget: workIssue`；或 manual/no-Issue 为 `issueRelationship: none`、`closeTarget: none`
 - [ ] 当前分支不是 `master`/`main`，且符合 `type/scope`
 - [ ] commit message 符合 `type(scope): description`
 - [ ] commit hash 和 message 已写入 `tasks.md` 或 `log.md`
-- [ ] PR body 使用 `Closes #<workIssue>`，parent 非 none 时只使用 `Refs #<parentIssue>`
+- [ ] 有 work Issue 时 PR body 使用 `Closes #<workIssue>`；manual/no-Issue 时无 closing keyword；parent 非 none 时只使用 `Refs #<parentIssue>`
 - [ ] PR 触发 CodeQL 和 CI；若缺失，PR 已明示缺口
 - [ ] PR 描述列出验证命令和实际结果
