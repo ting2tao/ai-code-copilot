@@ -64,7 +64,7 @@
 - Create: `scripts/check_progressive_sdd.py`
 - Modify: `scripts/check_framework.sh`
 
-- [ ] **Step 1: Add a failing top-level check for the new policy checker**
+- [x] **Step 1: Add a failing top-level check for the new policy checker**
 
 Add the following near the initial `need_file` declarations in `scripts/check_framework.sh`:
 
@@ -79,7 +79,7 @@ Add this after the existing shell syntax checks:
 python3 scripts/check_progressive_sdd.py "$ROOT"
 ```
 
-- [ ] **Step 2: Run the framework check and verify Red**
+- [x] **Step 2: Run the framework check and verify Red**
 
 Run:
 
@@ -89,7 +89,7 @@ bash scripts/check_framework.sh
 
 Expected: non-zero exit with `missing file: config/workflow-policy.json`.
 
-- [ ] **Step 3: Create the canonical policy**
+- [x] **Step 3: Create the canonical policy**
 
 Create `config/workflow-policy.json` with this complete structure:
 
@@ -173,7 +173,7 @@ Create `config/workflow-policy.json` with this complete structure:
 }
 ```
 
-- [ ] **Step 4: Create the policy checker**
+- [x] **Step 4: Create the policy checker**
 
 Create `scripts/check_progressive_sdd.py` as a Python 3 standard-library script. It must:
 
@@ -237,7 +237,7 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 5: Run the focused checker and top-level framework check**
+- [x] **Step 5: Run the focused checker and top-level framework check**
 
 Run:
 

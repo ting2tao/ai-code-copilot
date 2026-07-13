@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "tiers": {
+    "inline": {
+      "maxFiles": 2,
+      "maxPurposes": 1,
+      "maxCommits": 1,
+      "requiresExecutableVerification": true,
+      "requiresDirectRollback": true
+    },
+    "compact": {
+      "maxFiles": 5
+    },
+    "full": {
+      "riskCategories": [
+        "public-api",
+        "schema",
+        "database",
+        "dependency",
+        "ci",
+        "deployment",
+        "generated-artifact",
+        "security",
+        "permission",
+        "authentication",
+        "sensitive-data",
+        "money",
+        "state-machine",
+        "cross-module-business-rule",
+        "accepted-residual-risk"
+      ]
+    }
+  },
+  "promotion": {
+    "inlineToCompact": [
+      "file-count-exceeded",
+      "second-purpose",
+      "second-commit",
+      "verification-missing",
+      "bounded-debugging-exceeded",
+      "contract-ambiguous",
+      "session-handoff",
+      "commit-requested",
+      "publish-requested",
+      "auditable-review-requested",
+      "persistence-requested"
+    ],
+    "toFull": [
+      "full-risk-discovered",
+      "material-reverse-sync",
+      "important-review-correction",
+      "critical-review-correction",
+      "durable-knowledge",
+      "open-risk",
+      "multiple-review-units"
+    ]
+  },
+  "git": {
+    "allowedTypes": [
+      "feat",
+      "fix",
+      "docs",
+      "refactor",
+      "test",
+      "chore",
+      "perf",
+      "ci",
+      "build"
+    ]
+  },
+  "github": {
+    "issuePolicies": [
+      "always",
+      "on-commit",
+      "on-publish",
+      "manual"
+    ],
+    "newProjectDefault": "on-publish",
+    "legacyDefault": "always",
+    "closeTarget": "workIssue"
+  }
+}
