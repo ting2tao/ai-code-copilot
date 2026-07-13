@@ -387,3 +387,22 @@ Phase 3 must not block the Phase 1/2 release. The Phase 1/2 implementation adds 
 - Existing compact/full changes and archived records continue to work.
 - Issue creation follows project policy without weakening legacy projects, and PRs still close only the work Issue.
 - Framework self-check, shell syntax checks, and documentation alignment pass.
+
+## 17. Phase 1/2 Implementation Evidence
+
+Verified on 2026-07-13 against `feat/progressive-sdd`:
+
+| Acceptance criterion | Implementation evidence | Fresh verification |
+|---|---|---|
+| Low-risk two-file work can remain Inline without artifacts or Issue under a compatible policy | `config/workflow-policy.json`, `agents/workflows/inline.md` | `python3 scripts/check_progressive_sdd.py .` classified the two-file executable/reversible fixture as Inline and passed |
+| Scope, uncertainty, lifecycle, or risk promotes before more edits | `agents/workflows/inline.md`, `agents/workflows/compact.md`, `agents/workflows/full.md` | Focused checker validated router modules and promotion contracts; full framework check passed |
+| Full-risk work cannot remain Inline or Compact | canonical `full.riskCategories` plus set-intersection routing in `scripts/check_progressive_sdd.py` | Focused public-API risk fixture classified Full and passed |
+| Promotion preserves evidence and confirms only material change | `changes/templates/quick-card.md`, `agents/spec-reviewer.md`, `agents/code-quality-reviewer.md` | Focused promotion-marker checks and bounded SessionStart fixture passed |
+| Activation loads router/modules instead of the monolith | `skill/SKILL.md`, `agents/router.md`, `agents/workflows/` | Focused module-reference check passed; legacy prompt remains conditional fallback |
+| Existing records and archives remain compatible | unchanged record identifiers, legacy fallback, existing templates, install/sync behavior | `bash scripts/check_framework.sh` passed all Java/Go/Python/Frontend/Monorepo fixtures |
+| Issue lifecycle is configurable without weakening legacy projects | `config/project-config.json`, `scripts/init_project.sh`, `agents/workflows/finish.md`, GitHub rules | fixtures preserved old config bytes and reported legacy `always`; disposable Python init produced `issuePolicy: on-publish` |
+| Syntax, framework, docs, and scope checks pass | synchronized README/AGENTS/overview/flow/Harness/Loop docs and mechanical checks | shell syntax, focused checker, full framework check, and `git diff --check origin/main...HEAD` all exited 0 |
+
+The disposable installation check used `init_project.sh --upgrade --dry-run`, confirmed that dry-run created no `.ai_code_copilot` directory, then performed a real initialization and found `"issuePolicy": "on-publish"` in the generated config.
+
+Phase 3 remains a post-adoption follow-up: measure prompt characters, turns before first edit, tier distribution, promotion quality, verification coverage, rework, token use, and cross-session recovery from real projects before removing additional legacy prose or retuning thresholds.

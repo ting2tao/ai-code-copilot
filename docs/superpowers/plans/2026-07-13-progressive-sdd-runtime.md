@@ -691,7 +691,7 @@ git commit -m "docs(progressive-sdd): 同步分层运行时说明"
 - Update: `docs/superpowers/specs/2026-07-13-progressive-sdd-runtime-design.md` with final implementation evidence.
 - Update: `docs/superpowers/plans/2026-07-13-progressive-sdd-runtime.md` checkboxes and commit evidence.
 
-- [ ] **Step 1: Verify shell syntax**
+- [x] **Step 1: Verify shell syntax**
 
 Run:
 
@@ -701,7 +701,7 @@ bash -n hooks/session-start scripts/check_framework.sh scripts/init_project.sh i
 
 Expected: exit 0 with no output.
 
-- [ ] **Step 2: Run focused and complete framework checks**
+- [x] **Step 2: Run focused and complete framework checks**
 
 Run:
 
@@ -712,7 +712,7 @@ bash scripts/check_framework.sh
 
 Expected: focused checker prints success and the complete suite exits 0.
 
-- [ ] **Step 3: Verify formatting and changed-file scope**
+- [x] **Step 3: Verify formatting and changed-file scope**
 
 Run:
 
@@ -724,7 +724,7 @@ git diff --stat origin/main...HEAD
 
 Expected: no whitespace errors; only planned framework, policy, template, test, and documentation files appear.
 
-- [ ] **Step 4: Verify installation and sync dry-runs**
+- [x] **Step 4: Verify installation and sync dry-runs**
 
 Run against a disposable project fixture:
 
@@ -738,11 +738,11 @@ grep -q '"issuePolicy": "on-publish"' "$tmpdir/.ai_code_copilot/config.json"
 
 Expected: dry-run performs no writes; initialization succeeds and new config contains the new-project default.
 
-- [ ] **Step 5: Review against every acceptance criterion**
+- [x] **Step 5: Review against every acceptance criterion**
 
 Read the design §16 and map each criterion to a changed file plus fresh command evidence. Record any remaining Phase 3 measurement work as follow-up, not as a failed Phase 1/2 criterion.
 
-- [ ] **Step 6: Commit final evidence corrections**
+- [x] **Step 6: Commit final evidence corrections**
 
 ```bash
 git add docs/superpowers/specs/2026-07-13-progressive-sdd-runtime-design.md docs/superpowers/plans/2026-07-13-progressive-sdd-runtime.md
