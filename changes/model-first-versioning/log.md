@@ -32,3 +32,19 @@ command: bash scripts/check_framework.sh
 exit: 0
 summary: progressive SDD, semantic version, and full framework checks passed
 ```
+
+## Task 3: Model-first activation
+
+```text
+command: python3 scripts/check_model_first_versioning.py .
+exit: 1
+summary: expected RED — activation.defaultPath must be native
+
+command: python3 scripts/check_model_first_versioning.py . && python3 scripts/check_progressive_sdd.py . && bash hooks/session-start | python3 -m json.tool >/dev/null
+exit: 0
+summary: model-first activation, Compact/Full routing, and SessionStart JSON checks passed
+
+command: bash scripts/check_framework.sh
+exit: 0
+summary: full framework gate passed after removing framework-owned Inline
+```

@@ -14,97 +14,102 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def classify(policy: dict, facts: dict) -> str:
+def should_activate(policy: dict, facts: dict) -> bool:
+    activation = policy["activation"]
+    if facts.get("explicitIntent") in activation["explicitIntents"]:
+        return True
+    signals = set(facts.get("signals", []))
+    if signals & set(activation["mustActivateSignals"]):
+        return True
+    return False
+
+
+def classify_activated(policy: dict, facts: dict) -> str:
     risks = set(facts.get("risks", []))
     full_risks = set(policy["tiers"]["full"]["riskCategories"])
-    compact = policy["tiers"]["compact"]
     if (
         risks & full_risks
         or facts.get("acceptedResidualRisk", False)
-        or facts.get("files", 0) > compact["maxFiles"]
+        or facts.get("files", 0) > policy["tiers"]["compact"]["maxFiles"]
         or facts.get("multipleDeliverableGoals", False)
         or facts.get("multipleReviewUnits", False)
     ):
         return "full"
-    inline = policy["tiers"]["inline"]
-    if (
-        facts.get("files", 0) > inline["maxFiles"]
-        or facts.get("purposes", 1) > inline["maxPurposes"]
-        or facts.get("commits", 1) > inline["maxCommits"]
-        or not facts.get("executableVerification", False)
-        or not facts.get("directRollback", False)
-        or facts.get("persistedLifecycle", False)
-    ):
-        return "compact"
-    return "inline"
+    return "compact"
 
 
 def main() -> None:
     root = Path(sys.argv[1]).resolve()
     policy = json.loads(read_text(root / "config/workflow-policy.json"))
-    if policy.get("version") != 1:
-        fail("workflow policy version must be 1")
+    if policy.get("version") != 2:
+        fail("workflow policy version must be 2")
     if policy["github"]["newProjectDefault"] != "on-publish":
         fail("new projects must default issuePolicy to on-publish")
     if policy["github"]["legacyDefault"] != "always":
         fail("legacy projects without issuePolicy must default to always")
     if policy["github"].get("manualNoIssueCloseTarget") != "none":
         fail("manual projects without an Issue must use closeTarget none")
-    fixtures = [
+    activation_fixtures = [
         (
             {
-                "files": 2,
-                "executableVerification": True,
-                "directRollback": True,
+                "signals": [],
             },
-            "inline",
+            False,
         ),
         (
             {
-                "files": 3,
-                "executableVerification": True,
-                "directRollback": True,
+                "signals": ["security"],
+            },
+            True,
+        ),
+        (
+            {
+                "explicitIntent": "finish",
+            },
+            True,
+        ),
+        (
+            {
+                "signals": ["session-handoff"],
+            },
+            True,
+        ),
+    ]
+    for facts, expected in activation_fixtures:
+        actual = should_activate(policy, facts)
+        if actual != expected:
+            fail(f"activation expected {expected}, got {actual}: {facts}")
+
+    tier_fixtures = [
+        (
+            {
+                "files": 2,
             },
             "compact",
         ),
         (
             {
                 "files": 6,
-                "executableVerification": True,
-                "directRollback": True,
-            },
-            "full",
-        ),
-        (
-            {
-                "files": 2,
-                "executableVerification": True,
-                "directRollback": True,
-                "multipleDeliverableGoals": True,
             },
             "full",
         ),
         (
             {
                 "files": 1,
-                "executableVerification": True,
-                "directRollback": True,
                 "risks": ["public-api"],
             },
             "full",
         ),
     ]
-    for facts, expected in fixtures:
-        actual = classify(policy, facts)
+    for facts, expected in tier_fixtures:
+        actual = classify_activated(policy, facts)
         if actual != expected:
             fail(f"classifier expected {expected}, got {actual}: {facts}")
     for risk in policy["tiers"]["full"]["riskCategories"]:
-        actual = classify(
+        actual = classify_activated(
             policy,
             {
                 "files": 1,
-                "executableVerification": True,
-                "directRollback": True,
                 "risks": [risk],
             },
         )
@@ -113,7 +118,6 @@ def main() -> None:
 
     required_modules = [
         "init.md",
-        "inline.md",
         "compact.md",
         "full.md",
         "debug.md",
@@ -130,8 +134,8 @@ def main() -> None:
     skill = read_text(root / "skill/SKILL.md")
     if "agents/router.md" not in skill:
         fail("skill must load agents/router.md")
-    if "agents/copilot-prompt.md" not in skill:
-        fail("skill must retain the legacy prompt fallback")
+    if "回退加载单体提示词" not in skill:
+        fail("skill must reject monolithic prompt fallback")
 
     quick_card = read_text(root / "changes/templates/quick-card.md")
     for marker in [

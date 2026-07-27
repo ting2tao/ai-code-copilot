@@ -1,13 +1,49 @@
 {
-  "version": 1,
+  "version": 2,
+  "activation": {
+    "defaultPath": "native",
+    "explicitIntents": [
+      "init",
+      "sync",
+      "upgrade",
+      "brainstorm",
+      "propose",
+      "apply",
+      "fix-ci",
+      "review",
+      "finish",
+      "publish",
+      "test",
+      "archive"
+    ],
+    "mustActivateSignals": [
+      "security",
+      "authentication",
+      "permission",
+      "sensitive-data",
+      "money",
+      "destructive-operation",
+      "production",
+      "deployment",
+      "ci",
+      "dependency",
+      "database",
+      "schema",
+      "generated-artifact",
+      "public-api",
+      "state-machine",
+      "cross-module-business-rule",
+      "session-handoff",
+      "durable-decision",
+      "auditable-review",
+      "commit",
+      "publish",
+      "repeated-investigation",
+      "material-uncertainty"
+    ],
+    "lowRiskOverrideAllowed": true
+  },
   "tiers": {
-    "inline": {
-      "maxFiles": 2,
-      "maxPurposes": 1,
-      "maxCommits": 1,
-      "requiresExecutableVerification": true,
-      "requiresDirectRollback": true
-    },
     "compact": {
       "maxFiles": 5
     },
@@ -32,19 +68,6 @@
     }
   },
   "promotion": {
-    "inlineToCompact": [
-      "file-count-exceeded",
-      "second-purpose",
-      "second-commit",
-      "verification-missing",
-      "bounded-debugging-exceeded",
-      "contract-ambiguous",
-      "session-handoff",
-      "commit-requested",
-      "publish-requested",
-      "auditable-review-requested",
-      "persistence-requested"
-    ],
     "toFull": [
       "full-risk-discovered",
       "material-reverse-sync",

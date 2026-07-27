@@ -6,7 +6,7 @@ plan: docs/superpowers/plans/2026-07-27-model-first-versioning.md
 |------|--------|--------------|
 | 1. Establish Full SDD execution record | completed | Record completeness and real Spec hash |
 | 2. Add semantic version contract | completed | RED: missing VERSION; GREEN: focused and full checks passed |
-| 3. Make activation model-first | pending | Activation policy fixtures |
+| 3. Make activation model-first | completed | Native/activation fixtures and SessionStart JSON passed |
 | 4. Align workflows, reviewers, and records | pending | Progressive policy check |
 | 5. Implement full-replacement installers | pending | Hermetic overwrite smoke |
 | 6. Overwrite managed project files and record version | pending | Framework fixture matrix |

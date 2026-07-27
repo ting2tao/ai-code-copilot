@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import re
 import subprocess
 import sys
@@ -71,11 +72,52 @@ def behavior_changed_from_base(root: Path) -> bool:
     return False
 
 
+def require_markers(text: str, label: str, markers: list[str]) -> None:
+    missing = [marker for marker in markers if marker not in text]
+    if missing:
+        fail(f"{label} missing: {', '.join(missing)}")
+
+
+def check_activation_contract(root: Path) -> None:
+    policy = json.loads(read_text(root / "config/workflow-policy.json"))
+    activation = policy.get("activation", {})
+    if activation.get("defaultPath") != "native":
+        fail("activation.defaultPath must be native")
+    require_markers(
+        " ".join(activation.get("mustActivateSignals", [])),
+        "mustActivateSignals",
+        ["security", "permission", "money", "production", "database", "deployment"],
+    )
+    require_markers(
+        " ".join(activation.get("explicitIntents", [])),
+        "explicitIntents",
+        ["init", "propose", "review", "finish", "archive"],
+    )
+    skill = read_text(root / "skill/SKILL.md")
+    description = skill.split("---", 2)[1]
+    for forbidden in [
+        "实现/开发/写代码/加功能",
+        "优化/重构/refactor",
+        "修 bug/debug",
+    ]:
+        if forbidden in description:
+            fail(f"skill description retains unconditional coding trigger: {forbidden}")
+    hook = read_text(root / "hooks/session-start")
+    require_markers(
+        hook,
+        "SessionStart",
+        ["模型原生处理", "自动激活 ai-code-copilot", "不得绕过人工确认"],
+    )
+    if (root / "agents/workflows/inline.md").exists():
+        fail("framework-owned inline workflow must be removed")
+
+
 def main() -> None:
     root = Path(sys.argv[1]).resolve()
     version = read_version(root)
     if behavior_changed_from_base(root) and not version_changed_from_base(root, version):
         fail("framework behavior changed without a VERSION bump")
+    check_activation_contract(root)
     print(f"model-first-versioning: version {version} checks passed")
 
 
