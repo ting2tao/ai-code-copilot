@@ -78,3 +78,19 @@ summary: full framework gate passed with install overwrite smoke included
 
 note: PowerShell was checked by static contract only because pwsh is not installed in the current macOS environment.
 ```
+
+## Task 6: Project sync ownership and version state
+
+```text
+command: bash scripts/check_framework.sh
+exit: 1
+summary: expected RED — init_project.sh missing def framework_version()
+
+command: bash -n scripts/init_project.sh && python3 scripts/check_model_first_versioning.py . && bash scripts/check_framework.sh
+exit: 0
+summary: every fixture recorded frameworkVersion/frameworkCommit; managed rules/templates/state were overwritten; config/context/domain/knowledge/active changes/archives were preserved; invalid configs failed; no .new files were created
+
+command: bash scripts/init_project.sh --project tests/fixtures/go --upgrade --dry-run
+exit: 0
+summary: dry-run listed versioned managed writes and left the fixture unchanged
+```

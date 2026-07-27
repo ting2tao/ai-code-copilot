@@ -127,6 +127,33 @@ def check_install_contract(root: Path) -> None:
             fail(f"{relative} must report VERSION, not a commit as the release version")
 
 
+def check_project_sync_contract(root: Path) -> None:
+    init_project = read_text(root / "scripts/init_project.sh")
+    require_markers(
+        init_project,
+        "scripts/init_project.sh",
+        [
+            "def framework_version():",
+            "def validate_existing_config():",
+            "def write_managed(",
+            'data["frameworkVersion"]',
+            'data["frameworkCommit"]',
+            "existing config githubWorkflow.issuePolicy is required",
+            "framework-managed core rules",
+            "active changes",
+            "archives",
+        ],
+    )
+    for forbidden in [
+        "write_if_missing_or_new",
+        "copy_if_missing_or_new",
+        "migration-note:",
+        ".new candidates",
+    ]:
+        if forbidden in init_project:
+            fail(f"scripts/init_project.sh retains obsolete sync behavior: {forbidden}")
+
+
 def main() -> None:
     root = Path(sys.argv[1]).resolve()
     version = read_version(root)
@@ -134,6 +161,7 @@ def main() -> None:
         fail("framework behavior changed without a VERSION bump")
     check_activation_contract(root)
     check_install_contract(root)
+    check_project_sync_contract(root)
     print(f"model-first-versioning: version {version} checks passed")
 
 
