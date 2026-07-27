@@ -41,8 +41,17 @@ def read_version(root: Path) -> str:
     if raw.count("\n") != 1 or not raw.endswith("\n"):
         fail("VERSION must contain one line with a trailing newline")
     version = raw[:-1]
-    if not SEMVER.fullmatch(version):
+    match = SEMVER.fullmatch(version)
+    if not match:
         fail(f"invalid semantic version: {version!r}")
+    prerelease = match.group(4)
+    if prerelease and any(
+        identifier.isdigit()
+        and len(identifier) > 1
+        and identifier.startswith("0")
+        for identifier in prerelease.split(".")
+    ):
+        fail(f"invalid semantic version prerelease: {version!r}")
     return version
 
 
@@ -63,7 +72,7 @@ def version_changed_from_base(root: Path, version: str) -> bool:
 def behavior_changed_from_base(root: Path) -> bool:
     result = git_result(
         root,
-        ["diff", "--quiet", "origin/main...HEAD", "--", *BEHAVIOR_PATHS],
+        ["diff", "--quiet", "origin/main", "--", *BEHAVIOR_PATHS],
     )
     if result.returncode == 0:
         return False

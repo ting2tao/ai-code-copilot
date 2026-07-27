@@ -1,12 +1,11 @@
 ---
 name: ai-code-copilot
 description: |
-  Use for explicit ai-code-copilot lifecycle requests such as 初始化项目/init/sync/upgrade,
-  brainstorm/propose/apply/fix-ci/review/finish/publish/test/archive, or when the model detects
-  security, permission, money, production, deployment, database, public-contract, persistent,
-  audit, or cross-session risk. Do not use for ordinary low-risk implementation, debugging,
-  refactoring, tests, documentation, discussion, or read-only analysis; handle those natively
-  unless material risk or uncertainty appears.
+  Use for explicit ai-code-copilot lifecycle requests: 初始化项目/init/sync/upgrade,
+  brainstorm/propose/apply/fix-ci/review/finish/publish/archive, or the explicit test workflow.
+  Also use for model-detected security, permission, money, production, deployment, database,
+  public-contract, persistence, audit, or cross-session risk. Keep ordinary low-risk coding,
+  debugging, refactoring, test-writing, docs, discussion, and read-only analysis native.
 ---
 
 # ai-code-copilot

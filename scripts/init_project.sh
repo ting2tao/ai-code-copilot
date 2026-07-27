@@ -106,11 +106,21 @@ def framework_version():
         raise SystemExit(f"unable to read framework VERSION: {version_path}: {exc}")
     if not re.fullmatch(
         r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
-        r"(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?\n",
+        r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+        r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?\n",
         version,
     ):
         raise SystemExit(f"invalid framework VERSION: {version_path}")
-    return version.strip()
+    value = version.strip()
+    prerelease = value.split("+", 1)[0].partition("-")[2]
+    if prerelease and any(
+        identifier.isdigit()
+        and len(identifier) > 1
+        and identifier.startswith("0")
+        for identifier in prerelease.split(".")
+    ):
+        raise SystemExit(f"invalid framework VERSION prerelease: {version_path}")
+    return value
 
 
 current_framework_version = framework_version()

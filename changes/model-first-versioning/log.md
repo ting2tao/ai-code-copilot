@@ -112,3 +112,44 @@ summary: bilingual README, AGENTS, current architecture/flow/team-talk docs, pol
 
 decision: removed the remaining legacy issuePolicy default so strict project sync and activated runtime now both reject missing policy instead of disagreeing.
 ```
+
+## Task 8: Final verification and review
+
+```text
+command: python3 scripts/check_model_first_versioning.py . && python3 scripts/check_progressive_sdd.py . && bash scripts/test_install_overwrite.sh
+exit: 0
+summary: version, activation, Compact/Full routing, full-replacement install, invalid-source preservation, and static documentation contracts passed
+
+command: bash scripts/check_framework.sh
+exit: 0
+summary: progressive-sdd, model-first-versioning, install overwrite, and all project fixture checks passed
+
+command: bash -n hooks/session-start scripts/check_framework.sh scripts/init_project.sh scripts/test_install_overwrite.sh install.sh install-wsl.sh && compile both Python checker sources in memory && git diff --check origin/main
+exit: 0
+summary: Bash syntax, Python syntax, and full worktree diff whitespace checks passed
+
+command: command -v pwsh
+exit: 1
+summary: PowerShell runtime unavailable; install.ps1 received static marker and manual code review only
+
+command: final combined gate (first attempt)
+exit: 1
+summary: skill discovery description exceeded the existing 500-character budget (537); wording was shortened without broadening activation
+
+command: final combined gate (rerun after correction)
+exit: 0
+summary: targeted checks, full framework gate, Bash/Python syntax, complete diff check, and explicit PowerShell limitation all passed
+```
+
+### Spec Compliance
+
+- PASS: all ten Acceptance items are represented in runtime policy, installers, project sync, versioned state, synchronized docs, and fresh mechanical evidence.
+- PASS: project-owned assets remain outside direct overwrite; installation-local edits are intentionally removed.
+- PASS: no compatibility migration, old runtime fallback, automatic rollback, tag, push, or PR action was added.
+
+### Code Quality
+
+- Critical: none found.
+- Important: none found.
+- Minor/limitation: Windows/PowerShell runtime smoke is not available on this host; static checks and cross-platform symmetry are present.
+- Review method: independent inline second pass against the approved Spec because this session disallows sub-Agent delegation.

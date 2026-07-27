@@ -26,4 +26,4 @@ upgrade:           bash <COPILOT_HOME>/scripts/init_project.sh --project <projec
 - `project-context.md`、`domain-rules.md`、现有 `config.json` 是 project-owned，保留原字节。
 - 框架托管 core rules、命中 pack rules、templates 和 state 直接覆盖；项目主权资产保持不动。
 - dry-run 不写文件。
-- 完成后运行 `<COPILOT_HOME>/scripts/check_framework.sh`，并报告命中 pack、变更和候选文件。
+- 完成后运行 `<COPILOT_HOME>/scripts/check_framework.sh`，并报告命中 pack、已覆盖的框架托管文件与保留的项目主权资产。

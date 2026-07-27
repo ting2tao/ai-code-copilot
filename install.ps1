@@ -56,9 +56,23 @@ function Test-SourceTree {
             Err "来源目录不完整，缺少: $required"
         }
     }
-    $sourceVersion = (Get-Content (Join-Path $SourceTree "VERSION") -Raw -Encoding UTF8).Trim()
+    $versionPath = Join-Path $SourceTree "VERSION"
+    $sourceVersionRaw = [IO.File]::ReadAllText($versionPath)
+    if ($sourceVersionRaw -notmatch '\A(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?\r?\n\z') {
+        Err "来源 VERSION 必须是单行换行结尾的 SemVer"
+    }
+    $sourceVersion = $sourceVersionRaw -replace '\r?\n\z', ''
     if ($sourceVersion -notmatch '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$') {
         Err "来源 VERSION 不是合法 SemVer: $sourceVersion"
+    }
+    $versionWithoutBuild = $sourceVersion.Split("+")[0]
+    if ($versionWithoutBuild.Contains("-")) {
+        $prerelease = $versionWithoutBuild.Substring($versionWithoutBuild.IndexOf("-") + 1)
+        foreach ($identifier in $prerelease.Split(".")) {
+            if ($identifier -match '^0\d+$') {
+                Err "来源 VERSION 的数字预发布标识不能有前导零: $sourceVersion"
+            }
+        }
     }
 }
 

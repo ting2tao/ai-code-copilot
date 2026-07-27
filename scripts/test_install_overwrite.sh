@@ -48,4 +48,25 @@ if len(commands) != 1:
     raise SystemExit(f"expected exactly one installed SessionStart hook, got {commands}")
 PY
 
+BAD_SOURCE="$TMP_HOME/bad-source"
+mkdir -p "$BAD_SOURCE/skill" "$BAD_SOURCE/agents" "$BAD_SOURCE/hooks"
+cp "$ROOT/skill/SKILL.md" "$BAD_SOURCE/skill/SKILL.md"
+cp "$ROOT/agents/copilot-prompt.md" "$BAD_SOURCE/agents/copilot-prompt.md"
+cp "$ROOT/hooks/session-start" "$BAD_SOURCE/hooks/session-start"
+printf '0.1.0\nunexpected\n' >"$BAD_SOURCE/VERSION"
+cp "$INSTALL_DIR/VERSION" "$TMP_HOME/version-before-invalid-install"
+if (cd "$BAD_SOURCE" && bash "$ROOT/install.sh" --codex >"$TMP_HOME/install-invalid.out" 2>&1); then
+  printf 'install-overwrite: invalid source VERSION was accepted\n' >&2
+  exit 1
+fi
+cmp -s "$TMP_HOME/version-before-invalid-install" "$INSTALL_DIR/VERSION"
+test -f "$INSTALL_DIR/skill/SKILL.md"
+
+printf '0.1.0-01\n' >"$BAD_SOURCE/VERSION"
+if (cd "$BAD_SOURCE" && bash "$ROOT/install.sh" --codex >"$TMP_HOME/install-invalid-prerelease.out" 2>&1); then
+  printf 'install-overwrite: invalid numeric prerelease was accepted\n' >&2
+  exit 1
+fi
+cmp -s "$TMP_HOME/version-before-invalid-install" "$INSTALL_DIR/VERSION"
+
 printf 'install-overwrite: repeated local install replaced the managed tree\n'

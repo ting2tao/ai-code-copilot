@@ -146,7 +146,7 @@ ai-code-copilot is the default delivery orchestrator. Superpowers is an explicit
 
 ## Progressive Complexity
 
-Every request is classified before work begins:
+Every activated request is classified before framework-guided work begins:
 
 | Level | When to use | Flow |
 |-------|-------------|------|

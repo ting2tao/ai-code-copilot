@@ -63,10 +63,27 @@ validate_source_tree() {
       return 1
     fi
   done
-  source_version="$(tr -d '\r\n' < "$source_tree/VERSION")"
+  if [ "$(wc -l < "$source_tree/VERSION" | tr -d ' ')" -ne 1 ] || grep -q $'\r' "$source_tree/VERSION"; then
+    err "来源 VERSION 必须是单行 LF 结尾的 SemVer"
+    return 1
+  fi
+  source_version="$(tr -d '\n' < "$source_tree/VERSION")"
   if [[ ! "$source_version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
     err "来源 VERSION 不是合法 SemVer: $source_version"
     return 1
+  fi
+  local version_without_build="${source_version%%+*}"
+  if [[ "$version_without_build" == *-* ]]; then
+    local prerelease="${version_without_build#*-}"
+    local identifier
+    local -a prerelease_identifiers
+    IFS='.' read -r -a prerelease_identifiers <<< "$prerelease"
+    for identifier in "${prerelease_identifiers[@]}"; do
+      if [[ "$identifier" =~ ^0[0-9]+$ ]]; then
+        err "来源 VERSION 的数字预发布标识不能有前导零: $source_version"
+        return 1
+      fi
+    done
   fi
 }
 
