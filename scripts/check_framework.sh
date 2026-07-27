@@ -26,6 +26,8 @@ need_file agents/code-quality-reviewer.md
 need_file config/project-config.json
 need_file config/workflow-policy.json
 need_file scripts/check_progressive_sdd.py
+need_file VERSION
+need_file scripts/check_model_first_versioning.py
 need_file docs/harness-engineering.md
 need_file docs/loop-engineering.md
 need_file hooks/session-start
@@ -47,6 +49,7 @@ bash -n hooks/session-start
 bash -n scripts/init_project.sh
 
 python3 scripts/check_progressive_sdd.py "$ROOT"
+python3 scripts/check_model_first_versioning.py "$ROOT"
 
 python3 - "$ROOT" <<'PY'
 import json
