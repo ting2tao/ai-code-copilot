@@ -1,6 +1,6 @@
 # Workflow Module: review
 
-Auditable review 需要持久合同。Inline 收到 review/commit/publish 请求时先执行 `Inline -> Compact`，再开始审查。
+Auditable review 需要持久合同。原生执行收到 review/commit/publish 请求时先自动激活并执行 `Native -> Compact`，再开始审查。
 
 ## Stage 1: Spec Compliance
 

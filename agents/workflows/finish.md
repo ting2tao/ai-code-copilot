@@ -1,6 +1,6 @@
 # Workflow Module: finish / commit / publish
 
-读取项目 `.ai_code_copilot/config.json`。`issuePolicy` 缺失时使用 `legacy default: always`；允许 `always / on-commit / on-publish / manual`。`finishMode` 只控制 PR handoff。
+读取项目 `.ai_code_copilot/config.json`。`issuePolicy` 必须存在且为 `always / on-commit / on-publish / manual` 之一；缺失或非法时停止，不做兼容推断。`finishMode` 只控制 PR handoff。
 
 ## Issue lifecycle
 
@@ -9,7 +9,7 @@ always     -> resolve workIssue before implementation
 on-commit  -> local edits allowed; resolve workIssue before first commit
 on-publish -> local edits and commits allowed; resolve workIssue before push/PR
 manual     -> never auto-create; validate supplied Issue when present
-missing    -> legacy default always
+missing    -> invalid configuration; stop and report
 ```
 
 Issue 创建成功后立即持久化。已有 open Issue 先校验再复用；parent 存在时建立 native sub-issue；无 parent 时 standalone。关联失败保留原 work Issue 并阻塞所需阶段，不得创建替代 Issue。任何已解析 Issue 都保持 `closeTarget=workIssue`。
@@ -18,7 +18,7 @@ Issue 创建成功后立即持久化。已有 open Issue 先校验再复用；pa
 
 ## Commit gate
 
-- Inline 请求 commit 时先 `Inline -> Compact`。
+- 原生执行请求 commit 时先自动激活并执行 `Native -> Compact`。
 - 分支遵循项目合同；commit 使用 `type(scope): description`。
 - `on-commit`/`always` 必须在 commit 前解析 Issue；`on-publish` 可延后。
 - 记录实际 hash 和完整 message。

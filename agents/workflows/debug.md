@@ -11,7 +11,7 @@
 
 ## Persistence and promotion
 
-- Inline 只允许边界内的单轮直接诊断；需要 durable decision、重复调查或多文件扩展时触发 `Inline -> Compact`。
+- 未激活时由模型原生完成低风险、单轮诊断；需要 durable decision、重复调查或多文件扩展时自动激活并执行 `Native -> Compact`。
 - 发现 full risk 或 material contract change 触发 Full。
 - `/fix` 同步当前档位记录；不得向不存在的 log 写入。
 - `/fix-ci` 读取失败 job 的实际日志、workflow trigger、branch protection 和可复现本地命令；修复后记录 run URL/status 和验证输出。

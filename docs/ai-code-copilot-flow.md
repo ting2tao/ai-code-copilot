@@ -20,15 +20,15 @@ flowchart TD
     FillContext --> Ready(["✅ 初始化完成<br/>可用流程菜单"])
 
     Ready --> UserInput{用户输入}
-    UserInput -->|"需求/功能开发"| Router["agents/router.md<br/>按需加载 workflow module"]
+    UserInput --> ModelJudge{"模型判断<br/>是否需要框架"}
+    ModelJudge -->|"普通、低风险、边界清晰"| Native["Native 原生执行<br/>targeted verify"]
+    Native --> NativeDone(["✅ 原生交付"])
+    ModelJudge -->|"明确 lifecycle 或实质风险"| Activate["Activate ai-code-copilot"]
+    Activate --> Router["agents/router.md<br/>按需加载 workflow module"]
     Router --> SDDTier{"选择 Spec 持久化档位"}
-    SDDTier -->|"明确、低风险、≤2 文件"| InlinePath["Inline SDD<br/>Goal / Scope / Done Signal / Verify"]
-    SDDTier -->|"需要持久化/commit/PR"| QuickPath
+    SDDTier -->|"需要持久化/commit/PR"| QuickPath["Compact SDD"]
     SDDTier -->|"高风险/跨模块/多目标"| Complexity
-    InlinePath --> InlineExec["本地修改 + targeted verify<br/>不创建变更文档"]
-    InlineExec --> InlineDone(["✅ Inline 本地交付"])
-    InlineExec -.->|"范围或生命周期扩大"| QuickPath
-    InlineExec -.->|"发现 Full risk"| StandardPath
+    Native -.->|"范围、风险或生命周期扩大"| Activate
     QuickPath -.->|"单向升级，保留合同/diff/证据"| StandardPath
     UserInput -->|"修 bug / 报错"| FixFlow
     UserInput -->|"review 代码"| ReviewFlow
@@ -136,8 +136,8 @@ flowchart TD
     classDef debugNode fill:#E74C3C,stroke:#C0392B,color:#fff
 
     class Init,Scan,CreateDir,CopyRules,FillContext initNode
-    class Router,InlinePath,InlineExec,Brainstorm,BStep1,BStep2,BStep3,BStep4,BStep5,Propose,PStep1,PStep3,PStep4,PStep5,Apply,Preflight,ExecTask,Verify,WriteLog,GitCommit,FillLog,QuickCard,QuickExec,CRoadmap processNode
-    class Detect,SDDTier,Complexity,BriefConfirm,SpecConfirm,CheckSpec,MoreTasks,SpecPass,CodePass,Coverage,ConfirmKnowledge decisionNode
-    class Ready,InlineDone,ExecDone,ReviewDone,TestDone,Done doneNode
+    class Native,Activate,Router,Brainstorm,BStep1,BStep2,BStep3,BStep4,BStep5,Propose,PStep1,PStep3,PStep4,PStep5,Apply,Preflight,ExecTask,Verify,WriteLog,GitCommit,FillLog,QuickCard,QuickExec,CRoadmap processNode
+    class Detect,ModelJudge,SDDTier,Complexity,BriefConfirm,SpecConfirm,CheckSpec,MoreTasks,SpecPass,CodePass,Coverage,ConfirmKnowledge decisionNode
+    class Ready,NativeDone,ExecDone,ReviewDone,TestDone,Done doneNode
     class D1,D2,D3,D4 debugNode
 ```

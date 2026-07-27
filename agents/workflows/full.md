@@ -9,7 +9,7 @@ always     -> resolve workIssue before implementation
 on-commit  -> local edits allowed; resolve workIssue before first commit
 on-publish -> local edits and commits allowed; resolve workIssue before push/PR
 manual     -> never auto-create; validate supplied Issue when present
-missing    -> legacy default always
+missing    -> invalid configuration; stop and report
 ```
 
 全量记录从提案开始保存 Issue 状态，但只在策略门禁到达时执行创建。已存在的 open work Issue 必须复用；部分成功后不得创建替代票；有 work Issue 时 `closeTarget` 为 workIssue，manual/no-Issue 时为 none，parent 永不由子变更关闭。
@@ -41,6 +41,6 @@ missing    -> legacy default always
 5. mechanical Reverse Sync 自动记录；material Reverse Sync 停止并重新确认。
 6. commit message 使用 `type(scope): description`，并立即写入记录源。
 
-## Inline -> Full
+## Native -> Full
 
-Inline 调查直接发现 full risk 时跳过 Compact：停止编辑，生成完整记录，复制合同/diff/evidence，标记 promotion provenance，等待 material confirmation 后继续。
+原生调查直接发现 full risk 时跳过 Compact：停止编辑，生成完整记录，复制 Native contract/diff/evidence，标记 promotion provenance，等待 material confirmation 后继续。

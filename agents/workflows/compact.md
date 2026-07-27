@@ -6,7 +6,7 @@ Compact SDD 使用现有 `quick-card.md`，`recordMode: compact`。它适用于�
 
 `quick-card.md` 必须包含 Goal、文件、Non-goals、Acceptance、Agent Harness、Goal Contract、风险/回滚、GitHub lifecycle、Execution/Commit/Review/Finish records。
 
-新提案写 `promotedFrom: none`；从 Inline 升级写 `promotedFrom: inline`。
+新提案写 `promotedFrom: none`；从原生执行升级写 `promotedFrom: native`。
 
 ## Issue lifecycle
 
@@ -15,17 +15,17 @@ always     -> resolve workIssue before implementation
 on-commit  -> local edits allowed; resolve workIssue before first commit
 on-publish -> local edits and commits allowed; resolve workIssue before push/PR
 manual     -> never auto-create; validate supplied Issue when present
-missing    -> legacy default always
+missing    -> invalid configuration; stop and report
 ```
 
 已有 open work Issue 必须校验后复用；创建或关联部分成功后不得另建替代 Issue。任何已解析 Issue 都保持 `closeTarget=workIssue`，parent 只追踪整体需求。
 
-## Inline -> Compact
+## Native -> Compact
 
 严格顺序：
 
 ```text
-stop edits -> capture Inline contract/diff/evidence -> create quick-card.md -> copy evidence -> set recordMode: compact -> recompute hash -> confirm material changes only -> resume
+stop edits -> capture Native contract/diff/evidence -> create quick-card.md -> copy evidence -> set promotedFrom: native and recordMode: compact -> recompute hash -> confirm material changes only -> resume
 ```
 
 已有成功命令不为补文档而重复运行；复制时必须保留 command、exit code 和真实 output summary。若 Goal、Scope、Acceptance、Guardrails、风险或外部动作发生实质变化，等待确认；纯路径、符号、命令修正可机械 Reverse Sync 并记录。

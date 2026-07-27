@@ -299,14 +299,15 @@ SAFETY_CONTENT='<ai-code-copilot-safety-rules>
 兼容平台：Codex / Claude Code
 轻量路由位置：'"$PLUGIN_ROOT"'/agents/router.md
 按需模块目录：'"$PLUGIN_ROOT"'/agents/workflows/
-Legacy fallback：'"$PLUGIN_ROOT"'/agents/copilot-prompt.md
 SessionStart 注入层级：仅 L0 安全规则、框架路径、命令菜单、上下文新鲜度提醒和活跃变更摘要；不在启动时加载 pack rules、knowledge 全文或 spec.md 全文。
 
 <HARD-GATE>
-Inline SDD 仅在全部低风险条件明确满足且 Goal/Scope/Done Signal/Verify 可见时允许编辑。
+模型优先：普通、边界明确、低风险且可直接验证的任务由模型原生处理，不自动加载 ai-code-copilot。
+当请求显式进入 init/brainstorm/propose/apply/fix-ci/review/finish/publish/test/archive 生命周期，或模型判断涉及安全、权限、资金、生产、部署、数据库、公共契约、持久化、审计、跨会话或重大不确定性时，自动激活 ai-code-copilot。
+用户可要求低风险任务直接处理；不得绕过人工确认，尤其是破坏性操作、外部写入或安全/权限/资金/生产风险。
 Compact SDD 必须有有效 quick-card.md；Full SDD 必须有已确认 Spec。
 涉及资金/状态流转/权限/安全/生产风险必须进入 Full 并等待人工确认。
-不确定时使用 Compact；活动变更只允许 Inline -> Compact -> Full 或 Inline -> Full，不自动降级。
+Native 需要持久化时进入 Compact，发现 material risk 时直接进入 Full；Compact 只允许升级到 Full，不自动降级。
 </HARD-GATE>
 
 安全红线（始终生效）：
@@ -318,7 +319,6 @@ Compact SDD 必须有有效 quick-card.md；Full SDD 必须有已确认 Spec。
 
 可用命令：init / brainstorm / propose / apply / fix / fix-ci / review / finish / test / archive
 Codex 输入提示：请直接说 finish <变更名>、archive <变更名> 或中文自然语言；不要输入 /archive，Codex 会把它当成“归档当前会话”。若 /finish 被客户端拦截，也改用 finish <变更名>。
-如需完整框架能力，请说"帮我实现..."或直接调用命令名触发 ai-code-copilot skill。
 
 '"$CONTEXT_FRESHNESS_WARNING"'
 '"$ACTIVE_CHANGE_CONTEXT"'

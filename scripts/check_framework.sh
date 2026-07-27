@@ -26,6 +26,9 @@ need_file agents/code-quality-reviewer.md
 need_file config/project-config.json
 need_file config/workflow-policy.json
 need_file scripts/check_progressive_sdd.py
+need_file VERSION
+need_file scripts/check_model_first_versioning.py
+need_file scripts/test_install_overwrite.sh
 need_file docs/harness-engineering.md
 need_file docs/loop-engineering.md
 need_file hooks/session-start
@@ -47,6 +50,8 @@ bash -n hooks/session-start
 bash -n scripts/init_project.sh
 
 python3 scripts/check_progressive_sdd.py "$ROOT"
+python3 scripts/check_model_first_versioning.py "$ROOT"
+bash scripts/test_install_overwrite.sh
 
 python3 - "$ROOT" <<'PY'
 import json
@@ -140,25 +145,24 @@ workflow_section_markers = {
         "Quick Compact", "single record source", "Quick Full", "log.md", "summary.md",
         "parentIssue", "overall requirement", "workIssue", "automatically create", "reuse",
         "sub-issue", "type/scope", "type(scope): description", "Closes #<workIssue>",
-        "Refs #<parentIssue>", "finishMode", "issueWhenMissing", "obsolete", "ignored",
+        "Refs #<parentIssue>", "finishMode", "issuePolicy", "manual",
     ],
     "README-CN.md": [
         "Quick Compact", "唯一记录源", "Quick Full", "log.md", "summary.md",
         "parentIssue", "整体需求", "workIssue", "自动创建", "复用", "sub-issue",
         "type/scope", "type(scope): description", "Closes #<workIssue>",
-        "Refs #<parentIssue>", "finishMode", "issueWhenMissing", "废弃", "忽略",
+        "Refs #<parentIssue>", "finishMode", "issuePolicy", "manual",
     ],
     "AGENTS.md": [
-        "Quick Compact", "唯一记录源", "Quick Full", "log.md", "summary.md",
-        "parentIssue", "整体需求", "workIssue", "自动创建", "复用", "sub-issue",
-        "type/scope", "type(scope): description", "Closes #<workIssue>",
-        "Refs #<parentIssue>", "finishMode", "issueWhenMissing", "废弃", "忽略",
+        "模型优先", "原生处理", "自动激活", "Compact SDD", "Full SDD",
+        "parentIssue", "workIssue", "type/scope", "type(scope): description",
+        "Closes #<workIssue>", "Refs #<parentIssue>", "finishMode", "issuePolicy",
     ],
     "docs/ai-code-copilot-overview.md": [
         "Quick Compact", "唯一记录源", "Quick Full", "log.md", "summary.md",
         "parentIssue", "整体需求", "workIssue", "自动创建", "复用", "sub-issue",
         "type/scope", "type(scope): description", "Closes #<workIssue>",
-        "Refs #<parentIssue>", "finishMode", "issueWhenMissing", "废弃", "忽略",
+        "Refs #<parentIssue>", "finishMode", "issuePolicy", "manual",
     ],
 }
 workflow_sections = {}
@@ -173,13 +177,13 @@ for rel, (heading, next_heading_pattern) in workflow_contract_sections.items():
         raise SystemExit(f"{rel} workflow contract section missing: " + ", ".join(missing_markers))
 
 progressive_sdd_doc_markers = {
-    "README.md": ["agents/router.md", "Inline SDD", "Compact SDD", "Full SDD", "issuePolicy", "Promotion is monotonic", "Superpowers"],
-    "README-CN.md": ["agents/router.md", "Inline SDD", "Compact SDD", "Full SDD", "issuePolicy", "升级是单向", "Superpowers"],
-    "AGENTS.md": ["agents/router.md", "agents/workflows/", "workflow-policy.json", "Inline SDD", "单向升级", "Superpowers 边界"],
-    "docs/ai-code-copilot-overview.md": ["Inline SDD", "Compact SDD", "Full SDD", "issuePolicy", "Superpowers"],
-    "docs/ai-code-copilot-flow.md": ["agents/router.md", "Inline SDD", "单向升级"],
+    "README.md": ["agents/router.md", "Model-first", "Native", "Compact SDD", "Full SDD", "issuePolicy", "Promotion is monotonic", "Superpowers"],
+    "README-CN.md": ["agents/router.md", "模型优先", "Native", "Compact SDD", "Full SDD", "issuePolicy", "升级是单向", "Superpowers"],
+    "AGENTS.md": ["agents/router.md", "agents/workflows/", "workflow-policy.json", "模型优先", "单向升级", "Superpowers 边界"],
+    "docs/ai-code-copilot-overview.md": ["Native", "Activate", "Compact SDD", "Full SDD", "issuePolicy", "Superpowers"],
+    "docs/ai-code-copilot-flow.md": ["agents/router.md", "Native", "Activate", "单向升级"],
     "docs/harness-engineering.md": ["Spec 档位", "Acceptance", "Done Signal", "Guardrails", "Fallback"],
-    "docs/loop-engineering.md": ["Inline SDD", "Compact SDD", "Full SDD", "单向升级"],
+    "docs/loop-engineering.md": ["Native", "Compact SDD", "Full SDD", "单向升级"],
 }
 for rel, markers in progressive_sdd_doc_markers.items():
     text = (root / rel).read_text(encoding="utf-8")
@@ -237,7 +241,6 @@ for rel in workflow_docs:
 compact_eligibility_markers = {
     "README.md": ["executable verification", "direct rollback"],
     "README-CN.md": ["可执行验证", "直接回滚"],
-    "AGENTS.md": ["可执行验证", "直接回滚"],
     "docs/ai-code-copilot-overview.md": ["可执行验证", "直接回滚"],
 }
 for rel, markers in compact_eligibility_markers.items():
@@ -376,16 +379,17 @@ if shared_fixture_output in check_framework_text:
     raise SystemExit("fixture command output must live inside its unique temporary project directory")
 
 for marker in [
-    "except OSError as exc:",
-    "except json.JSONDecodeError as exc:",
+    "def framework_version():",
+    "def validate_existing_config():",
+    "existing config contains invalid JSON",
     "existing config root must be a JSON object",
     "existing config githubWorkflow must be a JSON object",
-    "warning: could not check obsolete githubWorkflow.issueWhenMissing",
-    "missing_issue_policy = \"issuePolicy\" not in github_workflow",
-    "migration-note: githubWorkflow.issuePolicy is missing; runtime uses legacy default always; project-owned config was preserved.",
+    "existing config githubWorkflow.issuePolicy is required",
+    "def write_managed(",
+    'data["frameworkVersion"]',
 ]:
     if marker not in init_project_text:
-        raise SystemExit(f"init_project.sh missing config migration check: {marker}")
+        raise SystemExit(f"init_project.sh missing strict sync contract: {marker}")
 
 quick_card = (root / "changes/templates/quick-card.md").read_text(encoding="utf-8")
 for marker in ["## Execution record", "## Commit record", "## Review record", "## Finish record"]:
@@ -1647,51 +1651,76 @@ if [ -d tests/fixtures ]; then
     if find "$tmpdir/.ai_code_copilot" -name '*.new' -type f | grep -q .; then
       fail "dry-run wrote .new files for fixture: $fixture"
     fi
+    python3 - "$tmpdir/.ai_code_copilot/.copilot-state.json" "$(tr -d '\r\n' < "$ROOT/VERSION")" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+state = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+if state.get("frameworkVersion") != sys.argv[2]:
+    raise SystemExit(f"fixture state has wrong frameworkVersion: {state}")
+if not state.get("frameworkCommit"):
+    raise SystemExit(f"fixture state has empty frameworkCommit: {state}")
+PY
     printf 'custom project context\n' > "$tmpdir/.ai_code_copilot/rules/project-context.md"
     printf 'custom domain rules\n' > "$tmpdir/.ai_code_copilot/rules/domain-rules.md"
-    printf '{"githubWorkflow":{"finishMode":"manual","issueWhenMissing":"ask"}}\n' > "$tmpdir/.ai_code_copilot/config.json"
+    printf 'local managed edit\n' > "$tmpdir/.ai_code_copilot/rules/coding-style.md"
+    printf '{"githubWorkflow":{"finishMode":"manual","issuePolicy":"manual"}}\n' > "$tmpdir/.ai_code_copilot/config.json"
     cp "$tmpdir/.ai_code_copilot/config.json" "$tmpdir/config.before-sync.json"
+    printf 'project knowledge\n' > "$tmpdir/.ai_code_copilot/knowledge/custom.md"
+    mkdir -p "$tmpdir/.ai_code_copilot/changes/custom-change" "$tmpdir/.ai_code_copilot/changes/archives/custom-archive"
+    printf 'active change\n' > "$tmpdir/.ai_code_copilot/changes/custom-change/spec.md"
+    printf 'archived change\n' > "$tmpdir/.ai_code_copilot/changes/archives/custom-archive/spec.md"
     printf 'old test template\n' > "$tmpdir/.ai_code_copilot/changes/templates/test-spec.md"
     sync_output="$tmpdir/fixture-sync.out"
     AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$sync_output"
     grep -q 'custom project context' "$tmpdir/.ai_code_copilot/rules/project-context.md" || fail "sync overwrote project-owned project-context: $fixture"
     grep -q 'custom domain rules' "$tmpdir/.ai_code_copilot/rules/domain-rules.md" || fail "sync overwrote project-owned domain-rules: $fixture"
+    cmp -s "$ROOT/rules/coding-style.md" "$tmpdir/.ai_code_copilot/rules/coding-style.md" || fail "sync did not overwrite managed coding-style: $fixture"
     cmp -s "$tmpdir/config.before-sync.json" "$tmpdir/.ai_code_copilot/config.json" || fail "sync changed project-owned config bytes: $fixture"
     grep -q '"finishMode":"manual"' "$tmpdir/.ai_code_copilot/config.json" || fail "sync overwrote project-owned config: $fixture"
-    grep -q '"issueWhenMissing":"ask"' "$tmpdir/.ai_code_copilot/config.json" || fail "sync did not preserve obsolete project-owned issueWhenMissing config: $fixture"
-    grep -q 'migration-note: githubWorkflow.issueWhenMissing is obsolete and ignored; project-owned config was preserved.' "$sync_output" || fail "sync missing obsolete issueWhenMissing migration note: $fixture"
-    grep -q 'migration-note: githubWorkflow.issuePolicy is missing; runtime uses legacy default always; project-owned config was preserved.' "$sync_output" || fail "sync missing legacy issuePolicy migration note: $fixture"
-    test ! -f "$tmpdir/.ai_code_copilot/rules/project-context.md.new" || fail "sync generated project-context.md.new for project-owned rule: $fixture"
-    test ! -f "$tmpdir/.ai_code_copilot/rules/domain-rules.md.new" || fail "sync generated domain-rules.md.new for project-owned rule: $fixture"
-    test ! -f "$tmpdir/.ai_code_copilot/config.json.new" || fail "sync generated config.json.new for project-owned config: $fixture"
+    grep -q '"issuePolicy":"manual"' "$tmpdir/.ai_code_copilot/config.json" || fail "sync changed project-owned issue policy: $fixture"
+    grep -q 'project knowledge' "$tmpdir/.ai_code_copilot/knowledge/custom.md" || fail "sync overwrote project knowledge: $fixture"
+    grep -q 'active change' "$tmpdir/.ai_code_copilot/changes/custom-change/spec.md" || fail "sync overwrote active change: $fixture"
+    grep -q 'archived change' "$tmpdir/.ai_code_copilot/changes/archives/custom-archive/spec.md" || fail "sync overwrote archived change: $fixture"
     cmp -s "$ROOT/changes/templates/test-spec.md" "$tmpdir/.ai_code_copilot/changes/templates/test-spec.md" || fail "sync did not update managed test-spec template: $fixture"
-    test ! -f "$tmpdir/.ai_code_copilot/changes/templates/test-spec.md.new" || fail "sync generated test-spec.md.new instead of updating managed template: $fixture"
+    if find "$tmpdir/.ai_code_copilot" -name '*.new' -type f | grep -q .; then
+      fail "sync generated .new files instead of applying ownership policy: $fixture"
+    fi
     if [ "$(basename "$fixture")" = "java-spring" ]; then
       printf '{invalid json\n' > "$tmpdir/.ai_code_copilot/config.json"
-      if ! AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/invalid-json-sync.out"; then
-        fail "sync failed instead of warning about invalid project config JSON"
+      cp "$tmpdir/.ai_code_copilot/config.json" "$tmpdir/invalid-config.before"
+      if AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/invalid-json-sync.out" 2>&1; then
+        fail "sync accepted invalid project config JSON"
       fi
-      grep -q 'warning: could not check obsolete githubWorkflow.issueWhenMissing: existing config contains invalid JSON:' "$tmpdir/invalid-json-sync.out" || fail "sync did not warn about invalid project config JSON"
+      grep -q 'existing config contains invalid JSON:' "$tmpdir/invalid-json-sync.out" || fail "sync missing invalid JSON error"
+      cmp -s "$tmpdir/invalid-config.before" "$tmpdir/.ai_code_copilot/config.json" || fail "failed sync rewrote invalid project config"
 
       printf '[]\n' > "$tmpdir/.ai_code_copilot/config.json"
-      if ! AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/non-object-sync.out"; then
-        fail "sync failed instead of warning about non-object project config"
+      if AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/non-object-sync.out" 2>&1; then
+        fail "sync accepted non-object project config"
       fi
-      grep -q 'warning: could not check obsolete githubWorkflow.issueWhenMissing: existing config root must be a JSON object;' "$tmpdir/non-object-sync.out" || fail "sync did not warn about non-object project config"
+      grep -q 'existing config root must be a JSON object' "$tmpdir/non-object-sync.out" || fail "sync missing non-object config error"
 
       printf '{"githubWorkflow":"manual"}\n' > "$tmpdir/.ai_code_copilot/config.json"
-      if ! AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/non-object-workflow-sync.out"; then
-        fail "sync failed instead of warning about non-object githubWorkflow config"
+      if AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/non-object-workflow-sync.out" 2>&1; then
+        fail "sync accepted non-object githubWorkflow config"
       fi
-      grep -q 'warning: could not check obsolete githubWorkflow.issueWhenMissing: existing config githubWorkflow must be a JSON object;' "$tmpdir/non-object-workflow-sync.out" || fail "sync did not warn about non-object githubWorkflow config"
+      grep -q 'existing config githubWorkflow must be a JSON object' "$tmpdir/non-object-workflow-sync.out" || fail "sync missing non-object githubWorkflow error"
+
+      printf '{"githubWorkflow":{"finishMode":"manual"}}\n' > "$tmpdir/.ai_code_copilot/config.json"
+      if AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/missing-policy-sync.out" 2>&1; then
+        fail "sync accepted config without githubWorkflow.issuePolicy"
+      fi
+      grep -q 'existing config githubWorkflow.issuePolicy is required' "$tmpdir/missing-policy-sync.out" || fail "sync missing required issuePolicy error"
 
       rm -f "$tmpdir/.ai_code_copilot/config.json"
       mkdir "$tmpdir/.ai_code_copilot/config.json"
-      if ! AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/unreadable-config-sync.out"; then
-        fail "sync failed instead of warning about unreadable project config"
+      if AI_CODE_COPILOT_HOME="$ROOT" "$ROOT/scripts/init_project.sh" --project "$tmpdir" --sync >"$tmpdir/unreadable-config-sync.out" 2>&1; then
+        fail "sync accepted unreadable project config"
       fi
-      grep -q 'warning: could not check obsolete githubWorkflow.issueWhenMissing: unable to read existing config:' "$tmpdir/unreadable-config-sync.out" || fail "sync did not warn about unreadable project config"
-      test -d "$tmpdir/.ai_code_copilot/config.json" || fail "sync replaced project-owned config directory"
+      grep -q 'unable to read existing config:' "$tmpdir/unreadable-config-sync.out" || fail "sync missing unreadable config error"
+      test -d "$tmpdir/.ai_code_copilot/config.json" || fail "failed sync replaced project-owned config directory"
     fi
     rm -rf "$tmpdir"
   done

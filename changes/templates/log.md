@@ -138,7 +138,7 @@ output:
 
 ## 知识发现
 
-> 兼容旧流程的知识记录区。`/finish` 和 `/archive` 都会扫描；新条目优先写入 `## Knowledge candidates`。
+> `/finish` 和 `/archive` 都会扫描本区；新条目优先写入 `## Knowledge candidates`。
 
 ### [待沉淀] {发现标题}
 

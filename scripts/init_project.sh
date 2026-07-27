@@ -17,10 +17,9 @@ Initializes or synchronizes .ai_code_copilot/ in a business project.
 Default behavior:
   - Creates .ai_code_copilot/ if missing.
   - Creates .ai_code_copilot/config.json if missing.
-  - Copies core rules and detected tech-pack rules.
-  - Project-owned files are preserved: rules/project-context.md and rules/domain-rules.md.
-  - Managed templates in changes/templates/ are updated to the framework version.
-  - Other existing rules are never overwritten; if generated content differs, writes <file>.new.
+  - Overwrites framework-managed core rules, detected tech-pack rules, templates, and state.
+  - Preserves project-owned config, project context, domain rules, knowledge, active changes, and archives.
+  - Rejects invalid existing config instead of migrating it.
 
 Options:
   --project <dir>  Target project directory. Defaults to current directory.
@@ -67,6 +66,7 @@ done
 python3 - "$COPILOT_HOME" "$PROJECT_DIR" "$MODE" "$DRY_RUN" <<'PY'
 import json
 import os
+import re
 import subprocess
 import sys
 from collections import OrderedDict
@@ -96,6 +96,34 @@ excluded_dirs = {
     "ai_code_copilot",
     ".ai_code_copilot",
 }
+
+
+def framework_version():
+    version_path = copilot_home / "VERSION"
+    try:
+        version = version_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise SystemExit(f"unable to read framework VERSION: {version_path}: {exc}")
+    if not re.fullmatch(
+        r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
+        r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+        r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?\n",
+        version,
+    ):
+        raise SystemExit(f"invalid framework VERSION: {version_path}")
+    value = version.strip()
+    prerelease = value.split("+", 1)[0].partition("-")[2]
+    if prerelease and any(
+        identifier.isdigit()
+        and len(identifier) > 1
+        and identifier.startswith("0")
+        for identifier in prerelease.split(".")
+    ):
+        raise SystemExit(f"invalid framework VERSION prerelease: {version_path}")
+    return value
+
+
+current_framework_version = framework_version()
 
 
 def iter_project_files(names):
@@ -194,22 +222,6 @@ def read_manifests():
     return manifests
 
 
-def write_if_missing_or_new(dest, content):
-    if not dest.exists():
-        if not dry_run:
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            dest.write_text(content, encoding="utf-8")
-        return "created", dest
-    existing = dest.read_text(encoding="utf-8")
-    if existing == content:
-        return "unchanged", dest
-    new_dest = dest.with_name(dest.name + ".new")
-    if not dry_run:
-        new_dest.parent.mkdir(parents=True, exist_ok=True)
-        new_dest.write_text(content, encoding="utf-8")
-    return "candidate", new_dest
-
-
 def write_project_owned(dest, content):
     if not dest.exists():
         if not dry_run:
@@ -222,7 +234,7 @@ def write_project_owned(dest, content):
     return "preserved-project-owned", dest
 
 
-def write_managed_template(dest, content):
+def write_managed(dest, content):
     if not dest.exists():
         if not dry_run:
             dest.parent.mkdir(parents=True, exist_ok=True)
@@ -234,26 +246,7 @@ def write_managed_template(dest, content):
     if not dry_run:
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(content, encoding="utf-8")
-    return "updated-template", dest
-
-
-def write_managed_state(dest, content):
-    if not dest.exists():
-        if not dry_run:
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            dest.write_text(content, encoding="utf-8")
-        return "created", dest
-    existing = dest.read_text(encoding="utf-8")
-    if existing == content:
-        return "unchanged", dest
-    if dry_run:
-        return "candidate", dest.with_name(dest.name + ".new")
-    dest.write_text(content, encoding="utf-8")
-    return "updated", dest
-
-
-def copy_if_missing_or_new(src, dest):
-    return write_if_missing_or_new(dest, src.read_text(encoding="utf-8"))
+    return "updated-managed", dest
 
 
 def prefixed_rule_name(pack_id, rel):
@@ -387,39 +380,25 @@ def framework_commit():
         return "unknown"
 
 
-def load_existing_state():
-    if not state_path.exists():
-        return {}
-    try:
-        return json.loads(state_path.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
-
-
 def state_content(detected):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    existing = load_existing_state()
-    initialized_at = existing.get("initializedAt") or now
     data = OrderedDict()
+    data["frameworkVersion"] = current_framework_version
     data["frameworkCommit"] = framework_commit()
     data["mode"] = mode
-    data["initializedAt"] = initialized_at
+    data["initializedAt"] = now
     data["lastSyncedAt"] = now
     data["projectContextSyncedAt"] = now_utc
-    data["projectContextStaleAfterDays"] = int(existing.get("projectContextStaleAfterDays", 30))
+    data["projectContextStaleAfterDays"] = 30
     data["packs"] = [item["id"] for item in detected]
     data["packMatches"] = {
         item["id"]: [os.path.relpath(match, project_dir) for match in item["matches"]]
         for item in detected
     }
-    data["syncPolicy"] = "project-context.md and domain-rules.md are project-owned and preserved; changes/templates/*.md are framework-managed and updated; other changed rules are written as .new candidates; this state file is managed automatically"
+    data["syncPolicy"] = "framework-managed core rules, detected pack rules, templates, and state are overwritten; config, project-context.md, domain-rules.md, knowledge, active changes, and archives are project-owned and preserved"
     return json.dumps(data, ensure_ascii=False, indent=2) + "\n"
 
-
-if not dry_run:
-    for directory in [rules_target, changes_target / "templates", changes_target / "archives", knowledge_target]:
-        directory.mkdir(parents=True, exist_ok=True)
 
 detected = []
 for pack_dir, manifest in read_manifests():
@@ -438,31 +417,35 @@ for pack_dir, manifest in read_manifests():
 
 events = []
 
-obsolete_issue_config = False
-missing_issue_policy = False
-config_inspection_warning = None
-existing_config_text = None
-config_path_present = config_path.exists() or config_path.is_symlink()
-if config_path_present:
+def validate_existing_config():
+    if not (config_path.exists() or config_path.is_symlink()):
+        return None
     try:
         existing_config_text = config_path.read_text(encoding="utf-8")
     except OSError as exc:
-        config_inspection_warning = f"unable to read existing config: {exc}"
-    else:
-        try:
-            existing_config = json.loads(existing_config_text)
-        except json.JSONDecodeError as exc:
-            config_inspection_warning = f"existing config contains invalid JSON: {exc}"
-        else:
-            if not isinstance(existing_config, dict):
-                config_inspection_warning = "existing config root must be a JSON object"
-            else:
-                github_workflow = existing_config.get("githubWorkflow", {})
-                if not isinstance(github_workflow, dict):
-                    config_inspection_warning = "existing config githubWorkflow must be a JSON object"
-                else:
-                    obsolete_issue_config = "issueWhenMissing" in github_workflow
-                    missing_issue_policy = "issuePolicy" not in github_workflow
+        raise SystemExit(f"unable to read existing config: {exc}")
+    try:
+        existing_config = json.loads(existing_config_text)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"existing config contains invalid JSON: {exc}")
+    if not isinstance(existing_config, dict):
+        raise SystemExit("existing config root must be a JSON object")
+    github_workflow = existing_config.get("githubWorkflow")
+    if not isinstance(github_workflow, dict):
+        raise SystemExit("existing config githubWorkflow must be a JSON object")
+    if "issuePolicy" not in github_workflow:
+        raise SystemExit("existing config githubWorkflow.issuePolicy is required")
+    if github_workflow["issuePolicy"] not in {"always", "on-commit", "on-publish", "manual"}:
+        raise SystemExit("existing config githubWorkflow.issuePolicy is invalid")
+    return existing_config_text
+
+
+existing_config_text = validate_existing_config()
+config_path_present = existing_config_text is not None
+
+if not dry_run:
+    for directory in [rules_target, changes_target / "templates", changes_target / "archives", knowledge_target]:
+        directory.mkdir(parents=True, exist_ok=True)
 
 framework_config_text = (copilot_home / "config" / "project-config.json").read_text(encoding="utf-8")
 if config_path_present:
@@ -478,7 +461,7 @@ for src in sorted((copilot_home / "rules").glob("*.md")):
     if src.name == "domain-rules.md":
         status, path = write_project_owned(rules_target / src.name, src.read_text(encoding="utf-8"))
     else:
-        status, path = copy_if_missing_or_new(src, rules_target / src.name)
+        status, path = write_managed(rules_target / src.name, src.read_text(encoding="utf-8"))
     events.append((status, path))
 
 for item in detected:
@@ -487,11 +470,11 @@ for item in detected:
     for rel in item["manifest"].get("rules", []):
         src = pack_dir / rel
         dest = rules_target / prefixed_rule_name(pack_id, rel)
-        status, path = copy_if_missing_or_new(src, dest)
+        status, path = write_managed(dest, src.read_text(encoding="utf-8"))
         events.append((status, path))
 
 for src in sorted((copilot_home / "changes" / "templates").glob("*.md")):
-    status, path = write_managed_template(
+    status, path = write_managed(
         changes_target / "templates" / src.name,
         src.read_text(encoding="utf-8"),
     )
@@ -500,7 +483,7 @@ for src in sorted((copilot_home / "changes" / "templates").glob("*.md")):
 status, path = write_project_owned(rules_target / "project-context.md", project_context(detected))
 events.append((status, path))
 
-index_status, index_path = write_if_missing_or_new(
+index_status, index_path = write_project_owned(
     knowledge_target / "index.md",
     "# Knowledge Index\n\n"
     "> Project-specific knowledge discovered by `/archive`. Read this index first; load only relevant knowledge files.\n\n"
@@ -510,7 +493,7 @@ index_status, index_path = write_if_missing_or_new(
 )
 events.append((index_status, index_path))
 
-state_status, state_dest = write_managed_state(state_path, state_content(detected))
+state_status, state_dest = write_managed(state_path, state_content(detected))
 events.append((state_status, state_dest))
 
 verb = "dry-run" if dry_run else "complete"
@@ -520,17 +503,6 @@ print("detected packs: " + (", ".join(item["id"] for item in detected) if detect
 for status, path in events:
     if status != "unchanged":
         print(f"{status}: {path.relative_to(project_dir)}")
-if any(status == "candidate" for status, _ in events) and not dry_run:
-    print("note: .new files were generated for existing files that differ; review and merge them manually.")
-if config_inspection_warning:
-    print(f"warning: could not check obsolete githubWorkflow.issueWhenMissing: {config_inspection_warning}; project-owned config was preserved.")
-if obsolete_issue_config:
-    print("migration-note: githubWorkflow.issueWhenMissing is obsolete and ignored; project-owned config was preserved.")
-if missing_issue_policy:
-    print("migration-note: githubWorkflow.issuePolicy is missing; runtime uses legacy default always; project-owned config was preserved.")
 if dry_run:
-    if any(status == "candidate" for status, _ in events):
-        print("note: candidates listed only; no files were written.")
-    else:
-        print("note: dry-run only; no files were written.")
+    print("note: dry-run only; no files were written.")
 PY

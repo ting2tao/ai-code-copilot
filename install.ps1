@@ -49,6 +49,63 @@ function Ok   { param($msg) Write-Host "v  $msg" -ForegroundColor Green }
 function Warn { param($msg) Write-Host "!  $msg" -ForegroundColor Yellow }
 function Err  { param($msg) Write-Host "x  $msg" -ForegroundColor Red; exit 1 }
 
+function Test-SourceTree {
+    param([string]$SourceTree)
+    foreach ($required in @("VERSION", "skill\SKILL.md", "agents\copilot-prompt.md", "hooks\session-start")) {
+        if (-not (Test-Path (Join-Path $SourceTree $required) -PathType Leaf)) {
+            Err "来源目录不完整，缺少: $required"
+        }
+    }
+    $versionPath = Join-Path $SourceTree "VERSION"
+    $sourceVersionRaw = [IO.File]::ReadAllText($versionPath)
+    if ($sourceVersionRaw -notmatch '\A(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?\r?\n\z') {
+        Err "来源 VERSION 必须是单行换行结尾的 SemVer"
+    }
+    $sourceVersion = $sourceVersionRaw -replace '\r?\n\z', ''
+    if ($sourceVersion -notmatch '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$') {
+        Err "来源 VERSION 不是合法 SemVer: $sourceVersion"
+    }
+    $versionWithoutBuild = $sourceVersion.Split("+")[0]
+    if ($versionWithoutBuild.Contains("-")) {
+        $prerelease = $versionWithoutBuild.Substring($versionWithoutBuild.IndexOf("-") + 1)
+        foreach ($identifier in $prerelease.Split(".")) {
+            if ($identifier -match '^0\d+$') {
+                Err "来源 VERSION 的数字预发布标识不能有前导零: $sourceVersion"
+            }
+        }
+    }
+}
+
+function Replace-InstallTree {
+    param(
+        [string]$SourceTree,
+        [string]$Destination
+    )
+    $parent = Split-Path $Destination -Parent
+    if (-not (Test-Path $parent)) {
+        New-Item -ItemType Directory -Path $parent -Force | Out-Null
+    }
+    $stageDir = Join-Path $parent (".ai-code-copilot-stage-" + [Guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
+    try {
+        Get-ChildItem -LiteralPath $SourceTree -Force |
+            Where-Object { $_.Name -notin @(".git", ".DS_Store") } |
+            ForEach-Object {
+                Copy-Item -LiteralPath $_.FullName -Destination $stageDir -Recurse -Force
+            }
+        Test-SourceTree $stageDir
+        if (Test-Path $Destination) {
+            Remove-Item $Destination -Force -Recurse
+        }
+        Move-Item -LiteralPath $stageDir -Destination $Destination
+        $stageDir = $null
+    } finally {
+        if ($stageDir -and (Test-Path $stageDir)) {
+            Remove-Item $stageDir -Force -Recurse
+        }
+    }
+}
+
 # ============ 卸载 ============
 if ($Uninstall) {
     Write-Host "卸载 ai-code-copilot ($AppName)" -ForegroundColor White
@@ -93,60 +150,40 @@ Info "目标平台: $AppName"
 Info "安装目录: $InstallDir"
 
 # ============ 安装或更新 ============
-$SourceDir = $PWD
-$IsSourceDir = (Test-Path (Join-Path $SourceDir "skill\SKILL.md")) -and (Test-Path (Join-Path $SourceDir "agents\copilot-prompt.md"))
+$SourceDir = $PWD.Path
+$IsSourceDir = (Test-Path (Join-Path $SourceDir "skill\SKILL.md")) -and
+    (Test-Path (Join-Path $SourceDir "agents\copilot-prompt.md")) -and
+    (Test-Path (Join-Path $SourceDir "VERSION"))
+$SourceTemp = $null
 
-if (Test-Path (Join-Path $InstallDir ".git")) {
-    Info "检测到已安装，执行更新..."
-    Push-Location $InstallDir
-    try {
-        $before = git rev-parse --short HEAD
-        git pull --ff-only
-        if ($LASTEXITCODE -ne 0) {
-            if ($IsSourceDir) {
-                Warn "远程更新失败，从本地源码目录同步..."
-                $src = $SourceDir + "\*"
-                Copy-Item -Path $src -Destination $InstallDir -Recurse -Force -Exclude ".git",".DS_Store"
-                Ok "已从本地源码同步"
-            } else {
-                Write-Host "x  更新失败，请手动检查: cd '$InstallDir' && git status" -ForegroundColor Red
-                exit 1
-            }
-        } else {
-            $after = git rev-parse --short HEAD
-            if ($before -eq $after) { Ok "已是最新版本 ($after)" } else { Ok "已更新: $before → $after" }
-        }
-    } finally {
-        Pop-Location
-    }
-} elseif (Test-Path $InstallDir) {
-    if ($IsSourceDir) {
-        Info "检测到本地目录(非 git 仓库)，从源码目录同步..."
-        $src = $SourceDir + "\*"
-        Copy-Item -Path $src -Destination $InstallDir -Recurse -Force -Exclude ".git",".DS_Store"
-        Ok "已从本地源码同步"
-    } else {
-        Info "检测到本地目录(非 git 仓库)，重新 clone..."
-        Remove-Item $InstallDir -Force -Recurse
-        git clone $RepoUrl $InstallDir
-        Ok "已 clone 到 $InstallDir"
-    }
+if ($IsSourceDir) {
+    $SourceTree = $SourceDir
+    Info "使用本地源码作为版本来源"
 } else {
-    $parent = Split-Path $InstallDir -Parent
-    if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
-    if ($IsSourceDir) {
-        Info "从本地源码目录安装..."
-        Copy-Item -Path $SourceDir -Destination $InstallDir -Recurse -Force -Exclude ".git",".DS_Store"
-        Ok "已复制到 $InstallDir"
+    $SourceTemp = Join-Path ([IO.Path]::GetTempPath()) ("ai-code-copilot-" + [Guid]::NewGuid().ToString("N"))
+    $SourceTree = Join-Path $SourceTemp "source"
+    New-Item -ItemType Directory -Path $SourceTemp -Force | Out-Null
+    Info "从 $RepoUrl 获取最新版本..."
+    git clone --depth 1 $RepoUrl $SourceTree
+    if ($LASTEXITCODE -ne 0) {
+        Err "git clone 失败，请确认仓库地址或在源码根目录运行本脚本"
+    }
+}
+
+try {
+    Test-SourceTree $SourceTree
+    $sourceVersion = (Get-Content (Join-Path $SourceTree "VERSION") -Raw -Encoding UTF8).Trim()
+    if (Test-Path (Join-Path $InstallDir "VERSION")) {
+        $installedVersion = (Get-Content (Join-Path $InstallDir "VERSION") -Raw -Encoding UTF8).Trim()
+        Info "直接覆盖更新: $installedVersion → $sourceVersion"
     } else {
-        Info "首次安装，从 $RepoUrl clone..."
-        git clone $RepoUrl $InstallDir
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "x  git clone 失败" -ForegroundColor Red
-            Write-Host "x  请确认仓库地址正确，或先手动 clone 到 $InstallDir 后再跑本脚本" -ForegroundColor Red
-            exit 1
-        }
-        Ok "已 clone 到 $InstallDir"
+        Info "安装版本: $sourceVersion"
+    }
+    Replace-InstallTree $SourceTree $InstallDir
+    Ok "框架托管目录已完整替换"
+} finally {
+    if ($SourceTemp -and (Test-Path $SourceTemp)) {
+        Remove-Item $SourceTemp -Force -Recurse
     }
 }
 
@@ -229,12 +266,8 @@ if (-not (Test-Path (Join-Path $SkillLink "SKILL.md"))) {
 }
 Ok "junction 与 SKILL.md 正常"
 
-if (Test-Path (Join-Path $InstallDir ".git")) {
-    Push-Location $InstallDir
-    $version = git rev-parse --short HEAD
-    Pop-Location
-    Ok "当前版本: $version"
-}
+$version = (Get-Content (Join-Path $InstallDir "VERSION") -Raw -Encoding UTF8).Trim()
+Ok "当前版本: $version"
 
 # ============ 完成提示 ============
 Write-Host ""
@@ -246,7 +279,7 @@ Write-Host "下一步:"
 Write-Host "  1. 重启 $AppName 会话(让 skill 生效)"
 Write-Host "  2. cd 到业务项目根目录"
 Write-Host "  3. 输入: 初始化项目"
-Write-Host "  4. 之后输入: 帮我做 xxx 需求 即可触发流程"
+Write-Host "  4. 普通低风险任务由模型原生处理；需要框架流程时直接说 init/propose/review/finish 等意图"
 Write-Host ""
 Write-Host "更新:     powershell -ExecutionPolicy Bypass -File `"$InstallDir\install.ps1`" -$Platform"
 Write-Host "卸载:     powershell -ExecutionPolicy Bypass -File `"$InstallDir\install.ps1`" -$Platform -Uninstall"
