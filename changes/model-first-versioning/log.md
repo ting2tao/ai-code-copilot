@@ -153,3 +153,7 @@ summary: targeted checks, full framework gate, Bash/Python syntax, complete diff
 - Important: none found.
 - Minor/limitation: Windows/PowerShell runtime smoke is not available on this host; static checks and cross-platform symmetry are present.
 - Review method: independent inline second pass against the approved Spec because this session disallows sub-Agent delegation.
+
+## Post-install verification
+
+The first local `0.1.0` installation exposed stale onboarding text claiming a generic coding request would activate the framework. The macOS/Linux, WSL, and PowerShell completion messages were corrected to model-first wording, a regression assertion was added, and the focused plus full framework gates passed before reinstalling.

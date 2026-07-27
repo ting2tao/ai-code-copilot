@@ -134,6 +134,8 @@ def check_install_contract(root: Path) -> None:
             fail(f"{relative} must replace from a validated source, not git pull")
         if "git rev-parse --short HEAD" in content:
             fail(f"{relative} must report VERSION, not a commit as the release version")
+        if "帮我做 xxx 需求" in content:
+            fail(f"{relative} must not claim generic coding requests activate the framework")
 
 
 def check_project_sync_contract(root: Path) -> None:
