@@ -2,8 +2,8 @@ change: model-first-versioning
 status: in-review
 spec-hash: sha256:c72a84ef23dc4a1edb9595be8715d8e473c18ec023ad7fd7779d8cf9580bd1eb
 parentIssue: none
-workIssue: pending
-issueRelationship: pending
+workIssue: https://github.com/ting2tao/ai-code-copilot/issues/34
+issueRelationship: standalone
 closeTarget: workIssue
 branch: feat/model-first-versioning
 goal: model-first activation and semantic version 0.1.0 with full replacement updates

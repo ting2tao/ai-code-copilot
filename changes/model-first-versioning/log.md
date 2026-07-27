@@ -157,3 +157,13 @@ summary: targeted checks, full framework gate, Bash/Python syntax, complete diff
 ## Post-install verification
 
 The first local `0.1.0` installation exposed stale onboarding text claiming a generic coding request would activate the framework. The macOS/Linux, WSL, and PowerShell completion messages were corrected to model-first wording, a regression assertion was added, and the focused plus full framework gates passed before reinstalling.
+
+## GitHub handoff
+
+```text
+workIssue: https://github.com/ting2tao/ai-code-copilot/issues/34
+issueRelationship: standalone
+closeTarget: workIssue
+state: OPEN
+summary: the approved model-first/versioning change summary, acceptance checklist, test plan, and PowerShell limitation were published as the unique work Issue
+```
