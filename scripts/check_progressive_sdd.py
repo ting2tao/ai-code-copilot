@@ -45,8 +45,8 @@ def main() -> None:
         fail("workflow policy version must be 2")
     if policy["github"]["newProjectDefault"] != "on-publish":
         fail("new projects must default issuePolicy to on-publish")
-    if policy["github"]["legacyDefault"] != "always":
-        fail("legacy projects without issuePolicy must default to always")
+    if "legacyDefault" in policy["github"]:
+        fail("workflow policy must not provide a compatibility default")
     if policy["github"].get("manualNoIssueCloseTarget") != "none":
         fail("manual projects without an Issue must use closeTarget none")
     activation_fixtures = [
@@ -209,7 +209,7 @@ def main() -> None:
         "on-commit",
         "on-publish",
         "manual",
-        "legacy default: always",
+        "invalid configuration; stop and report",
         "Closes #<workIssue>",
         "Refs #<parentIssue>",
         "workIssue: none",
@@ -236,22 +236,24 @@ def main() -> None:
 
     docs = {
         "README.md": [
-            "Inline SDD",
+            "Model-first",
+            "Native",
             "Compact SDD",
             "Full SDD",
             "issuePolicy",
             "agents/router.md",
         ],
         "README-CN.md": [
-            "Inline SDD",
+            "模型优先",
+            "Native",
             "Compact SDD",
             "Full SDD",
             "issuePolicy",
             "agents/router.md",
         ],
-        "AGENTS.md": ["agents/router.md", "agents/workflows/", "Inline SDD", "单向升级"],
+        "AGENTS.md": ["agents/router.md", "agents/workflows/", "模型优先", "单向升级"],
         "docs/ai-code-copilot-overview.md": [
-            "Inline SDD",
+            "Native",
             "Compact SDD",
             "Full SDD",
         ],

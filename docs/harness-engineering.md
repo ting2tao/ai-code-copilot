@@ -10,7 +10,7 @@ Loop Engineering 是 Harness 之上的动态控制模型：Harness 回答 Agent 
 
 ## Harness 随 Spec 档位增长
 
-Goal Contract 嵌入当前 Spec 持久化档位，不另建一套平行文档：Inline SDD 在会话中保留最小 Goal/Scope/Done Signal/Verify；Compact SDD 写入 `quick-card.md`；Full SDD 写入 `spec.md` 并由 tasks/test-spec/log/summary 扩展。三档的质量标准相同，只有 Harness 的持久化深度不同。
+普通低风险工作由模型原生执行，不强制建立框架记录。需要生命周期编排或实质风险控制时，框架自动激活：Compact SDD 把 Goal Contract 写入 `quick-card.md`；Full SDD 写入 `spec.md` 并由 tasks/test-spec/log/summary 扩展。原生执行、Compact SDD、Full SDD 使用相同的安全与验证标准，区别是 Harness 的持久化深度。
 
 Harness 信号必须从合同派生：Acceptance 和 Done Signal 决定成功验证，Guardrails 防止通过删测试或绕过检查“假完成”，Fallback 决定失败后的降级、停止或人工门禁。升级时复制已有命令和真实结果，不为补文档虚构或重复成功证据。
 

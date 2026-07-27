@@ -21,6 +21,7 @@ ai-code-copilot 是一个兼容 **Codex** 与 **Claude Code** 的 AI 编码协�
 
 ## 核心特点
 
+- **模型优先激活** — 普通低风险编码由模型原生处理；明确生命周期意图或实质风险才自动激活框架
 - **Spec 驱动** — Standard/Complex 没有 spec 不准写代码；Quick 没有 quick-card 不准写代码
 - **项目级上下文** — `/init` 将技术栈、命令、架构和领域规则沉淀到 `.ai_code_copilot/`
 - **Harness Engineering** — 用测试、日志、规则、review 和 knowledge 设计 Agent 可见反馈循环
@@ -57,7 +58,7 @@ ai-code-copilot 不把所有语言规则揉成一套。通用流程和安全红�
 | Hook | `hooks/hooks.json`、`hooks/session-start` | 唤醒框架、注入 L0 安全、提示 context 过期、展示 active change 摘要 | 命令级路由或加载 packs/knowledge |
 | Prompt | `agents/copilot-prompt.md` | 定义每个命令什么时候加载什么上下文 | 维护机器状态 |
 | Templates | `changes/templates/*.md` | 长期文档结构和 review gate | 运行时事实 |
-| State | `.ai_code_copilot/.copilot-state.json` | 框架 commit、命中 packs、同步时间、context 新鲜度 | 用户工作流偏好 |
+| State | `.ai_code_copilot/.copilot-state.json` | `frameworkVersion`、`frameworkCommit`、命中 packs、同步时间、context 新鲜度 | 用户工作流偏好 |
 
 Quick Compact 的 SessionStart 状态来自经过校验的 `quick-card.md` metadata，其他模式使用 `summary.md`。当前模式对应的记录源缺失或字段不完整时，SessionStart 会给出 fallback 提示，具体命令阶段再读取完整变更文档。Log 压缩阈值放在 `.ai_code_copilot/config.json` 的 `logCompression` 下。建议安装 Python 3；没有 Python 时 hook 仍会注入 L0 安全规则，但会跳过 context freshness 和 active change 摘要。
 
@@ -123,19 +124,21 @@ flowchart LR
 
 ## 渐进式 SDD 运行时
 
-Codex Skill 首先加载小型 [`agents/router.md`](agents/router.md)，再按需加载 `agents/workflows/` 下的单个模块。原来的单体主提示词仅作为旧安装或模块缺失时的兼容回退。
+运行时采用**模型优先**。普通、边界清晰、低风险的实现、调试、重构、测试、文档、讨论和只读分析由模型原生处理；不能仅因为请求涉及代码就加载 ai-code-copilot。
 
-Inline SDD、Compact SDD、Full SDD 是同一工程质量标准下的记录持久化档位，不是三套质量标准：
+当用户明确提出 init、brainstorm、propose、apply、review、finish、archive 等生命周期动作，或模型判断存在安全、权限、资金、生产、部署、数据库、公共合同、跨模块、持久化、交接、审计等实质风险时，框架会自动激活。激活后先加载小型 [`agents/router.md`](agents/router.md)，再按需加载 `agents/workflows/` 下的单个模块。
+
+Native 原生执行位于 skill 之外。激活后的 Compact SDD、Full SDD 是同一工程质量标准下的记录持久化档位，不是两套质量标准：
 
 | 档位 | 记录成本 | 适用场景 |
 |------|----------|----------|
-| **Inline SDD** | 会话内 `Goal / Scope / Done Signal / Verify` | 目标明确、低风险、可直接回滚且最多两文件的本地改动 |
+| **Native 原生处理** | 不生成框架记录 | 边界清晰、低风险且不需要生命周期编排或持久证据 |
 | **Compact SDD** | 一个 `quick-card.md` | 需要持久化、commit/PR、交接或可审计 review |
 | **Full SDD** | 按需使用 design/spec/tasks/test/log/summary | 公共合同、数据库、安全、部署、跨模块规则、多目标或残余风险 |
 
-升级是单向的：`Inline -> Compact -> Full`，也可直接 `Inline -> Full`；活动变更不会自动降级。已有 `recordMode: compact` Quick Card 继续作为 Compact SDD，已有 Quick Full/Standard/Complex 记录继续作为 Full SDD。
+升级是单向的：`Native -> 自动激活 -> Compact -> Full`，也可直接 `Native -> 自动激活 -> Full`；活动变更不会自动降级。框架继续执行前，先把 Native 阶段的合同、diff 和验证证据复制进持久记录。
 
-新项目的 `githubWorkflow.issuePolicy` 默认是 `on-publish`：本地编辑和 commit 可以先执行，但 push/PR 前必须解析工作 Issue。旧项目配置缺少 `issuePolicy` 时继续使用 legacy `always`。支持 `always`、`on-commit`、`on-publish`、`manual`。
+新项目的 `githubWorkflow.issuePolicy` 默认是 `on-publish`：本地编辑和 commit 可以先执行，但 push/PR 前必须解析工作 Issue。已有项目配置保持项目主权，但配置非法或缺少必需的 `issuePolicy` 时，显式同步会直接失败，不做迁移。支持 `always`、`on-commit`、`on-publish`、`manual`。
 
 ai-code-copilot 是默认交付编排器。Superpowers 降级为显式使用的专项库，用于困难调试、完成前验证、review、高风险 TDD、worktree 隔离或明确需要的并行工作，不再作为第二套默认工作流加载。
 
@@ -156,10 +159,10 @@ ai-code-copilot 是默认交付编排器。Superpowers 降级为显式使用的�
 - **Quick Compact** 只适用于不超过 2 个文件、单一目的、单 commit，且不改 API/DB/依赖/CI/部署/generated artifact，不涉及安全、权限、认证、敏感信息、状态机或跨模块规则，并具备可执行验证与直接回滚的变更；`quick-card.md` 是唯一记录源。执行中任一条件不再满足时，必须自动升级为 Quick Full 后再继续。
 - **Quick Full** 用于不满足或无法确认 Compact 条件的 Quick；记录集固定为 `quick-card.md` + `log.md` + `summary.md`。
 - 需求开始时解析或只询问一次 `parentIssue`；存在时先读取整体需求，并在 GitHub 能力可用时把本次工作关联为 native sub-issue。
-- 到达 `issuePolicy` 指定的生命周期门禁时，必须自动创建唯一 `workIssue`，或校验并复用已记录的 open `workIssue`。新项目默认 `on-publish`；旧配置缺失时按 `always`；`manual` 从不自动创建。
+- 到达 `issuePolicy` 指定的生命周期门禁时，必须自动创建唯一 `workIssue`，或校验并复用已记录的 open `workIssue`。新项目默认 `on-publish`；`manual` 从不自动创建。
 - 分支严格使用 `type/scope`；commit 严格使用 `type(scope): description`。
 - 存在工作 Issue 时，`/finish` 的 PR body 只用 `Closes #<workIssue>`；`manual` 且未提供 Issue 时显式记录 no-Issue 并省略 closing keyword。`parentIssue` 只允许 `Refs #<parentIssue>`，绝不由子变更关闭。
-- `finishMode` 只控制 PR handoff（`ask`、`auto-pr`、`manual`）。旧 `issueWhenMissing` 已废弃并忽略，不能替代 `issuePolicy`。
+- `finishMode` 只控制 PR handoff（`ask`、`auto-pr`、`manual`）。
 
 ---
 
@@ -312,7 +315,9 @@ curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/insta
 # 或“初始化项目”
 ```
 
-> **更新：** 再次执行上面的 `curl ... | bash` 即可，脚本会自动 `git pull`。
+> **更新：** 根目录 [`VERSION`](VERSION) 是唯一版本源，当前版本为 `0.1.0`，发布标签使用 `v${VERSION}`。再次执行上面的 `curl ... | bash` 即可更新。
+>
+> 更新采用整包覆盖：安装器先校验新来源，再完整替换框架托管安装目录。安装目录中的本地修改会被丢弃；不提供兼容迁移、旧版本保留或自动回滚。
 >
 > **手动安装：**
 > ```bash
@@ -437,11 +442,11 @@ bash ~/.codex/ai_code_copilot/scripts/init_project.sh --project . --upgrade --dr
 
 - 缺失文件会直接补齐
 - 已存在且内容相同的文件跳过
-- `config.json` 是项目主权配置文件，已存在时保留项目内容，不生成 `.new`
-- `rules/project-context.md` 和 `rules/domain-rules.md` 是项目主权文件，已存在时保留项目内容，不生成 `.new`
-- `changes/templates/*.md` 是框架托管流程模板，已存在但内容不同则自动更新到新版
-- 其他规则文件已存在但内容不同会写成 `<文件名>.new`，项目团队人工比较后决定是否合并
-- `.ai_code_copilot/.copilot-state.json` 是机器维护的状态文件，会在非 dry-run 同步时刷新框架 commit、命中的 packs、初始化和同步时间
+- 框架托管的 core rules、命中 pack rules、`changes/templates/*.md` 与 `.copilot-state.json` 直接覆盖到当前版本
+- 项目主权的 `config.json`、`rules/project-context.md`、`rules/domain-rules.md`、`knowledge/`、活动 `changes/<name>/` 与 `changes/archives/` 保持不动
+- 已有项目配置必须是合法 JSON，并包含受支持的 `githubWorkflow.issuePolicy`；显式同步遇到非法或旧配置会失败，不做迁移
+- 不生成 `.new` 候选，不做兼容迁移，也不自动回滚
+- `.ai_code_copilot/.copilot-state.json` 同时记录 `frameworkVersion` 和 `frameworkCommit`
 - `.copilot-state.json` 会记录 `projectContextSyncedAt`；SessionStart 会在过期时软提醒。默认阈值 30 天，可在 `.ai_code_copilot/config.json` 中用 `projectContextStaleAfterDays` 覆盖。
 - `logCompression.reviewThresholdLines` 和 `logCompression.fixThresholdLines` 控制 `/review` 或 `/fix` 何时把过程记录压缩到 `log.archive.md`。
 

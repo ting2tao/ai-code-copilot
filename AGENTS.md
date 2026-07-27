@@ -10,10 +10,11 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 
 **全局层**（安装后默认位于 `~/.codex/ai_code_copilot/`）— 框架运行主体：
 - `skill/SKILL.md` — Codex skill 注册入口，定义触发条件
-- `agents/router.md` — 轻量运行时入口，选择 Inline/Compact/Full SDD 并按需加载模块
-- `agents/workflows/` — init、inline、compact、full、debug、review、test、finish、archive 专项模块
-- `agents/copilot-prompt.md` — 旧安装或模块缺失时的严格兼容回退，不是默认加载入口
+- `agents/router.md` — skill 激活后的轻量入口，选择 Compact/Full SDD 并按需加载模块
+- `agents/workflows/` — init、compact、full、debug、review、test、finish、archive 专项模块
+- `agents/copilot-prompt.md` — 完整流程参考，必须与模块化运行时保持一致，不作为回退入口
 - `config/workflow-policy.json` — 分层阈值、风险类别、升级触发器和 Issue 策略的机械合同
+- `VERSION` — 唯一 SemVer 版本源；当前为 `0.1.0`
 - `agents/spec-reviewer.md` / `agents/code-quality-reviewer.md` — 双阶段审查的 Sub-Agent
 - `hooks/session-start` — 会话启动时通过 `hookSpecificOutput` 注入安全规则
 - `hooks/hooks.json` — hook 注册配置
@@ -38,7 +39,7 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 
 - `agents/router.md` / `agents/workflows/*.md` — 默认运行时路由和各阶段流程
 - `config/workflow-policy.json` — 可机械验证的分层与生命周期策略
-- `agents/copilot-prompt.md` — 兼容回退；修改核心合同后需检查回退是否仍保持更严格的 legacy 行为
+- `agents/copilot-prompt.md` — 完整合同参考；修改核心合同时必须同步模块化运行时
 - `skill/SKILL.md` — 触发条件和 skill 描述
 - `hooks/session-start` — 会话启动注入的安全规则
 - `scripts/*.sh` — 初始化、同步和框架自检
@@ -53,20 +54,22 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 
 ## 安装脚本
 
-- `install.sh` — macOS/Linux：clone 到 `~/.codex/ai_code_copilot/`，创建 skill symlink，注册 SessionStart hook
-- `install.ps1` — Windows PowerShell：使用目录 Junction 替代 symlink
-- `install-wsl.sh` — WSL 变体
+- `install.sh` — macOS/Linux：校验来源后整包覆盖安装目录，创建 skill symlink，注册 SessionStart hook
+- `install.ps1` — Windows PowerShell：整包覆盖并使用目录 Junction
+- `install-wsl.sh` — WSL 整包覆盖变体
 
 ## 核心设计原则
 
-- **Progressive SDD** — Inline SDD 使用会话内 Goal/Scope/Done Signal/Verify，仅限具备可执行验证和直接回滚的低风险小改动；Compact SDD 使用 `quick-card.md`；Full SDD 使用完整 spec/tasks/test/log 记录。三档只改变持久化成本，不降低工程质量
-- **No Contract, No Code** — Inline 必须先明确会话合同；Compact 没有 Quick Card 不写代码；Full 没有确认的 Spec 不写代码
-- **单向升级** — `Inline -> Compact -> Full` 或 `Inline -> Full`；活动变更不自动降级，升级必须保留 previous contract、diff 和验证证据
-- **Quick 兼容** — 原 Quick Compact 对应 Compact SDD，`quick-card.md` 是唯一记录源；Quick Full 使用 `quick-card.md` + `log.md` + `summary.md`，Standard/Complex 对应 Full SDD；旧记录无需迁移
-- **Issue 自动化** — 开始时用 `parentIssue` 读取整体需求；`issuePolicy` 决定解析时机：新项目默认 `on-publish`，旧配置缺失时按 `always`；到达门禁后自动创建或校验复用 `workIssue`，可用时建立 native sub-issue
+- **模型优先** — 普通、低风险、边界清晰的开发请求由模型原生处理，不因“写代码”自动加载 skill
+- **自动激活** — 明确 lifecycle 意图或安全/权限/资金/生产/部署/数据库/公共合同/跨模块/持久化/交接/审计风险自动激活 ai-code-copilot
+- **Progressive SDD** — 激活后只选择 Compact SDD 或 Full SDD；Compact 使用 `quick-card.md`，Full 使用完整 spec/tasks/test/log 记录
+- **No Contract, No Code** — Compact 没有 Quick Card 不写代码；Full 没有确认的 Spec 不写代码
+- **单向升级** — `Native -> activate -> Compact -> Full` 或 `Native -> activate -> Full`；升级必须保留 previous contract、diff 和验证证据
+- **Issue 自动化** — 开始时用 `parentIssue` 读取整体需求；`issuePolicy` 决定解析时机，新项目默认 `on-publish`；到达门禁后自动创建或校验复用 `workIssue`
 - **Git 硬合同** — 分支必须是 `type/scope`，commit 必须是 `type(scope): description`
 - **安全收尾** — 有工作 Issue 时 PR 只用 `Closes #<workIssue>`；`manual`/no-Issue 省略 closing keyword；父级始终只用 `Refs #<parentIssue>`；`finishMode` 只控制 PR handoff
-- **配置迁移** — 项目配置不自动改写；缺少 `issuePolicy` 时保持 legacy `always`，旧 `issueWhenMissing` 已废弃并忽略
+- **版本与覆盖** — `VERSION` 驱动发布和同步；全局安装整包覆盖，不保留安装目录本地修改，不做兼容迁移或自动回滚
+- **项目所有权** — 显式同步直接覆盖框架托管 rules/packs/templates/state，保留 config、project context、domain rules、knowledge、活动 changes 和 archives
 - **Evidence Before Claims** — 每个 task 完成必须展示可验证的命令输出
 - **Harness Enables** — 规格、测试、日志、review、规则和知识沉淀共同构成 Agent 可见反馈循环
 - **Loop Engineering** — 每个变更都要声明简洁的 Goal Contract：Goal、Done Signal、Guardrails、Fallback、Memory
@@ -78,7 +81,7 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 
 ## 命令速查
 
-默认命令路由定义在 `agents/router.md` 和 `agents/workflows/`；`agents/copilot-prompt.md` 保留兼容回退：
+激活后的命令路由定义在 `agents/router.md` 和 `agents/workflows/`：
 
 | 命令 | 用途 |
 |------|------|

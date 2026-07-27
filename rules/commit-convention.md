@@ -33,10 +33,10 @@ always     -> resolve workIssue before implementation
 on-commit  -> local edits allowed; resolve workIssue before first commit
 on-publish -> local edits and commits allowed; resolve workIssue before push/PR
 manual     -> never auto-create; validate supplied Issue when present
-missing    -> legacy default always
+missing    -> invalid configuration; stop and report
 ```
 
-- 新项目默认 `on-publish`；已有项目缺少 `issuePolicy` 时按 legacy `always` 运行，不静默改写项目配置。
+- 新项目默认 `on-publish`；已有项目缺少或写错 `issuePolicy` 时停止，不迁移也不推断默认值。
 - 严禁无票开发只认策略要求阶段前 `workIssue` confirmed/resolved；只有 `parentIssue` 不够，父需求不能代替本次工作票。
 - `manual` 不自动创建 Issue；用户提供 Issue 时仍须验证 open、可读、同仓库及关系。未提供时记录 `workIssue: none`、`issueRelationship: none`、`closeTarget: none`，不得把 parent 当作 close target。
 - Standard/Complex 在 `spec.md`，Quick Compact/Full 在 `quick-card.md` 记录 `parentIssue`、`workIssue`、`issueRelationship`、`closeTarget` 和 branch；到达策略门禁前允许 `workIssue: pending`。

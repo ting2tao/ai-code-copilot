@@ -99,7 +99,6 @@
       "manual"
     ],
     "newProjectDefault": "on-publish",
-    "legacyDefault": "always",
     "closeTarget": "workIssue",
     "manualNoIssueCloseTarget": "none"
   }

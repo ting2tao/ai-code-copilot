@@ -23,6 +23,7 @@ The framework helps you build a human-agent engineering loop: clarify the goal f
 
 ## Core Features
 
+- **Model-first activation**: ordinary low-risk coding stays native; explicit lifecycle intent or material risk triggers automatic activation.
 - **Spec-driven work**: Standard/Complex changes require `spec.md`; Quick changes require `quick-card.md`.
 - **Project-local context**: `/init` captures stack, commands, architecture, and domain rules in `.ai_code_copilot/`.
 - **Harness Engineering**: tests, logs, rules, reviews, and knowledge form an agent-visible feedback loop.
@@ -59,7 +60,7 @@ The context-budget policy is split across four layers:
 | Hook | `hooks/hooks.json`, `hooks/session-start` | Wake the framework, inject L0 safety, warn about stale context, show active-change summaries | Command-level routing or loading packs/knowledge |
 | Prompt | `agents/copilot-prompt.md` | Define what each command loads and when | Machine-maintained state |
 | Templates | `changes/templates/*.md` | Long-lived document structure and review gates | Runtime facts |
-| State | `.ai_code_copilot/.copilot-state.json` | Framework commit, matched packs, sync timestamps, context freshness | User workflow preferences |
+| State | `.ai_code_copilot/.copilot-state.json` | `frameworkVersion`, `frameworkCommit`, matched packs, sync timestamps, context freshness | User workflow preferences |
 
 For Quick Compact, SessionStart reads validated metadata from `quick-card.md`; other modes use `summary.md`. If the applicable source is malformed, SessionStart falls back to a warning and the command flow reads the full change documents later. Log compression thresholds are configurable in `.ai_code_copilot/config.json` under `logCompression`. Python 3 is recommended for the hook's JSON/date helpers; without it, the hook still injects L0 safety rules but skips freshness and active-change summaries.
 
@@ -125,19 +126,21 @@ flowchart LR
 
 ## Progressive SDD Runtime
 
-The Codex skill first loads the small [`agents/router.md`](agents/router.md), then loads only the needed file under `agents/workflows/`. The former monolithic prompt remains a compatibility fallback for older or incomplete installations.
+The runtime is **Model-first**. The model handles ordinary, bounded, low-risk implementation, debugging, refactoring, testing, documentation, discussion, and read-only analysis through its native capabilities. It does not load ai-code-copilot merely because code is involved.
 
-Inline SDD, Compact SDD, and Full SDD are persistence tiers for the same engineering standard—not three quality levels:
+Automatic activation occurs when the user explicitly asks for a lifecycle action such as init, brainstorm, propose, apply, review, finish, or archive, or when the model detects material security, permission, money, production, deployment, database, public-contract, cross-module, persistence, handoff, or audit risk. After activation, the skill loads the small [`agents/router.md`](agents/router.md), which selects only the required module under `agents/workflows/`.
+
+Native execution is outside the skill. Once activated, Compact SDD and Full SDD are persistence tiers for the same engineering standard—not two quality levels:
 
 | Tier | Record cost | Use when |
 |------|-------------|----------|
-| **Inline SDD** | Conversation-only `Goal / Scope / Done Signal / Verify` | Clear, low-risk, directly reversible local work touching at most two files |
+| **Native** | No framework record | Bounded, low-risk work that does not need lifecycle orchestration or durable evidence |
 | **Compact SDD** | One `quick-card.md` | The change needs persistence, a commit/PR, handoff, or auditable review |
 | **Full SDD** | design/spec/tasks/test/log/summary as needed | Public contracts, databases, security, deployment, cross-module rules, multiple goals, or residual risk |
 
-Promotion is monotonic: `Inline -> Compact -> Full`, or directly `Inline -> Full`; an active change never auto-downgrades. Existing `recordMode: compact` Quick Cards remain Compact SDD, and existing Quick Full/Standard/Complex records remain Full SDD.
+Promotion is monotonic: `Native -> automatic activation -> Compact -> Full`, or directly `Native -> automatic activation -> Full`; an active change never auto-downgrades. Native contract, diff, and evidence are copied into the activated record before framework-guided work resumes.
 
-New projects default `githubWorkflow.issuePolicy` to `on-publish`: local edits and commits may proceed, but the work Issue must be resolved before push/PR. Existing configurations without `issuePolicy` retain legacy `always` behavior. Supported policies are `always`, `on-commit`, `on-publish`, and `manual`.
+New projects default `githubWorkflow.issuePolicy` to `on-publish`: local edits and commits may proceed, but the work Issue must be resolved before push/PR. Existing project configuration is preserved, but invalid configuration or a missing required `issuePolicy` blocks explicit sync instead of being migrated. Supported policies are `always`, `on-commit`, `on-publish`, and `manual`.
 
 ai-code-copilot is the default delivery orchestrator. Superpowers is an explicit specialist library for focused debugging, verification, review, high-risk TDD, worktree isolation, or intentional parallelism; it is not loaded as a second default workflow stack.
 
@@ -158,10 +161,10 @@ When uncertain, the framework defaults to Standard.
 - **Quick Compact** is limited to a single-purpose, single-commit change touching at most two files, with no API, database, dependency, CI, deployment, generated-artifact, security, permission, authentication, sensitive-data, state-machine, or cross-module rule impact, and it must have executable verification plus direct rollback. It uses `quick-card.md` as its single record source. If any condition stops being true at runtime, it automatically upgrades to Quick Full before work continues.
 - **Quick Full** is the default when Compact eligibility is uncertain or unmet. Its record set is `quick-card.md` + `log.md` + `summary.md`.
 - At the start, the workflow parses or asks once for `parentIssue`, reads its overall requirement when present, and links the work as a native sub-issue when GitHub supports the relationship.
-- At the lifecycle gate selected by `issuePolicy`, the workflow must automatically create one `workIssue`, or validate and reuse the recorded open `workIssue`. New projects use `on-publish`; a missing legacy policy means `always`; `manual` never auto-creates.
+- At the lifecycle gate selected by `issuePolicy`, the workflow must automatically create one `workIssue`, or validate and reuse the recorded open `workIssue`. New projects use `on-publish`; `manual` never auto-creates.
 - Branches must use `type/scope`; commits must use `type(scope): description`.
 - When a work Issue exists, `/finish` puts `Closes #<workIssue>` in the PR body. Under `manual` with no supplied Issue, it records an explicit no-Issue delivery and omits closing keywords. A `parentIssue` is referenced only with `Refs #<parentIssue>` and is never closed by the child change.
-- `finishMode` controls only PR handoff (`ask`, `auto-pr`, or `manual`). The old `issueWhenMissing` setting is obsolete and ignored; it does not replace `issuePolicy`.
+- `finishMode` controls only PR handoff (`ask`, `auto-pr`, or `manual`).
 
 ## Standard Workflow
 
@@ -310,7 +313,9 @@ After installation, open Codex or Claude Code in any business project and say:
 # or say "初始化项目"
 ```
 
-Update by running the same `curl ... | bash` command again. The installer will run `git pull`.
+The current framework version is read from root [`VERSION`](VERSION) (`0.1.0`), and release tags use `v${VERSION}`. Update by running the same `curl ... | bash` command again.
+
+Updates use full replacement: the installer validates the new source, then replaces the entire framework-managed installation tree. Installation-local edits are discarded. There is no compatibility migration, retained previous release, or automatic rollback.
 
 Manual install:
 
@@ -430,11 +435,11 @@ Sync policy:
 
 - Missing files are created.
 - Existing identical files are skipped.
-- `config.json` is project-owned; existing content is preserved and no `.new` file is generated.
-- `rules/project-context.md` and `rules/domain-rules.md` are project-owned; existing content is preserved and no `.new` file is generated.
-- `changes/templates/*.md` are framework-managed; different existing files are updated to the new version.
-- Other rule files with different content are written as `<filename>.new` for project teams to compare and merge manually.
-- `.ai_code_copilot/.copilot-state.json` is machine-maintained and refreshed on non-dry-run sync.
+- Framework-managed core rules, detected pack rules, `changes/templates/*.md`, and `.copilot-state.json` are directly overwritten by the current framework version.
+- Project-owned `config.json`, `rules/project-context.md`, `rules/domain-rules.md`, `knowledge/`, active `changes/<name>/`, and `changes/archives/` are preserved.
+- Existing project configuration must be valid JSON with a supported `githubWorkflow.issuePolicy`; explicit sync fails instead of migrating invalid or old configuration.
+- No `.new` candidates, compatibility migration, or automatic rollback are produced.
+- `.ai_code_copilot/.copilot-state.json` records both `frameworkVersion` and `frameworkCommit`.
 - `.copilot-state.json` records `projectContextSyncedAt`; SessionStart warns when it is stale. Override the default 30-day threshold with `projectContextStaleAfterDays` in `.ai_code_copilot/config.json`.
 - `logCompression.reviewThresholdLines` and `logCompression.fixThresholdLines` control when `/review` or `/fix` should compress process notes into `log.archive.md`.
 

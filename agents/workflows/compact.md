@@ -15,7 +15,7 @@ always     -> resolve workIssue before implementation
 on-commit  -> local edits allowed; resolve workIssue before first commit
 on-publish -> local edits and commits allowed; resolve workIssue before push/PR
 manual     -> never auto-create; validate supplied Issue when present
-missing    -> legacy default always
+missing    -> invalid configuration; stop and report
 ```
 
 已有 open work Issue 必须校验后复用；创建或关联部分成功后不得另建替代 Issue。任何已解析 Issue 都保持 `closeTarget=workIssue`，parent 只追踪整体需求。

@@ -94,3 +94,21 @@ command: bash scripts/init_project.sh --project tests/fixtures/go --upgrade --dr
 exit: 0
 summary: dry-run listed versioned managed writes and left the fixture unchanged
 ```
+
+## Task 7: Runtime and documentation synchronization
+
+```text
+command: python3 scripts/check_model_first_versioning.py .
+exit: 1
+summary: expected RED — README.md missing Model-first, automatic activation, VERSION, 0.1.0, full replacement, frameworkVersion, and frameworkCommit
+
+command: python3 scripts/check_model_first_versioning.py . && python3 scripts/check_progressive_sdd.py .
+exit: 0
+summary: model-first version/update documentation and Native -> Compact/Full runtime checks passed
+
+command: bash scripts/check_framework.sh
+exit: 0
+summary: bilingual README, AGENTS, current architecture/flow/team-talk docs, policy, templates, and full fixture matrix passed
+
+decision: removed the remaining legacy issuePolicy default so strict project sync and activated runtime now both reject missing policy instead of disagreeing.
+```

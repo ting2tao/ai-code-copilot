@@ -154,6 +154,53 @@ def check_project_sync_contract(root: Path) -> None:
             fail(f"scripts/init_project.sh retains obsolete sync behavior: {forbidden}")
 
 
+def check_documentation_contract(root: Path) -> None:
+    docs = {
+        "README.md": [
+            "Model-first",
+            "native",
+            "automatic activation",
+            "VERSION",
+            "0.1.0",
+            "full replacement",
+            "frameworkVersion",
+            "frameworkCommit",
+        ],
+        "README-CN.md": [
+            "模型优先",
+            "原生处理",
+            "自动激活",
+            "VERSION",
+            "0.1.0",
+            "整包覆盖",
+            "frameworkVersion",
+            "frameworkCommit",
+        ],
+        "AGENTS.md": ["模型优先", "原生处理", "自动激活", "VERSION", "整包覆盖"],
+        "docs/ai-code-copilot-overview.md": ["Native", "Compact", "Full", "模型判断"],
+        "docs/ai-code-copilot-flow.md": ["Native", "Activate", "Compact", "Full"],
+        "docs/harness-engineering.md": ["原生执行", "Compact SDD", "Full SDD"],
+        "docs/loop-engineering.md": ["Native", "Compact SDD", "Full SDD"],
+        "docs/ai-code-copilot-team-talk.html": ["Native", "Compact", "Full"],
+        "agents/copilot-prompt.md": ["模型原生处理", "自动激活", "框架托管文件"],
+    }
+    stale_claims = [
+        "Inline SDD",
+        "Inline -> Compact",
+        "Inline -> Full",
+        "脚本会自动 `git pull`",
+        "installer will run `git pull`",
+        "其他规则文件若与新版本不同，生成 `<文件>.new`",
+        "Other rule files with different content are written as `<filename>.new`",
+    ]
+    for relative, markers in docs.items():
+        content = read_text(root / relative)
+        require_markers(content, relative, markers)
+        for claim in stale_claims:
+            if claim in content:
+                fail(f"{relative} contains stale current-runtime claim: {claim}")
+
+
 def main() -> None:
     root = Path(sys.argv[1]).resolve()
     version = read_version(root)
@@ -162,6 +209,7 @@ def main() -> None:
     check_activation_contract(root)
     check_install_contract(root)
     check_project_sync_contract(root)
+    check_documentation_contract(root)
     print(f"model-first-versioning: version {version} checks passed")
 
 

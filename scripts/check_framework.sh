@@ -145,25 +145,24 @@ workflow_section_markers = {
         "Quick Compact", "single record source", "Quick Full", "log.md", "summary.md",
         "parentIssue", "overall requirement", "workIssue", "automatically create", "reuse",
         "sub-issue", "type/scope", "type(scope): description", "Closes #<workIssue>",
-        "Refs #<parentIssue>", "finishMode", "issueWhenMissing", "obsolete", "ignored",
+        "Refs #<parentIssue>", "finishMode", "issuePolicy", "manual",
     ],
     "README-CN.md": [
         "Quick Compact", "唯一记录源", "Quick Full", "log.md", "summary.md",
         "parentIssue", "整体需求", "workIssue", "自动创建", "复用", "sub-issue",
         "type/scope", "type(scope): description", "Closes #<workIssue>",
-        "Refs #<parentIssue>", "finishMode", "issueWhenMissing", "废弃", "忽略",
+        "Refs #<parentIssue>", "finishMode", "issuePolicy", "manual",
     ],
     "AGENTS.md": [
-        "Quick Compact", "唯一记录源", "Quick Full", "log.md", "summary.md",
-        "parentIssue", "整体需求", "workIssue", "自动创建", "复用", "sub-issue",
-        "type/scope", "type(scope): description", "Closes #<workIssue>",
-        "Refs #<parentIssue>", "finishMode", "issueWhenMissing", "废弃", "忽略",
+        "模型优先", "原生处理", "自动激活", "Compact SDD", "Full SDD",
+        "parentIssue", "workIssue", "type/scope", "type(scope): description",
+        "Closes #<workIssue>", "Refs #<parentIssue>", "finishMode", "issuePolicy",
     ],
     "docs/ai-code-copilot-overview.md": [
         "Quick Compact", "唯一记录源", "Quick Full", "log.md", "summary.md",
         "parentIssue", "整体需求", "workIssue", "自动创建", "复用", "sub-issue",
         "type/scope", "type(scope): description", "Closes #<workIssue>",
-        "Refs #<parentIssue>", "finishMode", "issueWhenMissing", "废弃", "忽略",
+        "Refs #<parentIssue>", "finishMode", "issuePolicy", "manual",
     ],
 }
 workflow_sections = {}
@@ -178,13 +177,13 @@ for rel, (heading, next_heading_pattern) in workflow_contract_sections.items():
         raise SystemExit(f"{rel} workflow contract section missing: " + ", ".join(missing_markers))
 
 progressive_sdd_doc_markers = {
-    "README.md": ["agents/router.md", "Inline SDD", "Compact SDD", "Full SDD", "issuePolicy", "Promotion is monotonic", "Superpowers"],
-    "README-CN.md": ["agents/router.md", "Inline SDD", "Compact SDD", "Full SDD", "issuePolicy", "升级是单向", "Superpowers"],
-    "AGENTS.md": ["agents/router.md", "agents/workflows/", "workflow-policy.json", "Inline SDD", "单向升级", "Superpowers 边界"],
-    "docs/ai-code-copilot-overview.md": ["Inline SDD", "Compact SDD", "Full SDD", "issuePolicy", "Superpowers"],
-    "docs/ai-code-copilot-flow.md": ["agents/router.md", "Inline SDD", "单向升级"],
+    "README.md": ["agents/router.md", "Model-first", "Native", "Compact SDD", "Full SDD", "issuePolicy", "Promotion is monotonic", "Superpowers"],
+    "README-CN.md": ["agents/router.md", "模型优先", "Native", "Compact SDD", "Full SDD", "issuePolicy", "升级是单向", "Superpowers"],
+    "AGENTS.md": ["agents/router.md", "agents/workflows/", "workflow-policy.json", "模型优先", "单向升级", "Superpowers 边界"],
+    "docs/ai-code-copilot-overview.md": ["Native", "Activate", "Compact SDD", "Full SDD", "issuePolicy", "Superpowers"],
+    "docs/ai-code-copilot-flow.md": ["agents/router.md", "Native", "Activate", "单向升级"],
     "docs/harness-engineering.md": ["Spec 档位", "Acceptance", "Done Signal", "Guardrails", "Fallback"],
-    "docs/loop-engineering.md": ["Inline SDD", "Compact SDD", "Full SDD", "单向升级"],
+    "docs/loop-engineering.md": ["Native", "Compact SDD", "Full SDD", "单向升级"],
 }
 for rel, markers in progressive_sdd_doc_markers.items():
     text = (root / rel).read_text(encoding="utf-8")
@@ -242,7 +241,6 @@ for rel in workflow_docs:
 compact_eligibility_markers = {
     "README.md": ["executable verification", "direct rollback"],
     "README-CN.md": ["可执行验证", "直接回滚"],
-    "AGENTS.md": ["可执行验证", "直接回滚"],
     "docs/ai-code-copilot-overview.md": ["可执行验证", "直接回滚"],
 }
 for rel, markers in compact_eligibility_markers.items():
