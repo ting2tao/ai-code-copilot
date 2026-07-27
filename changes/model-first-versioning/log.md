@@ -167,3 +167,18 @@ closeTarget: workIssue
 state: OPEN
 summary: the approved model-first/versioning change summary, acceptance checklist, test plan, and PowerShell limitation were published as the unique work Issue
 ```
+
+## /finish record
+
+| Item | Result |
+|------|--------|
+| Work Issue | https://github.com/ting2tao/ai-code-copilot/issues/34 (OPEN, standalone) |
+| Pull Request | https://github.com/ting2tao/ai-code-copilot/pull/35 (OPEN, ready for review) |
+| Branch | `feat/model-first-versioning` |
+| Base | `main` |
+| Remote | `origin` |
+| Closing keyword | `Closes #34` |
+| Push result | `git push -u origin feat/model-first-versioning` succeeded after retrying with HTTP/1.1 and a larger post buffer |
+| Verification | `bash scripts/check_framework.sh` PASS; Bash syntax PASS; Python checker compilation PASS; `git diff --check origin/main...HEAD` PASS |
+| Limitation | Windows PowerShell runtime smoke unavailable on this macOS host; static validation passed |
+| Knowledge extraction | No `Knowledge candidates` or `知识发现` entries were present; promotion skipped |
