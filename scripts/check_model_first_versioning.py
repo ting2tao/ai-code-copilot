@@ -112,12 +112,28 @@ def check_activation_contract(root: Path) -> None:
         fail("framework-owned inline workflow must be removed")
 
 
+def check_install_contract(root: Path) -> None:
+    installer_markers = {
+        "install.sh": ["validate_source_tree", "replace_install_tree", "VERSION"],
+        "install-wsl.sh": ["validate_source_tree", "replace_install_tree", "VERSION"],
+        "install.ps1": ["Test-SourceTree", "Replace-InstallTree", "VERSION"],
+    }
+    for relative, markers in installer_markers.items():
+        content = read_text(root / relative)
+        require_markers(content, relative, markers)
+        if "git pull" in content:
+            fail(f"{relative} must replace from a validated source, not git pull")
+        if "git rev-parse --short HEAD" in content:
+            fail(f"{relative} must report VERSION, not a commit as the release version")
+
+
 def main() -> None:
     root = Path(sys.argv[1]).resolve()
     version = read_version(root)
     if behavior_changed_from_base(root) and not version_changed_from_base(root, version):
         fail("framework behavior changed without a VERSION bump")
     check_activation_contract(root)
+    check_install_contract(root)
     print(f"model-first-versioning: version {version} checks passed")
 
 

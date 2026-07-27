@@ -60,3 +60,21 @@ command: python3 scripts/check_progressive_sdd.py . && bash scripts/check_framew
 exit: 0
 summary: active workflows, reviewers, and templates consistently use Native -> Compact/Full; full framework gate passed
 ```
+
+## Task 5: Full-replacement installers
+
+```text
+command: python3 scripts/check_model_first_versioning.py .
+exit: 1
+summary: expected RED — install.sh missing validate_source_tree and replace_install_tree
+
+command: bash -n install.sh && bash -n install-wsl.sh && python3 scripts/check_model_first_versioning.py . && bash scripts/test_install_overwrite.sh
+exit: 0
+summary: installer contract and Bash syntax passed; two local installs removed stale/modified managed files and preserved VERSION, skill link, and one SessionStart hook
+
+command: bash scripts/check_framework.sh
+exit: 0
+summary: full framework gate passed with install overwrite smoke included
+
+note: PowerShell was checked by static contract only because pwsh is not installed in the current macOS environment.
+```

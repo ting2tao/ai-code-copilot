@@ -53,6 +53,44 @@ ok()    { echo "${GREEN}✓${RESET}  $*"; }
 warn()  { echo "${YELLOW}⚠${RESET}  $*"; }
 err()   { echo "${RED}✗${RESET}  $*" >&2; }
 
+validate_source_tree() {
+  local source_tree="$1"
+  local source_version
+  for required in VERSION skill/SKILL.md agents/copilot-prompt.md hooks/session-start; do
+    if [ ! -f "$source_tree/$required" ]; then
+      err "来源目录不完整，缺少: $required"
+      return 1
+    fi
+  done
+  source_version="$(tr -d '\r\n' < "$source_tree/VERSION")"
+  if [[ ! "$source_version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
+    err "来源 VERSION 不是合法 SemVer: $source_version"
+    return 1
+  fi
+}
+
+SOURCE_TMP=""
+STAGE_DIR=""
+cleanup_install_temps() {
+  [ -z "$SOURCE_TMP" ] || rm -rf "$SOURCE_TMP"
+  [ -z "$STAGE_DIR" ] || rm -rf "$STAGE_DIR"
+}
+trap cleanup_install_temps EXIT
+
+replace_install_tree() {
+  local source_tree="$1"
+  local install_parent
+  install_parent="$(dirname "$INSTALL_DIR")"
+  mkdir -p "$install_parent"
+  STAGE_DIR="$(mktemp -d "$install_parent/.ai-code-copilot-stage.XXXXXX")"
+  cp -R "$source_tree/." "$STAGE_DIR/"
+  rm -rf "$STAGE_DIR/.git" "$STAGE_DIR/.DS_Store"
+  validate_source_tree "$STAGE_DIR"
+  rm -rf "$INSTALL_DIR"
+  mv "$STAGE_DIR" "$INSTALL_DIR"
+  STAGE_DIR=""
+}
+
 resolve_platform() {
   if [ "$PLATFORM" = "auto" ]; then
     if [ -n "${CODEX_HOME:-}" ] || command -v codex >/dev/null 2>&1; then
@@ -132,60 +170,30 @@ info "目标平台: $APP_NAME"
 info "安装目录: $INSTALL_DIR"
 
 # ============ 安装或更新 ============
-if [ -d "$INSTALL_DIR/.git" ]; then
-  # 已有 git 仓库 → pull 更新
-  info "检测到已安装，执行更新..."
-  cd "$INSTALL_DIR"
-  BEFORE="$(git rev-parse --short HEAD)"
-  if git pull --ff-only 2>/dev/null; then
-    AFTER="$(git rev-parse --short HEAD)"
-    if [ "$BEFORE" = "$AFTER" ]; then
-      ok "已是最新版本 ($AFTER)"
-    else
-      ok "已更新: $BEFORE → $AFTER"
-    fi
-  else
-    # pull 失败（无 remote 或无 tracking）→ 尝试用源码目录覆盖
-    if [ -n "$SCRIPT_DIR" ]; then
-      warn "远程更新失败，从本地源码目录同步..."
-      rsync -a --delete --exclude='.git' --exclude='.DS_Store' "$SCRIPT_DIR/" "$INSTALL_DIR/"
-      ok "已从本地源码同步"
-    else
-      err "更新失败，请手动检查: cd $INSTALL_DIR && git status"
-      exit 1
-    fi
-  fi
-elif [ -d "$INSTALL_DIR" ]; then
-  # 目录存在但不是 git 仓库 → 用源码覆盖或重新 clone
-  if [ -n "$SCRIPT_DIR" ]; then
-    info "检测到本地目录(非 git 仓库)，从源码目录同步..."
-    rsync -a --delete --exclude='.git' --exclude='.DS_Store' "$SCRIPT_DIR/" "$INSTALL_DIR/"
-    ok "已从本地源码同步"
-  else
-    info "检测到本地目录(非 git 仓库)，重新 clone..."
-    rm -rf "$INSTALL_DIR"
-    git clone "$REPO_URL" "$INSTALL_DIR"
-    ok "已 clone 到 $INSTALL_DIR"
-  fi
+if [ -n "$SCRIPT_DIR" ]; then
+  SOURCE_TREE="$SCRIPT_DIR"
+  info "使用本地源码作为版本来源"
 else
-  # 全新安装
-  if [ -n "$SCRIPT_DIR" ]; then
-    info "从本地源码目录安装..."
-    mkdir -p "$(dirname "$INSTALL_DIR")"
-    cp -R "$SCRIPT_DIR" "$INSTALL_DIR"
-    rm -rf "$INSTALL_DIR/.git" "$INSTALL_DIR/.DS_Store"
-    ok "已复制到 $INSTALL_DIR"
-  else
-    info "首次安装，从 $REPO_URL clone..."
-    mkdir -p "$(dirname "$INSTALL_DIR")"
-    if ! git clone "$REPO_URL" "$INSTALL_DIR"; then
-      err "git clone 失败"
-      err "请确认仓库地址正确，或先手动 clone 到 $INSTALL_DIR 后再跑本脚本"
-      exit 1
-    fi
-    ok "已 clone 到 $INSTALL_DIR"
+  SOURCE_TMP="$(mktemp -d)"
+  SOURCE_TREE="$SOURCE_TMP/source"
+  info "从 $REPO_URL 获取最新版本..."
+  if ! git clone --depth 1 "$REPO_URL" "$SOURCE_TREE"; then
+    err "git clone 失败"
+    err "请确认仓库地址正确，或在源码根目录运行本脚本"
+    exit 1
   fi
 fi
+
+validate_source_tree "$SOURCE_TREE"
+SOURCE_VERSION="$(tr -d '\r\n' < "$SOURCE_TREE/VERSION")"
+if [ -f "$INSTALL_DIR/VERSION" ]; then
+  INSTALLED_VERSION="$(tr -d '\r\n' < "$INSTALL_DIR/VERSION")"
+  info "直接覆盖更新: $INSTALLED_VERSION → $SOURCE_VERSION"
+else
+  info "安装版本: $SOURCE_VERSION"
+fi
+replace_install_tree "$SOURCE_TREE"
+ok "框架托管目录已完整替换"
 
 # ============ 创建 symlink ============
 echo ""
@@ -285,10 +293,8 @@ if [ ! -f "$SKILL_LINK/SKILL.md" ]; then
 fi
 ok "symlink 与 SKILL.md 正常"
 
-if [ -d "$INSTALL_DIR/.git" ]; then
-  VERSION="$(cd "$INSTALL_DIR" && git rev-parse --short HEAD)"
-  ok "当前版本: $VERSION"
-fi
+INSTALLED_VERSION="$(tr -d '\r\n' < "$INSTALL_DIR/VERSION")"
+ok "当前版本: $INSTALLED_VERSION"
 
 # ============ 完成提示 ============
 echo ""

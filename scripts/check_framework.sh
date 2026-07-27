@@ -28,6 +28,7 @@ need_file config/workflow-policy.json
 need_file scripts/check_progressive_sdd.py
 need_file VERSION
 need_file scripts/check_model_first_versioning.py
+need_file scripts/test_install_overwrite.sh
 need_file docs/harness-engineering.md
 need_file docs/loop-engineering.md
 need_file hooks/session-start
@@ -50,6 +51,7 @@ bash -n scripts/init_project.sh
 
 python3 scripts/check_progressive_sdd.py "$ROOT"
 python3 scripts/check_model_first_versioning.py "$ROOT"
+bash scripts/test_install_overwrite.sh
 
 python3 - "$ROOT" <<'PY'
 import json
