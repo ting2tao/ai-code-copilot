@@ -41,6 +41,6 @@ missing    -> legacy default always
 5. mechanical Reverse Sync 自动记录；material Reverse Sync 停止并重新确认。
 6. commit message 使用 `type(scope): description`，并立即写入记录源。
 
-## Inline -> Full
+## Native -> Full
 
-Inline 调查直接发现 full risk 时跳过 Compact：停止编辑，生成完整记录，复制合同/diff/evidence，标记 promotion provenance，等待 material confirmation 后继续。
+原生调查直接发现 full risk 时跳过 Compact：停止编辑，生成完整记录，复制 Native contract/diff/evidence，标记 promotion provenance，等待 material confirmation 后继续。

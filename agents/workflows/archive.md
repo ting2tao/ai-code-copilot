@@ -1,6 +1,6 @@
 # Workflow Module: archive
 
-Archive 只处理已持久化的 Compact/Full 记录。Inline 没有变更目录，不强制生成知识或归档文档；如出现 durable knowledge，应先 `Inline -> Compact` 或直接 Full。
+Archive 只处理已持久化的 Compact/Full 记录。原生执行没有变更目录，不强制生成知识或归档文档；如出现 durable knowledge，应先自动激活并执行 `Native -> Compact`，或直接进入 Full。
 
 ## Process
 

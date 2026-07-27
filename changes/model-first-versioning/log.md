@@ -48,3 +48,15 @@ command: bash scripts/check_framework.sh
 exit: 0
 summary: full framework gate passed after removing framework-owned Inline
 ```
+
+## Task 4: Native escalation records
+
+```text
+command: python3 scripts/check_progressive_sdd.py .
+exit: 1
+summary: expected RED — quick-card missing promotedFrom: native
+
+command: python3 scripts/check_progressive_sdd.py . && bash scripts/check_framework.sh
+exit: 0
+summary: active workflows, reviewers, and templates consistently use Native -> Compact/Full; full framework gate passed
+```

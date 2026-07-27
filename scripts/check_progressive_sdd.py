@@ -140,6 +140,7 @@ def main() -> None:
     quick_card = read_text(root / "changes/templates/quick-card.md")
     for marker in [
         "promotedFrom:",
+        "promotedFrom: native",
         "Promotion record",
         "previous contract",
         "evidence copied",
@@ -149,13 +150,55 @@ def main() -> None:
             fail(f"quick-card missing promotion marker: {marker}")
     spec_reviewer = read_text(root / "agents/spec-reviewer.md")
     for marker in [
-        "Inline -> Compact",
-        "Inline -> Full",
+        "Native -> Compact",
+        "Native -> Full",
         "mechanical Reverse Sync",
         "material Reverse Sync",
     ]:
         if marker not in spec_reviewer:
             fail(f"spec reviewer missing progressive SDD marker: {marker}")
+
+    native_escalation_records = {
+        "agents/workflows/compact.md": [
+            "Native -> Compact",
+            "promotedFrom: native",
+        ],
+        "agents/workflows/full.md": [
+            "Native -> Full",
+            "material confirmation",
+        ],
+        "agents/code-quality-reviewer.md": ["Native -> Compact"],
+    }
+    for relative, markers in native_escalation_records.items():
+        content = read_text(root / relative)
+        for marker in markers:
+            if marker not in content:
+                fail(f"{relative} missing native escalation marker: {marker}")
+
+    active_runtime_files = [
+        "agents/workflows/compact.md",
+        "agents/workflows/full.md",
+        "agents/workflows/debug.md",
+        "agents/workflows/review.md",
+        "agents/workflows/finish.md",
+        "agents/workflows/archive.md",
+        "agents/spec-reviewer.md",
+        "agents/code-quality-reviewer.md",
+        "changes/templates/quick-card.md",
+        "changes/templates/summary.md",
+    ]
+    stale_inline_markers = [
+        "Inline SDD",
+        "Inline -> Compact",
+        "Inline -> Full",
+        "promotedFrom: inline",
+        "promoted-from: none | inline",
+    ]
+    for relative in active_runtime_files:
+        content = read_text(root / relative)
+        for marker in stale_inline_markers:
+            if marker in content:
+                fail(f"{relative} contains stale Inline marker: {marker}")
 
     project_config = json.loads(read_text(root / "config/project-config.json"))
     if project_config.get("githubWorkflow", {}).get("issuePolicy") != "on-publish":

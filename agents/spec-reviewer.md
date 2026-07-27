@@ -27,8 +27,8 @@
 
 ## Progressive SDD 审查
 
-- Inline 本身不进入持久化审查；收到 auditable review 请求时必须先完成 `Inline -> Compact`。
-- 核验 `Inline -> Compact` 和 `Inline -> Full` 是否遵循：`stop edits -> capture contract/diff/evidence -> create target record -> copy evidence -> update tier/recordMode -> recompute hash -> request confirmation only for material change -> resume`。
+- 原生执行本身不进入持久化审查；收到 auditable review 请求时必须先自动激活并完成 `Native -> Compact`。
+- 核验 `Native -> Compact` 和 `Native -> Full` 是否遵循：`stop edits -> capture Native contract/diff/evidence -> create target record -> copy evidence -> update tier/recordMode -> recompute hash -> request confirmation only for material change -> resume`。
 - `mechanical Reverse Sync` 仅允许修正路径、符号、命令或不改变行为/风险的实现细节，可自动记录。
 - `material Reverse Sync` 改变 Goal、Scope、Acceptance、Guardrails、风险或外部动作，必须停止并重新确认。
 - promotion 必须在继续编辑前发生；`promotedFrom`、previous contract、evidence copied 和 material confirmation 结论缺失时判定 FAIL/NEEDS_INFO。
