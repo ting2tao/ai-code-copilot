@@ -1,0 +1,5 @@
+{
+  "pass": false,
+  "requireChain": true,
+  "errorContains": "finished repository artifact requires git:<sha> revision"
+}

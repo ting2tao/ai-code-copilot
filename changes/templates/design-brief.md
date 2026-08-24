@@ -1,3 +1,15 @@
+<!-- artifact
+artifactVersion: 1
+artifactId: "{change-name}:design-brief"
+artifactType: design-brief
+artifactStatus: draft
+sourceOfTruth: repository
+sourceRef: self
+sourceRevision: working-tree
+upstream: none
+upstreamHash: none
+-->
+
 # 设计简报：{变更名}
 
 > **状态**：[ ] 探索中 / [ ] 已确定

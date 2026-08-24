@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-code-copilot.dev/schemas/agent-eval-case-v1.json",
+  "title": "ai-code-copilot Agent Eval Case",
+  "type": "object",
+  "required": [
+    "id",
+    "description",
+    "prompt",
+    "facts",
+    "expected"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]+$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "prompt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "facts": {
+      "type": "object"
+    },
+    "expected": {
+      "type": "object",
+      "required": [
+        "tier",
+        "modules",
+        "humanGate",
+        "writesBeforeContract"
+      ],
+      "properties": {
+        "tier": {
+          "enum": [
+            "inline",
+            "compact",
+            "full"
+          ]
+        },
+        "modules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "humanGate": {
+          "type": "boolean"
+        },
+        "writesBeforeContract": {
+          "const": false
+        },
+        "capabilityStatus": {
+          "enum": [
+            "available",
+            "unsupported",
+            "degraded"
+          ]
+        },
+        "promotion": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

@@ -24,13 +24,24 @@ missing    -> legacy default always
 - `summary.md`: 不超过约定预算的 active change 摘要。
 - `roadmap.md`: Complex 子变更依赖、集成顺序和上游 summary。
 
+## Artifact Chain
+
+新建或升级的 Full 记录必须使用 `workflow-policy.json.artifacts` 的 versioned metadata：`artifactVersion / artifactId / artifactType / artifactStatus / sourceOfTruth / sourceRef / sourceRevision / upstream / upstreamHash`。`design-brief.md` 是 intent-equivalent 根产物，`tasks.md + test-spec.md` 是 plan-equivalent 产物；不额外创建同义 `intent.md` 或 `plan.md`。
+
+- 每阶段开始前运行 `scripts/check_artifact_chain.py`，确认上游存在、类型允许且 hash 未漂移。
+- draft 可暂用 `upstreamHash: pending`；approved/active/reviewed/finished 必须固定真实 `sha256:`。
+- material 上游变化先 Reverse Sync 并重新确认；metadata/path/hash 的机械同步保留原确认来源并记录 provenance。
+- `sourceOfTruth` 必须唯一声明为 repository/GitHub/external；副本只存链接和 revision，不形成双权威。
+- repository artifact 在工作区使用 `sourceRef: self / sourceRevision: working-tree`；提交或 finish 后把 revision 更新为 `git:<sha>`，形成 Git audit linkage。
+- 无 metadata 的历史记录走 legacy skip；新建 Full 或显式 `--require-chain` 不得跳过。
+
 ## brainstorm
 
 读取项目现状和可用 Harness；一次只问一个问题；给 2-3 方案和推荐；逐段确认需求、方案、风险；生成 design brief。涉及父 Issue 时先读整体需求和已完成 sibling。
 
 ## propose
 
-从已确认设计和真实代码生成完整记录。Goal Contract 是 Spec 首部：Goal、Done Signal、Guardrails、Fallback、Memory，不再创建独立文档。Harness 从 Acceptance/Done Signal/Guardrails/Fallback 派生。复杂领域补充 Language、Boundary、Invariants、State Transitions、Owner。
+从已确认设计和真实代码生成完整记录。Goal Contract 是 Spec 首部：Goal、Done Signal、Guardrails、Fallback、Memory，不再创建独立文档。Harness 从 Acceptance/Done Signal/Guardrails/Fallback 派生。复杂领域补充 Language、Boundary、Invariants、State Transitions、Owner。生成每个 artifact 后立即写入上游 ID/hash；Spec 确认后将相关 draft 状态与 hash 同步为 approved/active。
 
 ## apply
 

@@ -49,6 +49,7 @@ SDD 是共同底层合同，不是额外命令：
 3. 知识加载先读 `knowledge/index.md`，再按相关性读取最多 5 条。
 4. SessionStart metadata 只是提示；合同文件和实时仓库状态才是事实来源。
 5. pack rules 只按命中技术栈和目标文件加载。
+6. 新建或升级的持久记录先验证 Artifact Chain；历史记录无 metadata 时按 policy 的 legacy 分支读取，不自动迁移。
 
 ## Compatibility fallback
 

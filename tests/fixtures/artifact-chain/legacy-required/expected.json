@@ -1,0 +1,5 @@
+{
+  "pass": false,
+  "requireChain": true,
+  "errorContains": "artifact chain required"
+}

@@ -1,3 +1,15 @@
+<!-- artifact
+artifactVersion: 1
+artifactId: "{change-name}:log-summary"
+artifactType: log-summary
+artifactStatus: draft
+sourceOfTruth: repository
+sourceRef: self
+sourceRevision: working-tree
+upstream: "{change-name}:log"
+upstreamHash: pending
+-->
+
 # Log Summary: {change-name}
 
 > Generated during `/finish` for Complex sub-project handoff. Keep this file under 30 lines.

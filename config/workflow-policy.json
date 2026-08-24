@@ -79,5 +79,130 @@
     "legacyDefault": "always",
     "closeTarget": "workIssue",
     "manualNoIssueCloseTarget": "none"
+  },
+  "artifacts": {
+    "version": 1,
+    "metadataFields": [
+      "artifactVersion",
+      "artifactId",
+      "artifactType",
+      "artifactStatus",
+      "sourceOfTruth",
+      "sourceRef",
+      "sourceRevision",
+      "upstream",
+      "upstreamHash"
+    ],
+    "sourceOfTruthValues": [
+      "repository",
+      "github",
+      "external"
+    ],
+    "statusTransitions": {
+      "draft": [
+        "approved",
+        "rejected"
+      ],
+      "approved": [
+        "active",
+        "rejected"
+      ],
+      "active": [
+        "reviewed",
+        "rejected"
+      ],
+      "reviewed": [
+        "finished",
+        "active"
+      ],
+      "finished": [
+        "archived"
+      ],
+      "rejected": [
+        "archived"
+      ],
+      "archived": []
+    },
+    "types": {
+      "design-brief": {
+        "allowedUpstreamTypes": []
+      },
+      "quick-card": {
+        "allowedUpstreamTypes": []
+      },
+      "roadmap": {
+        "allowedUpstreamTypes": [
+          "design-brief"
+        ]
+      },
+      "spec": {
+        "allowedUpstreamTypes": [
+          "design-brief",
+          "roadmap"
+        ]
+      },
+      "tasks": {
+        "allowedUpstreamTypes": [
+          "spec"
+        ]
+      },
+      "test-spec": {
+        "allowedUpstreamTypes": [
+          "spec"
+        ]
+      },
+      "log": {
+        "allowedUpstreamTypes": [
+          "spec",
+          "quick-card"
+        ]
+      },
+      "summary": {
+        "allowedUpstreamTypes": [
+          "spec",
+          "quick-card"
+        ]
+      },
+      "log-summary": {
+        "allowedUpstreamTypes": [
+          "log"
+        ]
+      }
+    },
+    "legacy": {
+      "missingMetadata": "skip",
+      "requireChainFlag": "fail"
+    },
+    "confirmationHashNormalizedFields": [
+      "confirmationHash",
+      "sourceRevision",
+      "upstreamHash"
+    ]
+  },
+  "agentEvals": {
+    "version": 1,
+    "minimumCases": 15,
+    "requiredModulesByTier": {
+      "inline": [
+        "agents/workflows/inline.md"
+      ],
+      "compact": [
+        "agents/workflows/compact.md"
+      ],
+      "full": [
+        "agents/workflows/full.md"
+      ]
+    },
+    "humanGateRiskCategories": [
+      "security",
+      "permission",
+      "authentication",
+      "sensitive-data",
+      "money",
+      "state-machine",
+      "deployment"
+    ],
+    "writesBeforeContract": false,
+    "liveMode": "external-results-non-blocking"
   }
 }

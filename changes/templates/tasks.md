@@ -1,3 +1,15 @@
+<!-- artifact
+artifactVersion: 1
+artifactId: "{change-name}:tasks"
+artifactType: tasks
+artifactStatus: draft
+sourceOfTruth: repository
+sourceRef: self
+sourceRevision: working-tree
+upstream: "{change-name}:spec"
+upstreamHash: pending
+-->
+
 # 任务列表：{变更名}
 
 <!-- If this change is a Complex sub-project, load only this sub-project's
