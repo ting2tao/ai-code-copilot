@@ -5,9 +5,9 @@ artifactType: tasks
 artifactStatus: approved
 sourceOfTruth: repository
 sourceRef: self
-sourceRevision: working-tree
+sourceRevision: git:6be53b8
 upstream: ai-native-sdlc-alignment:s1:spec
-upstreamHash: sha256:c8d85cfea2d4422e223fe9a712679e404b7b725c170b5e359c9d9ad9635c3c12
+upstreamHash: sha256:fd8356f19b5553e2f1acca1eca4e1efca62991545043a5eb91fb2ae7a28f21dd
 -->
 
 # S1 Tasks：Artifact Chain + Agent Eval Baseline
@@ -39,5 +39,5 @@ upstreamHash: sha256:c8d85cfea2d4422e223fe9a712679e404b7b725c170b5e359c9d9ad9635
 ## T5 — 集成与审查
 
 - [x] 更新 `scripts/check_framework.sh` 与 legacy fallback 最小合同。
-- [ ] 运行定向测试、`git diff --check` 和全量 framework check。
-- [ ] 回填 log、summary、parent tasks/log，并执行 Spec Compliance/Code Quality review。
+- [x] 运行定向测试、`git diff --check` 和全量 framework check。
+- [x] 回填 log、summary、parent tasks/log，并执行本地 Spec Compliance/Code Quality review。

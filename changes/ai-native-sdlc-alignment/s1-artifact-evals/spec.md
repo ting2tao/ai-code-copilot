@@ -5,7 +5,7 @@ artifactType: spec
 artifactStatus: approved
 sourceOfTruth: repository
 sourceRef: self
-sourceRevision: working-tree
+sourceRevision: git:6be53b8
 upstream: ai-native-sdlc-alignment:roadmap
 upstreamHash: sha256:9ac6664cf068b955e9529307b7951d439e95757d8f36a0a7ff6b94d8a7be6ae6
 -->

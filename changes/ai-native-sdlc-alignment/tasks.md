@@ -31,8 +31,8 @@ upstreamHash: sha256:a9dee5165c570806487c2e4ccf9ef1ecedef3e61b6df6e133e79c6bcb49
 
 | Task | 描述 | 状态 | commit hash |
 |------|------|------|-------------|
-| T1 | S1：Artifact Chain 合同与 checker | ✅ | pending commit |
-| T2 | S1：Agent Eval baseline | ✅ | pending commit |
+| T1 | S1：Artifact Chain 合同与 checker | ✅ | `6be53b8` |
+| T2 | S1：Agent Eval baseline | ✅ | `6be53b8` |
 | T3 | S2：三层 Guardrail policy 与 deterministic checks | ⏳ | |
 | T4 | S2：CI/platform adapter 与 review/finish 集成 | ⏳ | |
 | T5 | S3：Maintain/triage 回流 | ⏳ | |

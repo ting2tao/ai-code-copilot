@@ -30,7 +30,7 @@ upstreamHash: sha256:a9dee5165c570806487c2e4ccf9ef1ecedef3e61b6df6e133e79c6bcb49
 | 确认人 | 用户 |
 | 确认范围 Hash | `sha256:e095b8f47bb69d4ecd7366cdbbd69b841c32c21bcd7e1a82139a17d0ae905a07`（动态 Artifact 字段归一化） |
 | 涉及文件数 | 总范围 20+；按 S1/S2/S3 拆分 |
-| commit 列表 | 无 |
+| commit 列表 | `6be53b8 feat(sdlc): add artifact chain and agent eval baseline` |
 
 ## Active decisions
 
@@ -66,7 +66,12 @@ upstreamHash: sha256:a9dee5165c570806487c2e4ccf9ef1ecedef3e61b6df6e133e79c6bcb49
 
 ## Review outcomes
 
-尚未 review；Spec 仍为草稿。
+### S1 Review
+
+- Spec Compliance：PASS。
+- Code Quality：PASS。
+- GitHub Readiness：NEEDS_INFO，仅因 `on-publish` workIssue 尚未解析；不阻塞本地 commit。
+- Harness/Loop Readiness：READY；live model eval 明确为未执行的 non-blocking capability。
 
 ## Verification log
 
