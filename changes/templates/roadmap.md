@@ -1,3 +1,15 @@
+<!-- artifact
+artifactVersion: 1
+artifactId: "{change-name}:roadmap"
+artifactType: roadmap
+artifactStatus: draft
+sourceOfTruth: repository
+sourceRef: self
+sourceRevision: working-tree
+upstream: "{change-name}:design-brief"
+upstreamHash: pending
+-->
+
 # Complex Roadmap：{变更名}
 
 > **状态**：[ ] 草稿 / [ ] 已确认 / [ ] 实施中 / [ ] 已完成

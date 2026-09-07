@@ -14,16 +14,17 @@
 3. 检查 compact Quick 的 Runtime promotion 生命周期：对照实际 diff、commit、quick-card 记录和本次审查发现；若实际或预计改动文件数超过 2 个文件、出现第二个目的或第二个 commit、发现 Compact 排除风险（API/DB/依赖/CI/部署/generated artifact、资金/权限/认证/安全/敏感信息/状态机/跨模块业务规则）、Reverse Sync 扩大已确认范围、review 需要 Important/Critical correction、出现 durable knowledge 或 open risk，必须先 promotion，未升级仍保持 `recordMode: compact` 时判定 FAIL
    - 检查 Runtime promotion 证据与顺序，至少与主提示词一致：`stop edits -> create log.md and summary.md -> copy existing evidence from quick-card.md -> set recordMode: full -> recompute confirmation hash -> request confirmation if hash changed -> resume only after the full record is valid`
    - quick-card.md 必须保留原始轻量提案和 promotion 记录；log.md/summary.md 已创建，证据复制、hash 重算和必要的重新确认均可核验；缺证据或顺序不一致时判定 FAIL
-4. Standard/Complex 提取 spec.md §2 功能点、§3 变更范围、Agent Harness、Goal Contract、Domain Check（如适用）、验收标准；Quick 提取 quick-card 的目标、涉及文件、非目标、验收方式、Agent Harness、Goal Contract、Domain Check（如适用）、风险与回滚
-5. 对每条功能点/目标：
+4. 对带 `artifactVersion` 的新建/升级记录运行 Artifact Chain 检查：artifactId 唯一、sourceOfTruth 合法且唯一、upstream 类型允许、approved/active hash 与实际文件一致、状态转换合法。失败时直接判定 FAIL；无 metadata 的历史记录只允许明确 legacy SKIP。
+5. Standard/Complex 提取 spec.md §2 功能点、§3 变更范围、Agent Harness、Goal Contract、Domain Check（如适用）、验收标准；Quick 提取 quick-card 的目标、涉及文件、非目标、验收方式、Agent Harness、Goal Contract、Domain Check（如适用）、风险与回滚
+6. 对每条功能点/目标：
    - 用 Grep/Glob 找到相关实现文件
    - Read 实际代码，独立确认逻辑是否符合 spec 描述
    - 不依赖 apply 阶段的报告，自己验证
-6. 检查是否有多余实现（YAGNI 违规）
-7. 检查 Agent 可验证性：验收条件是否有对应验证命令、Agent 可见证据、失败自诊断入口；不可见信息是否已记录人工确认项
-8. 检查 Loop 可验证性：Goal Contract 是否包含 Done Signal、Guardrails、Fallback 和 Memory；compact Quick 检查 quick-card.md 是否记录 Loop Evidence，full Quick 和 Standard/Complex 检查 log.md 是否记录 Loop Evidence
-9. 检查 Domain Check：涉及领域复杂度时，Language、Boundary、Invariants、State Transitions、Owner 是否已记录，且实现没有绕过业务不变量或状态流转
-10. 输出审查报告
+7. 检查是否有多余实现（YAGNI 违规）
+8. 检查 Agent 可验证性：验收条件是否有对应验证命令、Agent 可见证据、失败自诊断入口；不可见信息是否已记录人工确认项
+9. 检查 Loop 可验证性：Goal Contract 是否包含 Done Signal、Guardrails、Fallback 和 Memory；compact Quick 检查 quick-card.md 是否记录 Loop Evidence，full Quick 和 Standard/Complex 检查 log.md 是否记录 Loop Evidence
+10. 检查 Domain Check：涉及领域复杂度时，Language、Boundary、Invariants、State Transitions、Owner 是否已记录，且实现没有绕过业务不变量或状态流转
+11. 输出审查报告
 
 ## Progressive SDD 审查
 

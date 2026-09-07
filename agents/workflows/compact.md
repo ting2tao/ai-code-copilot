@@ -6,6 +6,8 @@ Compact SDD 使用现有 `quick-card.md`，`recordMode: compact`。它适用于�
 
 `quick-card.md` 必须包含 Goal、文件、Non-goals、Acceptance、Agent Harness、Goal Contract、风险/回滚、GitHub lifecycle、Execution/Commit/Review/Finish records。
 
+新建 Quick Card 在既有 front matter 中写入最小 Artifact Chain metadata：`artifactVersion / artifactId / artifactType=quick-card / artifactStatus / sourceOfTruth / sourceRef / sourceRevision / upstream=none / upstreamHash=none`。repository 工作区记录使用 `sourceRef: self / sourceRevision: working-tree`，提交后更新为 `git:<sha>`。Compact 不为满足链路额外创建 design-brief/spec/tasks；Native 不强制落盘。无 metadata 的历史 Quick Card 保持 legacy 可读。
+
 新提案写 `promotedFrom: none`；从原生执行升级写 `promotedFrom: native`。
 
 ## Issue lifecycle
@@ -36,7 +38,8 @@ stop edits -> capture Native contract/diff/evidence -> create quick-card.md -> c
 2. 校验当前分支、Issue lifecycle policy、目标路径、验证命令和用户无关改动。
 3. 单目的执行；每步把实际验证写入 Execution record。
 4. 在 `issuePolicy` 要求的生命周期门禁前解析/校验 work Issue，并在 commit 后记录精确 hash/message。
-5. 发现 promotion trigger 时立即停止并升级，不得先写 full-only log。
+5. 同步 `artifactStatus`；状态变化必须符合 `workflow-policy.json.artifacts.statusTransitions`。
+6. 发现 promotion trigger 时立即停止并升级，不得先写 full-only log。
 
 ## Compact -> Full Runtime promotion
 
@@ -47,3 +50,4 @@ stop edits -> create log.md and summary.md -> copy existing evidence from quick-
 ```
 
 Quick Card 保留原始合同和 Promotion record。活动变更不得自动降级。
+升级生成的 Full artifacts 必须引用 Quick Card 或新建的已确认 Full Spec，并固定真实 upstream hash；升级后运行 artifact checker，失败时不得恢复编辑。

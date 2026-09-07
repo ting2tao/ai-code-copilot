@@ -1,3 +1,15 @@
+<!-- artifact
+artifactVersion: 1
+artifactId: "{change-name}:test-spec"
+artifactType: test-spec
+artifactStatus: draft
+sourceOfTruth: repository
+sourceRef: self
+sourceRevision: working-tree
+upstream: "{change-name}:spec"
+upstreamHash: pending
+-->
+
 # 测试 Spec：{变更名}
 
 > **关联 Spec**：`spec.md`

@@ -17,3 +17,5 @@
 - `/fix-ci` 读取失败 job 的实际日志、workflow trigger、branch protection 和可复现本地命令；修复后记录 run URL/status 和验证输出。
 
 不得用重跑掩盖确定性失败，不得在未确认根因时宣称修复。
+
+Guardrail：使用 `check_guardrails.py --git-diff <base> --task-mode fix`（CI 修复用 `fix-ci`），按 `guardrail-policy.json` 检查测试路径变化。测试新增、修正和删除都可能合理，但必须先确认不削弱 Acceptance，并留下人工批准证据；不得伪造 approval 消除失败。

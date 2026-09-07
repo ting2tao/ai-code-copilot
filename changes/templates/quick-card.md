@@ -1,4 +1,13 @@
 ---
+artifactVersion: 1
+artifactId: "{change-name}:quick-card"
+artifactType: quick-card
+artifactStatus: draft
+sourceOfTruth: repository
+sourceRef: self
+sourceRevision: working-tree
+upstream: none
+upstreamHash: none
 change: "{change-name}"
 status: proposed
 recordMode: compact # compact | full

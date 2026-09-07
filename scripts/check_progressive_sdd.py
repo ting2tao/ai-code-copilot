@@ -43,6 +43,39 @@ def main() -> None:
     policy = json.loads(read_text(root / "config/workflow-policy.json"))
     if policy.get("version") != 2:
         fail("workflow policy version must be 2")
+    if policy.get("guardrails") != {"version": 1, "policy": "config/guardrail-policy.json"}:
+        fail("guardrail contract must point to the versioned policy")
+    for relative in ["agents/workflows/full.md", "agents/workflows/review.md",
+                     "agents/workflows/debug.md", "agents/workflows/finish.md",
+                     "agents/copilot-prompt.md", "rules/security.md"]:
+        if "guardrail-policy.json" not in read_text(root / relative):
+            fail(f"{relative} missing guardrail execution contract")
+    artifacts = policy.get("artifacts", {})
+    if artifacts.get("version") != 1:
+        fail("artifact policy version must be 1")
+    for field in [
+        "artifactVersion",
+        "artifactId",
+        "artifactType",
+        "artifactStatus",
+        "sourceOfTruth",
+        "sourceRef",
+        "sourceRevision",
+        "upstream",
+        "upstreamHash",
+    ]:
+        if field not in artifacts.get("metadataFields", []):
+            fail(f"artifact policy missing metadata field: {field}")
+    if artifacts.get("legacy", {}).get("missingMetadata") != "skip":
+        fail("legacy artifact records must remain readable without migration")
+    normalized = set(artifacts.get("confirmationHashNormalizedFields", []))
+    if normalized != {"confirmationHash", "sourceRevision", "upstreamHash"}:
+        fail("confirmation hash must normalize dynamic artifact fields")
+    evals = policy.get("agentEvals", {})
+    if evals.get("version") != 1 or evals.get("minimumCases", 0) < 15:
+        fail("agent eval policy must require version 1 and at least 15 cases")
+    if evals.get("writesBeforeContract") is not False:
+        fail("agent evals must enforce No Contract, No Code")
     if policy["github"]["newProjectDefault"] != "on-publish":
         fail("new projects must default issuePolicy to on-publish")
     if "legacyDefault" in policy["github"]:

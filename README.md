@@ -313,7 +313,7 @@ After installation, open Codex or Claude Code in any business project and say:
 # or say "初始化项目"
 ```
 
-The current framework version is read from root [`VERSION`](VERSION) (`0.1.0`), and release tags use `v${VERSION}`. Update by running the same `curl ... | bash` command again.
+The current framework version is read from root [`VERSION`](VERSION) (`0.2.0`), and release tags use `v${VERSION}`. Update by running the same `curl ... | bash` command again.
 
 Updates use full replacement: the installer validates the new source, then replaces the entire framework-managed installation tree. Installation-local edits are discarded. There is no compatibility migration, retained previous release, or automatic rollback.
 

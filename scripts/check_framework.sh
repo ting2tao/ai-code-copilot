@@ -25,7 +25,19 @@ need_file agents/spec-reviewer.md
 need_file agents/code-quality-reviewer.md
 need_file config/project-config.json
 need_file config/workflow-policy.json
+need_file config/guardrail-policy.json
+need_file scripts/check_guardrails.py
+need_file hooks/pre-tool-guardrail
+need_file tests/test_guardrails.py
+need_file scripts/check_artifact_chain.py
+need_file scripts/run_agent_evals.py
+need_file tests/test_agent_evals.py
+need_file tests/test_model_first_versioning.py
 need_file scripts/check_progressive_sdd.py
+need_file evals/schema.json
+need_file evals/cases/core.json
+need_file evals/README.md
+need_file tests/fixtures/agent-evals/invalid-results.json
 need_file VERSION
 need_file scripts/check_model_first_versioning.py
 need_file scripts/test_install_overwrite.sh
@@ -36,6 +48,9 @@ need_dir rules
 need_dir packs
 need_dir changes/templates
 need_dir tests/fixtures/monorepo
+need_dir tests/fixtures/artifact-chain
+need_dir tests/fixtures/agent-evals
+need_dir evals/cases
 
 for f in rules/*.md; do
   case "$(basename "$f")" in
@@ -47,9 +62,36 @@ done
 bash -n install.sh
 bash -n install-wsl.sh
 bash -n hooks/session-start
+bash -n hooks/pre-tool-guardrail
 bash -n scripts/init_project.sh
 
 python3 scripts/check_progressive_sdd.py "$ROOT"
+python3 -m unittest discover -s tests -p 'test_guardrails.py'
+python3 -m unittest discover -s tests -p 'test_agent_evals.py'
+python3 -m unittest discover -s tests -p 'test_model_first_versioning.py'
+python3 -m py_compile scripts/check_artifact_chain.py scripts/run_agent_evals.py
+python3 scripts/check_artifact_chain.py \
+  --policy config/workflow-policy.json \
+  --templates changes/templates \
+  --fixtures tests/fixtures/artifact-chain \
+  --transition draft:approved
+if python3 scripts/check_artifact_chain.py \
+  --policy config/workflow-policy.json \
+  --transition draft:finished >/dev/null 2>&1; then
+  fail "artifact transition validator accepted draft -> finished"
+fi
+python3 scripts/run_agent_evals.py \
+  --policy config/workflow-policy.json \
+  --schema evals/schema.json \
+  --cases evals/cases \
+  --self-check-external
+if python3 scripts/run_agent_evals.py \
+  --policy config/workflow-policy.json \
+  --schema evals/schema.json \
+  --cases evals/cases \
+  --results tests/fixtures/agent-evals/invalid-results.json >/dev/null 2>&1; then
+  fail "agent eval scorer accepted invalid external results"
+fi
 python3 scripts/check_model_first_versioning.py "$ROOT"
 bash scripts/test_install_overwrite.sh
 
@@ -437,6 +479,15 @@ for line in front_matter_match.group(1).splitlines():
     raw_front_matter[key] = raw_value
 
 expected_quick_card_front_matter = {
+    "artifactVersion": "1",
+    "artifactId": '"{change-name}:quick-card"',
+    "artifactType": "quick-card",
+    "artifactStatus": "draft",
+    "sourceOfTruth": "repository",
+    "sourceRef": "self",
+    "sourceRevision": "working-tree",
+    "upstream": "none",
+    "upstreamHash": "none",
     "change": '"{change-name}"',
     "status": "proposed",
     "recordMode": "compact",

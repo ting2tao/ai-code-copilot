@@ -14,7 +14,7 @@ ai-code-copilot 是一个面向多技术栈软件项目的 AI 编码协作框架
 - `agents/workflows/` — init、compact、full、debug、review、test、finish、archive 专项模块
 - `agents/copilot-prompt.md` — 完整流程参考，必须与模块化运行时保持一致，不作为回退入口
 - `config/workflow-policy.json` — 分层阈值、风险类别、升级触发器和 Issue 策略的机械合同
-- `VERSION` — 唯一 SemVer 版本源；当前为 `0.1.0`
+- `VERSION` — 唯一 SemVer 版本源；当前为 `0.2.0`
 - `agents/spec-reviewer.md` / `agents/code-quality-reviewer.md` — 双阶段审查的 Sub-Agent
 - `hooks/session-start` — 会话启动时通过 `hookSpecificOutput` 注入安全规则
 - `hooks/hooks.json` — hook 注册配置

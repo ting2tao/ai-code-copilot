@@ -74,11 +74,15 @@ def behavior_changed_from_base(root: Path) -> bool:
         root,
         ["diff", "--quiet", "origin/main", "--", *BEHAVIOR_PATHS],
     )
-    if result.returncode == 0:
-        return False
     if result.returncode == 1:
         return True
-    return False
+    if result.returncode != 0:
+        return True
+    untracked = git_result(
+        root,
+        ["ls-files", "--others", "--exclude-standard", "--", *BEHAVIOR_PATHS],
+    )
+    return untracked.returncode != 0 or bool(untracked.stdout.strip())
 
 
 def require_markers(text: str, label: str, markers: list[str]) -> None:
@@ -166,13 +170,14 @@ def check_project_sync_contract(root: Path) -> None:
 
 
 def check_documentation_contract(root: Path) -> None:
+    version = read_version(root)
     docs = {
         "README.md": [
             "Model-first",
             "native",
             "automatic activation",
             "VERSION",
-            "0.1.0",
+            version,
             "full replacement",
             "frameworkVersion",
             "frameworkCommit",
@@ -182,7 +187,7 @@ def check_documentation_contract(root: Path) -> None:
             "原生处理",
             "自动激活",
             "VERSION",
-            "0.1.0",
+            version,
             "整包覆盖",
             "frameworkVersion",
             "frameworkCommit",

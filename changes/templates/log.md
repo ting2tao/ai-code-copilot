@@ -1,3 +1,15 @@
+<!-- artifact
+artifactVersion: 1
+artifactId: "{change-name}:log"
+artifactType: log
+artifactStatus: draft
+sourceOfTruth: repository
+sourceRef: self
+sourceRevision: working-tree
+upstream: "{change-name}:spec"
+upstreamHash: pending
+-->
+
 # 变更日志：{变更名}
 
 > 本文件记录变更过程中的关键决策、踩坑、知识发现和验证证据，供 /review、/finish、/archive 使用。

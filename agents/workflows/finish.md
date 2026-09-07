@@ -22,6 +22,7 @@ Issue 创建成功后立即持久化。已有 open Issue 先校验再复用；pa
 - 分支遵循项目合同；commit 使用 `type(scope): description`。
 - `on-commit`/`always` 必须在 commit 前解析 Issue；`on-publish` 可延后。
 - 记录实际 hash 和完整 message。
+- 运行 `check_guardrails.py --git-diff <base> --operation commit --task-mode finish`，核对当前 diff 的 Guardrail evidence。审批绑定 eventHash，内容变化必须重审；不得仅凭 hook 曾经放行省略扫描。
 
 ## Publish gate
 
@@ -31,3 +32,5 @@ Issue 创建成功后立即持久化。已有 open Issue 先校验再复用；pa
 4. 有 work Issue 时，PR body 只用 `Closes #<workIssue>`；`manual`/no-Issue 时省略 closing keyword。parent 始终只用 `Refs #<parentIssue>`，永不关闭 parent。
 5. `finishMode=ask` 等待确认；`auto-pr` 执行 push/PR；`manual` 只输出命令和 body。
 6. 将 PR URL、base、remote、验证和 closing statement 写回当前记录源。
+
+Publish 前按 `rules/security.md` 对整个待发布 diff 运行 Guardrail checker（`--operation publish`），不是只扫最后一个 commit；未解决 block/ask 或覆盖缺口不得发布。`guardrail-policy.json` capability unavailable/degraded 时必须提供 local/CI + Human Gate 证据。审批声明不是发布授权，仍遵循 `finishMode` 和平台权限。

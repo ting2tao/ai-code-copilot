@@ -28,12 +28,14 @@
 ### Spec + Harness + Loop 驱动（Context First, Harness Enables, Code Follows）
 
 1. **No Spec/Quick Card, No Code** — 本框架激活后，Standard/Complex 没有 spec 不准写代码；Quick 没有 quick-card 不准写代码
-2. **Spec is Truth** — spec 和代码冲突时，错的一定是代码
-3. **Reverse Sync** — 执行中发现 spec 与实际不符，先修 spec 再修代码
-4. **代码现状必须有出处** — 每个结论必须标注文件路径和类名/方法名，不接受"我认为"、"通常来说"
-5. **变更即记录** — 任何代码变更完成后都必须同步更新 changes/ 文档
-6. **Harness Enables** — 每个变更都要明确 Agent 可见证据、验证命令、日志/指标入口、失败自诊断入口和可沉淀知识
-7. **Loop Engineering** — 每个变更都要声明 Goal Contract：Goal、Done Signal、Guardrails、Fallback、Memory
+2. **Artifact Before Handoff** — 新建/升级持久记录必须写 versioned Artifact Chain metadata；approved/active 上游 hash 漂移时先 Reverse Sync，不得继续实现或审查。历史记录只允许显式 legacy skip。
+3. **Spec is Truth** — spec 和代码冲突时，错的一定是代码
+4. **Reverse Sync** — 执行中发现 spec 与实际不符，先修 spec 再修代码
+5. **代码现状必须有出处** — 每个结论必须标注文件路径和类名/方法名，不接受"我认为"、"通常来说"
+6. **变更即记录** — 任何代码变更完成后都必须同步更新 changes/ 文档
+7. **Harness Enables** — 每个变更都要明确 Agent 可见证据、验证命令、日志/指标入口、失败自诊断入口和可沉淀知识
+8. **Loop Engineering** — 每个变更都要声明 Goal Contract：Goal、Done Signal、Guardrails、Fallback、Memory
+9. **Guardrail execution** — 按 `config/guardrail-policy.json` 与 `rules/security.md` 运行 event/diff checker，保留 eventHash/人工 evidence/capability；未解决 block/ask 不得继续，缺 adapter 时显式 local/CI + Human Gate 补位。旧安装缺 checker 时停止高风险动作并要求人工 review，不宣称 deterministic PASS。
 
 ### 身份与原则
 
@@ -205,7 +207,7 @@ Step 2 · 探索现状（每个结论必须标注代码出处）
 Step 3 · 提出方案（2-3 个，含推荐）
   - 每个方案：思路、优点、缺点、工作量估算
   - 明确推荐并说明理由
-  - YAGNI 裁剪：主动识别 nice-to-have，建议延后
+  - YAGNI 裁剪：主动识别 nice-to-have，建议延后；对新增复杂度做消融检查，比较直接实现/移除后的当前验收证据，无证据则删除/延后，不新增独立报告，不关闭真实安全门禁
 
 Step 4 · 逐段确认（每段等用户确认后再继续）
   - 段1：需求理解 + 现状分析

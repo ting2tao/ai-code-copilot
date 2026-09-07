@@ -315,7 +315,7 @@ curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/insta
 # 或“初始化项目”
 ```
 
-> **更新：** 根目录 [`VERSION`](VERSION) 是唯一版本源，当前版本为 `0.1.0`，发布标签使用 `v${VERSION}`。再次执行上面的 `curl ... | bash` 即可更新。
+> **更新：** 根目录 [`VERSION`](VERSION) 是唯一版本源，当前版本为 `0.2.0`，发布标签使用 `v${VERSION}`。再次执行上面的 `curl ... | bash` 即可更新。
 >
 > 更新采用整包覆盖：安装器先校验新来源，再完整替换框架托管安装目录。安装目录中的本地修改会被丢弃；不提供兼容迁移、旧版本保留或自动回滚。
 >

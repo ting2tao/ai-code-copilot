@@ -1,0 +1,11 @@
+[
+  {
+    "caseId": "inline-two-file-doc-fix",
+    "tier": "full",
+    "modules": [
+      "agents/workflows/full.md"
+    ],
+    "humanGate": false,
+    "writesBeforeContract": true
+  }
+]

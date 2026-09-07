@@ -31,6 +31,16 @@ Goal Contract 不创建独立的流程文档。普通低风险工作保持 Nativ
 
 活动变更只允许 `Native -> Activate -> Compact SDD -> Full SDD` 或 `Native -> Activate -> Full SDD` 单向升级。升级前停止新增编辑，复制合同、diff 和已有证据；机械 Reverse Sync 可直接记录，Goal、Scope、Acceptance、Guardrails、风险或外部动作变化则必须重新确认。
 
+## 恢复与退出纪律
+
+继承 `docs/harness-engineering.md` 的官方原则对齐，复用当前 Goal Contract，不增加第二套状态机：
+
+- 开始/恢复时先看当前状态：合同、Git revision/dirty diff、上次真实验证、未决批准和已发生副作用。摘要需要回到原始来源核验；会话恢复不授予新权限。
+- 一轮只推进可验证的 bounded step。长任务在 Fallback 中给出适合场景的预算（尝试次数、耗时或调用成本）和停止条件；没有明确授权不安排后台持久运行。
+- 完成、需要批准、预算耗尽、环境不可用要分别报告。暂时工具成功不等于整个任务完成；暂时工具失败也不必把已完成工作丢掉。
+- 外部副作用在重试前查询实际结果；无法确认时交接给人，不盲目重发部署、支付、通知或发布请求。无幂等接口时尤其不能用循环掩盖不确定性。
+- 交接写入现有 summary/log：最后验证状态、剩余任务、未决风险/批准、已执行外部操作及下一条验证命令。避免只留下“继续即可”。
+
 ## Loop Runtime（可选）
 
 当变更需要更强的自主循环时，再启用 Runtime 五件套：

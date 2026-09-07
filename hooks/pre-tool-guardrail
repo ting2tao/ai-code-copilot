@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+GUARDRAIL_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if ! command -v python3 >/dev/null 2>&1; then
+  echo 'guardrails: degraded (python3 unavailable); blocked. Restore runtime or use local/CI checker and human review.' >&2
+  exit 2
+fi
+# Unexpected runtime failures must also block; Claude ignores ordinary exit 1.
+python3 "$GUARDRAIL_ROOT/scripts/check_guardrails.py" \
+  --policy "$GUARDRAIL_ROOT/config/guardrail-policy.json" --hook-input - || exit 2

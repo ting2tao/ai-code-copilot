@@ -49,6 +49,8 @@ Git / Issue 合同核验：
 
 ## 输出格式
 
+新增 Guardrail 时核验 `config/guardrail-policy.json` 的三层控制、eventHash、人工 evidence、adapter coverage 与 fallback；不能把未执行或身份未核验的声明当作 PASS。新增抽象/规则/产物做消融审查：简化/移除后哪个当前验收或安全边界失效？没有证据的复杂度删除/延后；隔离实测与反事实要明确区分，不关闭真实门禁。结论放在现有报告。
+
 ```
 #### Code Quality 审查报告 — <变更名>
 
