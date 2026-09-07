@@ -5,12 +5,23 @@ artifactType: test-spec
 artifactStatus: approved
 sourceOfTruth: repository
 sourceRef: self
-sourceRevision: git:6be53b8
+sourceRevision: working-tree
 upstream: ai-native-sdlc-alignment:s1:spec
-upstreamHash: sha256:fd8356f19b5553e2f1acca1eca4e1efca62991545043a5eb91fb2ae7a28f21dd
+upstreamHash: sha256:720319fb33aeb12c5dad81513ba541a11f813fb55553aef88367f4142400a289
 -->
 
 # S1 Test Spec：Artifact Chain + Agent Eval Baseline
+
+## 2026-09-03 R6/main 新回归
+
+- `--fixtures tests/fixtures/artifact-chain`：mixed-default/mixed-required/mixed-malformed 必须拒绝；mixed-attachment 允许。原 legacy 默认 SKIP、legacy-required FAIL、原链/模板断言不变。
+- `python3 -m unittest discover -s tests -p 'test_agent_evals.py'`：Native/激活路由、tier/modules/humanGate/writesBeforeContract 偏差、已删除 module、external 结果偏差。
+- `run_agent_evals.py ... --self-check-external`：21 个当前 policy v2 cases；历史 Inline 结果不得冒充当前 live 结果。
+- `check_model_first_versioning.py .`：VERSION 0.2.0 和双语版本描述一致；原 main 的 Native、安装覆盖和同步检查保留。
+- `test_model_first_versioning.py`：仅新增未跟踪 `scripts/new_behavior.py` 且 VERSION 不变时，版本行为检测必须为 true。
+- eval 畸形 facts：signals/risks/unsupportedCapabilities、files、布尔路由字段和字符串意图字段须返回稳定诊断，不得泄漏 TypeError。
+- eval case 合同：`id` 必须为匹配 schema 的字符串；expected tier/modules/humanGate/writesBeforeContract 及可选 capabilityStatus/promotion 必须在评分前完成类型与枚举校验。
+- guardrail policy selector：risks/operations/taskModes 的拼写必须属于 checker 支持的封闭集合，防止策略拼写错误静默关闭控制；paths/patterns 保持可扩展。
 
 ## P0
 
@@ -45,10 +56,10 @@ bash scripts/check_framework.sh
 
 | 命令/场景 | 结果 | 证据摘要 |
 |-----------|------|----------|
-| Artifact current chain | PASS | `PASS 12 artifacts` |
-| Artifact fixtures/templates/合法 transition | PASS | `PASS 7 artifact-chain fixtures`; `PASS 9 artifact templates`; `PASS transition draft -> approved` |
+| Artifact current chain | PASS | `PASS 17 artifacts` |
+| Artifact fixtures/templates/合法 transition | PASS | `PASS 11 artifact-chain fixtures`; `PASS 9 artifact templates`; `PASS transition draft -> approved` |
 | 非法 transition | RED | exit 1；`illegal artifact transition: draft -> finished` |
-| Offline Agent eval | PASS | `PASS offline policy oracle (18 cases)` |
-| External scorer self-check | PASS | `PASS external scorer self-check (18 cases)` |
+| Offline Agent eval | PASS | `PASS offline policy oracle (21 cases)` |
+| External scorer self-check | PASS | `PASS external scorer self-check (21 cases)` |
 | Invalid external result | RED | exit 1；检测错误 tier/module/`writesBeforeContract=True` 及缺失结果 |
-| Full framework check | PASS | `ai-code-copilot framework check passed` |
+| Full framework check | PASS | `37 tests OK`; `ai-code-copilot framework check passed` |

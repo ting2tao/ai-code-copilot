@@ -7,7 +7,7 @@ sourceOfTruth: repository
 sourceRef: self
 sourceRevision: working-tree
 upstream: ai-native-sdlc-alignment:spec
-upstreamHash: sha256:a9dee5165c570806487c2e4ccf9ef1ecedef3e61b6df6e133e79c6bcb49a1f84
+upstreamHash: sha256:d54744ca078038516279986bef4fed50a17b7431a65373eca611789008833b25
 -->
 
 # 任务列表：ai-native-sdlc-alignment
@@ -33,8 +33,8 @@ upstreamHash: sha256:a9dee5165c570806487c2e4ccf9ef1ecedef3e61b6df6e133e79c6bcb49
 |------|------|------|-------------|
 | T1 | S1：Artifact Chain 合同与 checker | ✅ | `6be53b8` |
 | T2 | S1：Agent Eval baseline | ✅ | `6be53b8` |
-| T3 | S2：三层 Guardrail policy 与 deterministic checks | ⏳ | |
-| T4 | S2：CI/platform adapter 与 review/finish 集成 | ⏳ | |
+| T3 | S2：三层 Guardrail policy 与 deterministic checks | 独立 R1–R4 验收通过；Stage 1 因 R5(P2) FAIL | 未提交 |
+| T4 | S2：CI/platform adapter 与 review/finish 集成 | 本地实现；启用/人工 review 待确认 | 未提交 |
 | T5 | S3：Maintain/triage 回流 | ⏳ | |
 | T6 | S3：Lifecycle metrics 与文档同步 | ⏳ | |
 | T7 | 总体 review、兼容性和验收 | ⏳ | |

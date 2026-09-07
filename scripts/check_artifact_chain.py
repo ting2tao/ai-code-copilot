@@ -150,16 +150,24 @@ def validate_change(change_dir: Path, policy: dict, require_chain: bool = False)
     if not change_dir.is_dir():
         raise ValidationError(f"change directory not found: {change_dir}")
     artifacts: list[Artifact] = []
+    missing_metadata: list[Path] = []
     for path in sorted(change_dir.rglob("*.md")):
         metadata = parse_metadata(path)
         if metadata is not None:
             artifact = Artifact(path=path, metadata=metadata)
             validate_artifact(artifact, policy)
             artifacts.append(artifact)
+        elif path.stem in policy["types"]:
+            missing_metadata.append(path)
     if not artifacts:
         if require_chain:
             raise ValidationError(f"{change_dir}: artifact chain required but metadata is missing")
         return "SKIP legacy change without artifact metadata"
+
+    # A partially versioned chain is not legacy. Do not silently drop standard
+    # artifacts, but leave unrelated supporting Markdown outside the chain.
+    if missing_metadata:
+        raise ValidationError(f"{missing_metadata[0]}: artifact metadata is missing")
 
     by_id: dict[str, Artifact] = {}
     for artifact in artifacts:

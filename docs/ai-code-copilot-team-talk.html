@@ -608,23 +608,23 @@
 
     <section class="slide">
       <div class="sheet">
-        <p class="kicker">04 / COMPLEXITY</p>
-        <h2>不是所有需求都走同一套重量级流程</h2>
+        <p class="kicker">04 / MODEL-FIRST</p>
+        <h2>先由模型判断，再决定是否激活框架</h2>
         <div class="grid three">
           <div class="card">
-            <strong>Quick</strong>
-            <span>小改动，少于 5 个文件。生成 quick-card + log，轻量审查。</span>
+            <strong>Native</strong>
+            <span>普通、低风险、边界清晰的工作由模型原生完成，不加载 skill。</span>
           </div>
           <div class="card">
-            <strong>Standard</strong>
-            <span>默认新需求。brainstorm → propose → apply → review。</span>
+            <strong>Compact</strong>
+            <span>明确交付、持久化或审计需求时自动激活，用一个 quick-card 留证。</span>
           </div>
           <div class="card">
-            <strong>Complex</strong>
-            <span>跨模块或长周期。先 roadmap，再拆子项目分别 Standard。</span>
+            <strong>Full</strong>
+            <span>安全、权限、资金、生产、部署、数据库或跨模块风险进入完整记录。</span>
           </div>
         </div>
-        <div class="quote">默认建议：业务逻辑走 Standard，纯小修才走 Quick。</div>
+        <div class="quote">路径是 Native → Activate → Compact / Full；活动变更只向上升级。</div>
       </div>
     </section>
 
@@ -682,7 +682,6 @@ git commit -m "chore: init ai-code-copilot"</pre>
           <div class="card">
             <strong>忽略</strong>
             <ul>
-              <li><code>.ai_code_copilot/**/*.new</code></li>
               <li><code>.ai_code_copilot/**/.DS_Store</code></li>
               <li>团队可选忽略 <code>.copilot-state.json</code></li>
             </ul>

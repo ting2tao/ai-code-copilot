@@ -54,18 +54,19 @@ flowchart LR
 
 ## 渐进式 SDD 运行时
 
-`skill/SKILL.md` 默认只加载 `agents/router.md`，路由器根据风险和交付生命周期按需读取 `agents/workflows/` 模块。单体 `agents/copilot-prompt.md` 只在模块缺失时作为严格兼容回退。
+模型判断请求是否需要框架。普通低风险工作走 Native 原生执行；明确 lifecycle 意图或实质风险才激活 `skill/SKILL.md`。激活后只加载 `agents/router.md`，再按风险和交付生命周期按需读取 `agents/workflows/` 模块。
 
 ```text
-Inline SDD  ->  Compact SDD  ->  Full SDD
-     \-------------------------->
+Native -> Activate -> Compact SDD -> Full SDD
+          \-----------------------> Full SDD
 ```
 
-- **Inline SDD**：会话内 Goal/Scope/Done Signal/Verify，不落盘；只用于最多两文件、低风险、可直接回滚并有可执行验证的本地改动。
+- **Native**：skill 之外的模型原生路径；适合边界清晰、低风险、不需要持久合同的工作。
 - **Compact SDD**：使用一个 `quick-card.md`；适合需要 commit/PR、跨会话、交接或可审计 review 的小改动。
 - **Full SDD**：按风险使用 design/spec/tasks/test/log/summary；公共合同、数据库、安全、部署、跨模块规则、多目标和残余风险必须进入此档。
-- 三档共用相同的安全和验证标准，只调整记录成本。升级单向且保留 previous contract、diff 和证据；旧 Quick/Standard/Complex 记录继续兼容。
-- 新项目 `issuePolicy=on-publish`；旧项目缺少该字段时按 legacy `always`，项目配置不会被升级脚本静默改写。
+- 自动激活条件包括明确的 init/propose/review/finish/archive 意图，以及安全、权限、资金、生产、部署、数据库、公共合同、持久化、交接和审计风险。
+- 升级单向且保留 previous contract、diff 和证据；不提供旧运行时兼容回退。
+- 新项目 `issuePolicy=on-publish`；已有配置保持项目主权，但非法或缺少该字段会阻塞显式同步，不做迁移。
 - ai-code-copilot 是默认编排器；Superpowers 只作为显式调用的调试、验证、review、TDD、worktree 或并行专项库。
 
 ## 一分钟讲清楚
@@ -88,4 +89,4 @@ Inline SDD  ->  Compact SDD  ->  Full SDD
 - 开始时解析或询问 `parentIssue` 并读取整体需求；到达 `issuePolicy` 门禁后自动创建唯一 `workIssue`，或校验并复用已记录的 open work Issue。GitHub 支持时建立 native sub-issue。
 - 分支固定为 `type/scope`，commit 固定为 `type(scope): description`。
 - 有工作 Issue 时 `/finish` 只用 `Closes #<workIssue>`；`manual`/no-Issue 省略 closing keyword；父级始终仅使用 `Refs #<parentIssue>`。
-- `finishMode` 只控制 PR handoff。新项目 `issuePolicy` 默认 `on-publish`，旧配置缺失时使用 `always`；旧 `issueWhenMissing` 已废弃并忽略。
+- `finishMode` 只控制 PR handoff。新项目 `issuePolicy` 默认 `on-publish`；缺失或非法配置直接阻塞，不做兼容推断。

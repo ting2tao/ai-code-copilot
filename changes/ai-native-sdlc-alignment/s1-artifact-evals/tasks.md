@@ -5,12 +5,22 @@ artifactType: tasks
 artifactStatus: approved
 sourceOfTruth: repository
 sourceRef: self
-sourceRevision: git:6be53b8
+sourceRevision: working-tree
 upstream: ai-native-sdlc-alignment:s1:spec
-upstreamHash: sha256:fd8356f19b5553e2f1acca1eca4e1efca62991545043a5eb91fb2ae7a28f21dd
+upstreamHash: sha256:720319fb33aeb12c5dad81513ba541a11f813fb55553aef88367f4142400a289
 -->
 
 # S1 Tasks：Artifact Chain + Agent Eval Baseline
+
+## T6 — 2026-09-03 R6/main 集成增量（用户“继续”）
+
+- [x] R6 mixed metadata fixtures RED → GREEN，11 个 fixtures 通过；不强制附属 Markdown 产物化。
+- [x] 使用 main 的 should_activate/classify_activated 适配 Native/Compact/Full；21 cases 通过。
+- [x] 4 个 model-first eval 回归；policy/case 同时引用已删除模块的反例 RED → GREEN。
+- [x] VERSION 0.2.0，双语 README/AGENTS 同步；版本文档检查动态读取 VERSION，保留 main 安装与同步门禁。
+- [x] 集成后独立 Stage 1/Stage 2 重审通过；补齐 eval 输入边界、guardrail policy selector 与 binary-marker 精确识别，37 tests GREEN。
+- [ ] 当前快照人工批准与 commit/PR。
+- [x] Stage 2 首轮两个 Important：untracked 行为文件版本假绿与畸形 facts 未捕获异常，分别补真实 RED → GREEN 回归。
 
 ## T1 — 失败合同
 

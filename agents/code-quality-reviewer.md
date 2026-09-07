@@ -15,7 +15,7 @@
 - 命中技术栈的 pack 规则：`<COPILOT_HOME>/packs/<pack>/rules/*.md`
 
 Quick 证据源：
-- Inline SDD 收到 auditable review 请求时必须先完成 `Inline -> Compact`；升级完成前不得假设 quick-card/log 已存在，也不得直接给出持久化 PASS。
+- 原生执行收到 auditable review 请求时必须先自动激活并完成 `Native -> Compact`；升级完成前不得假设 quick-card/log 已存在，也不得直接给出持久化 PASS。
 - `recordMode: compact` 的 compact Quick：从 `quick-card.md` 读取目标、范围、execution/commit/review/Loop Evidence、验证命令、风险与回滚；不得要求必须存在 log.md。
 - `recordMode: full` 的 full Quick：从 quick-card.md 读取目标与范围，从 log.md 读取 execution/commit/review/Loop Evidence、验证命令、风险与回滚。
 - 若 compact Quick 中发现 Important/Critical correction、任何 open/accepted residual risk、durable knowledge 或 open risk，必须标记 Runtime promotion，先升级为 full Quick，再进入修复（fix）、接受（accept）记录或后续归档（archive）；升级完成前不得直接写入不存在的 log.md。
@@ -48,6 +48,8 @@ Git / Issue 合同核验：
 10. **Domain Check / 业务不变量**：复杂业务逻辑是否集中在清晰边界内，是否绕过 Invariants 或 State Transitions 直接改字段；金额、权限、状态等业务不变量被破坏 → Critical/Important
 
 ## 输出格式
+
+新增 Guardrail 时核验 `config/guardrail-policy.json` 的三层控制、eventHash、人工 evidence、adapter coverage 与 fallback；不能把未执行或身份未核验的声明当作 PASS。新增抽象/规则/产物做消融审查：简化/移除后哪个当前验收或安全边界失效？没有证据的复杂度删除/延后；隔离实测与反事实要明确区分，不关闭真实门禁。结论放在现有报告。
 
 ```
 #### Code Quality 审查报告 — <变更名>

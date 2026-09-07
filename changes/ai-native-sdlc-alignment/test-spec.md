@@ -7,7 +7,7 @@ sourceOfTruth: repository
 sourceRef: self
 sourceRevision: working-tree
 upstream: ai-native-sdlc-alignment:spec
-upstreamHash: sha256:a9dee5165c570806487c2e4ccf9ef1ecedef3e61b6df6e133e79c6bcb49a1f84
+upstreamHash: sha256:d54744ca078038516279986bef4fed50a17b7431a65373eca611789008833b25
 -->
 
 # 测试 Spec：ai-native-sdlc-alignment

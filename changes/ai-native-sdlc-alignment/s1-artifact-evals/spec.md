@@ -5,12 +5,16 @@ artifactType: spec
 artifactStatus: approved
 sourceOfTruth: repository
 sourceRef: self
-sourceRevision: git:6be53b8
+sourceRevision: working-tree
 upstream: ai-native-sdlc-alignment:roadmap
 upstreamHash: sha256:9ac6664cf068b955e9529307b7951d439e95757d8f36a0a7ff6b94d8a7be6ae6
 -->
 
 # S1 Spec：Artifact Chain + Agent Eval Baseline
+
+## 2026-09-03 用户确认的集成增量
+
+确认来源：用户“继续”，详见 parent Spec 的 R6/main 集成增补。恢复本子变更以修复 R6：混合目录中的标准 artifact 缺 metadata 必须失败，完全 legacy 默认仍跳过，严格模式不得跳过；附属 Markdown 不强制产物化。保留 artifact schema v1，workflow policy 接入 main v2；历史 Inline eval 改为验证 Native 激活边界与 Compact/Full 升级，不再要求已删除的 Inline module。以下原版本描述为历史基线，不要求恢复 legacy runtime。
 
 > **状态**：[x] 已确认（继承 parent Complex Spec 2026-08-24 确认）
 > **档位**：Standard / Full SDD

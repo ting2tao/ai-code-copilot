@@ -9,7 +9,7 @@ always     -> resolve workIssue before implementation
 on-commit  -> local edits allowed; resolve workIssue before first commit
 on-publish -> local edits and commits allowed; resolve workIssue before push/PR
 manual     -> never auto-create; validate supplied Issue when present
-missing    -> legacy default always
+missing    -> invalid configuration; stop and report
 ```
 
 全量记录从提案开始保存 Issue 状态，但只在策略门禁到达时执行创建。已存在的 open work Issue 必须复用；部分成功后不得创建替代票；有 work Issue 时 `closeTarget` 为 workIssue，manual/no-Issue 时为 none，parent 永不由子变更关闭。
@@ -52,6 +52,20 @@ missing    -> legacy default always
 5. mechanical Reverse Sync 自动记录；material Reverse Sync 停止并重新确认。
 6. commit message 使用 `type(scope): description`，并立即写入记录源。
 
-## Inline -> Full
+## 恢复检查与有界执行
 
-Inline 调查直接发现 full risk 时跳过 Compact：停止编辑，生成完整记录，复制合同/diff/evidence，标记 promotion provenance，等待 material confirmation 后继续。
+依据 `docs/harness-engineering.md`，开始或恢复时核验合同、Git revision/dirty diff、最近验证、未决批准与已发生副作用；summary 只是索引，不能代替当前事实。在现有 Fallback 记录长任务的预算与停止条件，每轮推进一个可验证步骤。副作用结果不明时先查询或请求人工判断，不盲目重放；handoff 复用 summary/log，包含下一条验证命令。复用宿主循环和权限设施，不因这些原则新增 runtime 或强制多 Agent。
+
+## Guardrail execution
+
+读取 `config/guardrail-policy.json`：advisory 提示、deterministic 检测、human 判断互补，不互相冒充。按 `rules/security.md` 的 CLI 合同验证当前 event/diff，记录 command、exit code、eventHash、control IDs、capability 和人工 evidence。Hook 只覆盖声明的工具，不能代替最终 diff 扫描；不得由 Agent 自行填写 approval 获得授权。
+
+## 消融优先（Ablation）
+
+对新增抽象、规则和产物，先问“拿掉它、用直接实现替代，会破坏哪个当前验收或安全边界？”固定输入和 Acceptance，单次只减少一个因素；可执行时在隔离环境比较 baseline / removed / restored 的证据。无法执行只写反事实分析，不冒充实验。
+
+没有当前需求或失败证据支撑的扩展点优先删除/延后；证据不足写明待验证。保留有边界隔离、实际复用或风险控制证据的必要抽象，不追求层数最少。结论复用 design-brief 的 YAGNI 和现有 log；小改动一句理由即可，不新增消融文档或审批阶段。禁止以消融为名删除测试、弱化 Acceptance、关闭真实安全/权限/生产门禁；离线样本全绿也不等于风险不存在。
+
+## Native -> Full
+
+原生调查直接发现 full risk 时跳过 Compact：停止编辑，生成完整记录，复制 Native contract/diff/evidence，标记 promotion provenance，等待 material confirmation 后继续。

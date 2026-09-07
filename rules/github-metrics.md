@@ -35,7 +35,7 @@ alwaysApply: true
 
 ### Work closure 与 parent progress
 
-- 统计必须记录 `issuePolicy`（`always`、`on-commit`、`on-publish`、`manual`）；缺失配置单列为 legacy `always`，避免把生命周期差异误判为流程失败。
+- 统计必须记录 `issuePolicy`（`always`、`on-commit`、`on-publish`、`manual`）；缺失或非法配置单列为 invalid，不得推断默认值。
 - `workIssue` 是一个已确认变更的交付单元；其 closure/关闭由合并 PR 中的 `Closes #<workIssue>` 统计。
 - `parentIssue` 是整体需求；work Issue closure/关闭与 parent requirement progress 必须分开统计，后者按 native sub-issue 的完成数/总数和 acceptance checklist 进度计算。
 - 有 work Issue 的变更中，`closeTarget` 必须固定为 `workIssue`；manual/no-Issue 使用 `closeTarget: none`。`parentIssue` 只能用 `Refs #<parentIssue>` 关联，不能因单个变更合并而自动关闭。

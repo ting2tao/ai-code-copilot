@@ -1,0 +1,5 @@
+{
+  "pass": false,
+  "requireChain": true,
+  "errorContains": "metadata is missing"
+}

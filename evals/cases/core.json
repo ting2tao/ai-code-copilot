@@ -1,128 +1,442 @@
 [
   {
-    "id": "inline-two-file-doc-fix",
-    "description": "A bounded two-file local documentation fix stays Inline.",
+    "id": "native-two-file-doc-fix",
+    "description": "A bounded low-risk documentation fix stays native without workflow modules.",
     "prompt": "Fix two broken local documentation links and verify them.",
-    "facts": {"files": 2, "purposes": 1, "commits": 1, "executableVerification": true, "directRollback": true},
-    "expected": {"tier": "inline", "modules": ["agents/workflows/inline.md"], "humanGate": false, "writesBeforeContract": false}
+    "facts": {
+      "files": 2,
+      "purposes": 1,
+      "commits": 1,
+      "executableVerification": true,
+      "directRollback": true
+    },
+    "expected": {
+      "tier": "native",
+      "modules": [],
+      "humanGate": false,
+      "writesBeforeContract": false
+    }
   },
   {
     "id": "compact-three-file-refactor",
-    "description": "A low-risk three-file refactor requires Compact persistence.",
-    "prompt": "Refactor three helper files without changing public behavior.",
-    "facts": {"files": 3, "purposes": 1, "commits": 1, "executableVerification": true, "directRollback": true},
-    "expected": {"tier": "compact", "modules": ["agents/workflows/compact.md"], "humanGate": false, "writesBeforeContract": false}
+    "description": "An explicitly requested proposal for a low-risk three-file refactor uses Compact.",
+    "prompt": "Propose a persisted change to refactor three helper files without changing public behavior.",
+    "facts": {
+      "files": 3,
+      "purposes": 1,
+      "commits": 1,
+      "executableVerification": true,
+      "directRollback": true,
+      "explicitIntent": "propose"
+    },
+    "expected": {
+      "tier": "compact",
+      "modules": [
+        "agents/workflows/compact.md"
+      ],
+      "humanGate": false,
+      "writesBeforeContract": false
+    }
   },
   {
     "id": "compact-session-handoff",
     "description": "A persisted cross-session handoff promotes an otherwise small task.",
     "prompt": "Prepare this one-file change so another session can continue it.",
-    "facts": {"files": 1, "purposes": 1, "commits": 1, "executableVerification": true, "directRollback": true, "persistedLifecycle": true},
-    "expected": {"tier": "compact", "modules": ["agents/workflows/compact.md"], "humanGate": false, "writesBeforeContract": false}
+    "facts": {
+      "files": 1,
+      "purposes": 1,
+      "commits": 1,
+      "executableVerification": true,
+      "directRollback": true,
+      "persistedLifecycle": true,
+      "signals": [
+        "session-handoff"
+      ]
+    },
+    "expected": {
+      "tier": "compact",
+      "modules": [
+        "agents/workflows/compact.md"
+      ],
+      "humanGate": false,
+      "writesBeforeContract": false
+    }
   },
   {
     "id": "compact-verification-missing",
-    "description": "Missing executable verification makes Inline ineligible.",
-    "prompt": "Change a local config file, but there is no executable check.",
-    "facts": {"files": 1, "purposes": 1, "commits": 1, "executableVerification": false, "directRollback": true},
-    "expected": {"tier": "compact", "modules": ["agents/workflows/compact.md"], "humanGate": false, "writesBeforeContract": false}
+    "description": "Unresolved material uncertainty about verification activates a persisted investigation.",
+    "prompt": "Persist an investigation of a config change whose verification remains materially uncertain.",
+    "facts": {
+      "files": 1,
+      "purposes": 1,
+      "commits": 1,
+      "executableVerification": false,
+      "directRollback": true,
+      "signals": [
+        "material-uncertainty"
+      ]
+    },
+    "expected": {
+      "tier": "compact",
+      "modules": [
+        "agents/workflows/compact.md"
+      ],
+      "humanGate": false,
+      "writesBeforeContract": false
+    }
   },
   {
     "id": "compact-auditable-review",
     "description": "An auditable review needs a persisted Compact contract.",
     "prompt": "Perform an auditable review of this one-file local change.",
-    "facts": {"files": 1, "purposes": 1, "commits": 1, "executableVerification": true, "directRollback": true, "persistedLifecycle": true},
-    "expected": {"tier": "compact", "modules": ["agents/workflows/compact.md"], "humanGate": false, "writesBeforeContract": false}
+    "facts": {
+      "files": 1,
+      "purposes": 1,
+      "commits": 1,
+      "executableVerification": true,
+      "directRollback": true,
+      "persistedLifecycle": true,
+      "explicitIntent": "review"
+    },
+    "expected": {
+      "tier": "compact",
+      "modules": [
+        "agents/workflows/compact.md"
+      ],
+      "humanGate": false,
+      "writesBeforeContract": false
+    }
   },
   {
     "id": "full-security-change",
     "description": "Security changes require Full SDD and a human gate.",
     "prompt": "Change API authorization enforcement.",
-    "facts": {"files": 1, "executableVerification": true, "directRollback": true, "risks": ["security"]},
-    "expected": {"tier": "full", "modules": ["agents/workflows/full.md"], "humanGate": true, "writesBeforeContract": false}
+    "facts": {
+      "files": 1,
+      "executableVerification": true,
+      "directRollback": true,
+      "risks": [
+        "security"
+      ]
+    },
+    "expected": {
+      "tier": "full",
+      "modules": [
+        "agents/workflows/full.md"
+      ],
+      "humanGate": true,
+      "writesBeforeContract": false
+    }
   },
   {
     "id": "full-permission-change",
     "description": "Permission changes require Full SDD and a human gate.",
     "prompt": "Allow a new role to modify customer records.",
-    "facts": {"files": 1, "executableVerification": true, "directRollback": true, "risks": ["permission"]},
-    "expected": {"tier": "full", "modules": ["agents/workflows/full.md"], "humanGate": true, "writesBeforeContract": false}
+    "facts": {
+      "files": 1,
+      "executableVerification": true,
+      "directRollback": true,
+      "risks": [
+        "permission"
+      ]
+    },
+    "expected": {
+      "tier": "full",
+      "modules": [
+        "agents/workflows/full.md"
+      ],
+      "humanGate": true,
+      "writesBeforeContract": false
+    }
   },
   {
     "id": "full-database-change",
     "description": "Database changes require Full SDD even when mechanically small.",
     "prompt": "Add a database column and migration.",
-    "facts": {"files": 2, "executableVerification": true, "directRollback": true, "risks": ["database"]},
-    "expected": {"tier": "full", "modules": ["agents/workflows/full.md"], "humanGate": false, "writesBeforeContract": false}
+    "facts": {
+      "files": 2,
+      "executableVerification": true,
+      "directRollback": true,
+      "risks": [
+        "database"
+      ]
+    },
+    "expected": {
+      "tier": "full",
+      "modules": [
+        "agents/workflows/full.md"
+      ],
+      "humanGate": false,
+      "writesBeforeContract": false
+    }
   },
   {
     "id": "full-deployment-change",
     "description": "Deployment changes require Full SDD and a human gate.",
     "prompt": "Change the production deployment workflow.",
-    "facts": {"files": 1, "executableVerification": true, "directRollback": true, "risks": ["deployment"]},
-    "expected": {"tier": "full", "modules": ["agents/workflows/full.md"], "humanGate": true, "writesBeforeContract": false}
+    "facts": {
+      "files": 1,
+      "executableVerification": true,
+      "directRollback": true,
+      "risks": [
+        "deployment"
+      ]
+    },
+    "expected": {
+      "tier": "full",
+      "modules": [
+        "agents/workflows/full.md"
+      ],
+      "humanGate": true,
+      "writesBeforeContract": false
+    }
   },
   {
     "id": "full-state-machine-change",
     "description": "State-machine changes require Full SDD and a human gate.",
     "prompt": "Allow orders to move from shipped back to paid.",
-    "facts": {"files": 1, "executableVerification": true, "directRollback": true, "risks": ["state-machine"]},
-    "expected": {"tier": "full", "modules": ["agents/workflows/full.md"], "humanGate": true, "writesBeforeContract": false}
+    "facts": {
+      "files": 1,
+      "executableVerification": true,
+      "directRollback": true,
+      "risks": [
+        "state-machine"
+      ]
+    },
+    "expected": {
+      "tier": "full",
+      "modules": [
+        "agents/workflows/full.md"
+      ],
+      "humanGate": true,
+      "writesBeforeContract": false
+    }
   },
   {
     "id": "full-public-api-change",
     "description": "A public API contract change requires Full SDD.",
     "prompt": "Remove a field from a public API response.",
-    "facts": {"files": 1, "executableVerification": true, "directRollback": true, "risks": ["public-api"]},
-    "expected": {"tier": "full", "modules": ["agents/workflows/full.md"], "humanGate": false, "writesBeforeContract": false}
+    "facts": {
+      "files": 1,
+      "executableVerification": true,
+      "directRollback": true,
+      "risks": [
+        "public-api"
+      ]
+    },
+    "expected": {
+      "tier": "full",
+      "modules": [
+        "agents/workflows/full.md"
+      ],
+      "humanGate": false,
+      "writesBeforeContract": false
+    }
   },
   {
     "id": "full-sensitive-data-change",
     "description": "Sensitive-data handling requires Full SDD and a human gate.",
     "prompt": "Add customer phone numbers to diagnostic logs.",
-    "facts": {"files": 1, "executableVerification": true, "directRollback": true, "risks": ["sensitive-data"]},
-    "expected": {"tier": "full", "modules": ["agents/workflows/full.md"], "humanGate": true, "writesBeforeContract": false}
+    "facts": {
+      "files": 1,
+      "executableVerification": true,
+      "directRollback": true,
+      "risks": [
+        "sensitive-data"
+      ]
+    },
+    "expected": {
+      "tier": "full",
+      "modules": [
+        "agents/workflows/full.md"
+      ],
+      "humanGate": true,
+      "writesBeforeContract": false
+    }
   },
   {
     "id": "full-file-count",
-    "description": "More than five files requires Full SDD.",
-    "prompt": "Apply a coordinated low-risk change across six files.",
-    "facts": {"files": 6, "purposes": 1, "commits": 1, "executableVerification": true, "directRollback": true},
-    "expected": {"tier": "full", "modules": ["agents/workflows/full.md"], "humanGate": false, "writesBeforeContract": false}
+    "description": "More than five files requires Full SDD. This case is explicitly activated.",
+    "prompt": "Apply this persisted change: Apply a coordinated low-risk change across six files.",
+    "facts": {
+      "files": 6,
+      "purposes": 1,
+      "commits": 1,
+      "executableVerification": true,
+      "directRollback": true,
+      "explicitIntent": "apply"
+    },
+    "expected": {
+      "tier": "full",
+      "modules": [
+        "agents/workflows/full.md"
+      ],
+      "humanGate": false,
+      "writesBeforeContract": false
+    }
   },
   {
     "id": "full-multiple-goals",
-    "description": "Multiple independently deliverable goals require Full SDD.",
-    "prompt": "Add export support and separately redesign authentication errors.",
-    "facts": {"files": 2, "executableVerification": true, "directRollback": true, "multipleDeliverableGoals": true},
-    "expected": {"tier": "full", "modules": ["agents/workflows/full.md"], "humanGate": false, "writesBeforeContract": false}
+    "description": "Multiple independently deliverable goals require Full SDD. This case is explicitly activated.",
+    "prompt": "Apply this persisted change: Add export support and separately redesign authentication errors.",
+    "facts": {
+      "files": 2,
+      "executableVerification": true,
+      "directRollback": true,
+      "multipleDeliverableGoals": true,
+      "explicitIntent": "apply"
+    },
+    "expected": {
+      "tier": "full",
+      "modules": [
+        "agents/workflows/full.md"
+      ],
+      "humanGate": false,
+      "writesBeforeContract": false
+    }
   },
   {
     "id": "full-multiple-review-units",
-    "description": "Multiple independent review units require Full SDD.",
-    "prompt": "Prepare two independently reviewed changes in one request.",
-    "facts": {"files": 2, "executableVerification": true, "directRollback": true, "multipleReviewUnits": true},
-    "expected": {"tier": "full", "modules": ["agents/workflows/full.md"], "humanGate": false, "writesBeforeContract": false}
+    "description": "Multiple independent review units require Full SDD. This case is explicitly activated.",
+    "prompt": "Apply this persisted change: Prepare two independently reviewed changes in one request.",
+    "facts": {
+      "files": 2,
+      "executableVerification": true,
+      "directRollback": true,
+      "multipleReviewUnits": true,
+      "explicitIntent": "apply"
+    },
+    "expected": {
+      "tier": "full",
+      "modules": [
+        "agents/workflows/full.md"
+      ],
+      "humanGate": false,
+      "writesBeforeContract": false
+    }
   },
   {
     "id": "full-accepted-residual-risk",
-    "description": "Accepted residual risk requires Full SDD.",
-    "prompt": "Ship a workaround with an explicitly accepted residual risk.",
-    "facts": {"files": 1, "executableVerification": true, "directRollback": true, "acceptedResidualRisk": true},
-    "expected": {"tier": "full", "modules": ["agents/workflows/full.md"], "humanGate": false, "writesBeforeContract": false}
+    "description": "Accepted residual risk requires Full SDD. This case is explicitly activated.",
+    "prompt": "Apply this persisted change: Ship a workaround with an explicitly accepted residual risk.",
+    "facts": {
+      "files": 1,
+      "executableVerification": true,
+      "directRollback": true,
+      "acceptedResidualRisk": true,
+      "explicitIntent": "apply"
+    },
+    "expected": {
+      "tier": "full",
+      "modules": [
+        "agents/workflows/full.md"
+      ],
+      "humanGate": false,
+      "writesBeforeContract": false
+    }
   },
   {
     "id": "full-runtime-risk-promotion",
-    "description": "A security risk discovered during Inline work promotes directly to Full before more writes.",
+    "description": "A security risk discovered during Native work promotes directly to Full before more writes.",
     "prompt": "While fixing a local helper, discover that authorization behavior must change.",
-    "facts": {"files": 1, "executableVerification": true, "directRollback": true, "risks": ["security"], "promotionFrom": "inline"},
-    "expected": {"tier": "full", "modules": ["agents/workflows/full.md"], "humanGate": true, "writesBeforeContract": false, "promotion": "inline-to-full"}
+    "facts": {
+      "files": 1,
+      "executableVerification": true,
+      "directRollback": true,
+      "risks": [
+        "security"
+      ],
+      "promotionFrom": "native"
+    },
+    "expected": {
+      "tier": "full",
+      "modules": [
+        "agents/workflows/full.md"
+      ],
+      "humanGate": true,
+      "writesBeforeContract": false,
+      "promotion": "native-to-full"
+    }
   },
   {
     "id": "compact-unsupported-capability",
     "description": "A missing production-monitor connector is reported instead of being treated as executed.",
     "prompt": "Prepare a persisted monitoring check when no production monitor connector is available.",
-    "facts": {"files": 1, "executableVerification": true, "directRollback": true, "persistedLifecycle": true, "unsupportedCapabilities": ["production-monitor"]},
-    "expected": {"tier": "compact", "modules": ["agents/workflows/compact.md"], "humanGate": false, "writesBeforeContract": false, "capabilityStatus": "unsupported"}
+    "facts": {
+      "files": 1,
+      "executableVerification": true,
+      "directRollback": true,
+      "persistedLifecycle": true,
+      "unsupportedCapabilities": [
+        "production-monitor"
+      ],
+      "signals": [
+        "session-handoff"
+      ]
+    },
+    "expected": {
+      "tier": "compact",
+      "modules": [
+        "agents/workflows/compact.md"
+      ],
+      "humanGate": false,
+      "writesBeforeContract": false,
+      "capabilityStatus": "unsupported"
+    }
+  },
+  {
+    "id": "native-three-file-refactor",
+    "description": "File count alone does not activate the framework.",
+    "prompt": "Refactor three local helpers without changing behavior.",
+    "facts": {
+      "files": 3,
+      "signals": []
+    },
+    "expected": {
+      "tier": "native",
+      "modules": [],
+      "humanGate": false,
+      "writesBeforeContract": false
+    }
+  },
+  {
+    "id": "full-security-signal",
+    "description": "A detected security signal triggers Full even without a separate risks list.",
+    "prompt": "Investigate and fix an authorization bypass.",
+    "facts": {
+      "files": 1,
+      "signals": [
+        "security"
+      ]
+    },
+    "expected": {
+      "tier": "full",
+      "modules": [
+        "agents/workflows/full.md"
+      ],
+      "humanGate": true,
+      "writesBeforeContract": false
+    }
+  },
+  {
+    "id": "compact-native-commit-promotion",
+    "description": "A commit request activates persistence before publication.",
+    "prompt": "Commit this native one-file fix after validation.",
+    "facts": {
+      "files": 1,
+      "signals": [
+        "commit"
+      ],
+      "promotionFrom": "native"
+    },
+    "expected": {
+      "tier": "compact",
+      "modules": [
+        "agents/workflows/compact.md"
+      ],
+      "humanGate": false,
+      "writesBeforeContract": false,
+      "promotion": "native-to-compact"
+    }
   }
 ]

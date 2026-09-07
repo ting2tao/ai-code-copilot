@@ -12,17 +12,28 @@ upstreamHash: sha256:9ac6664cf068b955e9529307b7951d439e95757d8f36a0a7ff6b94d8a7b
 
 # 变更 Spec：ai-native-sdlc-alignment
 
+## 2026-09-03 确认增补：R6 与最新 main 集成
+
+用户在“先修复 P2、适配最新 main、重审后提交 PR”的建议后回复“继续”，确认本增量；下列内容覆盖历史 Inline/policy v1 的兼容描述，历史决策仍保留供审计。
+
+- Goal：修复标准产物缺 metadata 漏检，将 S1/S2 接入 main `ee028aa4` 的 model-first / Native + Compact/Full 与 workflow policy v2；不恢复已删除的 Inline 工作流或 legacy fallback。
+- Scope：checker 及 fixtures；冲突解决和相关 router/workflow/README/eval oracle/schema/cases 的语义适配。沿用 artifact version 1、guardrail version 1，不新增编排器，不实现 S3。
+- Done Signal：mixed metadata 负例 RED → GREEN，legacy 默认 SKIP、严格模式 FAIL、附属 Markdown 兼容；main 原有验证与 S1/S2 自检均通过，eval 不依赖已删除模块，独立双阶段重审完成。
+- Guardrails：保留 main 已接受的激活与版本合同；不削弱风险、测试及人工批准；当前“继续”是实施与 PR 流程授权，不伪造精确快照审批。不得合并 GitHub PR、启用 hook/CI 或改写个人设置。
+- Fallback：先保存完整未提交工作快照；集成冲突只按两侧真实合同解决，不覆盖任一侧功能；无法验证则保留快照和未完成记录，停止发布。
+- Memory：严格链需覆盖单个标准产物缺失元数据；policy 版本升级时同时回归行为 oracle 与模块存在性，而非仅替换名称。
+
 > **状态**：[ ] 草稿 / [x] 已确认 / [ ] 实施中 / [ ] 已完成
 > **复杂度档位**：[ ] Quick / [ ] Standard / [x] Complex
 > **创建时间**：2026-08-24
 > **父 Issue（parentIssue）**：none
-> **工作 Issue（workIssue）**：pending（`on-publish` 门禁解析）
-> **Issue 关系（issueRelationship）**：pending；解析后应为 standalone
+> **工作 Issue（workIssue）**：[#36](https://github.com/ting2tao/ai-code-copilot/issues/36)（本次 S1/S2 交付；S3 仍待实施）
+> **Issue 关系（issueRelationship）**：standalone
 > **关闭目标（closeTarget）**：workIssue
 > **分支（branch）**：feat/ai-native-sdlc
 > **确认时间**：2026-08-24
 > **确认人**：用户
-> **确认范围 Hash**：`sha256:e095b8f47bb69d4ecd7366cdbbd69b841c32c21bcd7e1a82139a17d0ae905a07`（confirmationHash/sourceRevision/upstreamHash 归一化）
+> **原始确认范围 Hash（历史）**：`sha256:e095b8f47bb69d4ecd7366cdbbd69b841c32c21bcd7e1a82139a17d0ae905a07`（2026-08-24 原合同；2026-09-03 用户确认本次 S1/S2 提交 PR，机械解析工作票，不改变后续 S3 验收）
 
 ---
 

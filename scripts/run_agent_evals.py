@@ -9,7 +9,7 @@ import re
 import sys
 from pathlib import Path
 
-from check_progressive_sdd import classify
+from check_progressive_sdd import classify_activated, should_activate
 
 
 class EvalError(Exception):
@@ -18,6 +18,7 @@ class EvalError(Exception):
 
 CASE_REQUIRED = ["id", "description", "prompt", "facts", "expected"]
 EXPECTED_REQUIRED = ["tier", "modules", "humanGate", "writesBeforeContract"]
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def load_json(path: Path) -> object:
@@ -73,8 +74,8 @@ def validate_case(case: dict, policy: dict) -> list[str]:
             errors.append(f"missing field {field}")
     if errors:
         return errors
-    if not re.fullmatch(r"[a-z0-9][a-z0-9-]+", str(case["id"])):
-        errors.append("id must match ^[a-z0-9][a-z0-9-]+$")
+    if not isinstance(case["id"], str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]+", case["id"]):
+        errors.append("id must be a string matching ^[a-z0-9][a-z0-9-]+$")
     if not isinstance(case["description"], str) or not case["description"].strip():
         errors.append("description must be a non-empty string")
     if not isinstance(case["prompt"], str) or not case["prompt"].strip():
@@ -91,17 +92,59 @@ def validate_case(case: dict, policy: dict) -> list[str]:
     if errors:
         return errors
 
-    actual_tier = classify(policy, case["facts"])
+    if expected["tier"] not in {"native", "compact", "full"}:
+        errors.append("expected tier must be native, compact, or full")
+    if (not isinstance(expected["modules"], list)
+            or not all(isinstance(module, str) for module in expected["modules"])):
+        errors.append("expected modules must be an array of strings")
+    if type(expected["humanGate"]) is not bool:
+        errors.append("expected humanGate must be a boolean")
+    if expected["writesBeforeContract"] is not False:
+        errors.append("expected writesBeforeContract must be false")
+    if ("capabilityStatus" in expected
+            and expected["capabilityStatus"] not in {"available", "unsupported", "degraded"}):
+        errors.append("expected capabilityStatus is invalid")
+    if ("promotion" in expected
+            and (not isinstance(expected["promotion"], str) or not expected["promotion"])):
+        errors.append("expected promotion must be a non-empty string")
+    if errors:
+        return errors
+
+    # Risk facts and detected activation signals describe the same boundary.
+    # Normalize both before using main's two-step activation/tier oracle.
+    facts = case["facts"]
+    for field in ("signals", "risks", "unsupportedCapabilities"):
+        value = facts.get(field, [])
+        if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+            errors.append(f"facts {field} must be an array of strings")
+    files = facts.get("files", 0)
+    if type(files) is not int or files < 0:
+        errors.append("facts files must be a non-negative integer")
+    for field in ("acceptedResidualRisk", "multipleDeliverableGoals", "multipleReviewUnits"):
+        if field in facts and type(facts[field]) is not bool:
+            errors.append(f"facts {field} must be a boolean")
+    for field in ("explicitIntent", "promotionFrom"):
+        if field in facts and (not isinstance(facts[field], str) or not facts[field]):
+            errors.append(f"facts {field} must be a non-empty string")
+    if errors:
+        return errors
+    signals = set(facts.get("signals", [])) | set(facts.get("risks", []))
+    risks = set(facts.get("risks", [])) | (signals & set(policy["tiers"]["full"]["riskCategories"]))
+    route_facts = {**facts, "signals": list(signals), "risks": list(risks)}
+    actual_tier = classify_activated(policy, route_facts) if should_activate(policy, route_facts) else "native"
     if expected["tier"] != actual_tier:
         errors.append(f"tier expected {expected['tier']}, policy oracle got {actual_tier}")
     eval_policy = policy["agentEvals"]
     required_modules = eval_policy["requiredModulesByTier"][actual_tier]
+    for module in required_modules:
+        if not (ROOT / module).is_file():
+            errors.append(f"required module does not exist: {module}")
     if expected["modules"] != required_modules:
         errors.append(
             f"modules expected {expected['modules']}, policy requires {required_modules}"
         )
     human_gate = bool(
-        set(case["facts"].get("risks", []))
+        risks
         & set(eval_policy["humanGateRiskCategories"])
     )
     if expected["humanGate"] is not human_gate:

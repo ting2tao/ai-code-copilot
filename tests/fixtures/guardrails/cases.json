@@ -1,0 +1,14 @@
+[
+  {"id":"safe", "path":"src/main.py", "line":"answer = 42", "expected":[]},
+  {"id":"secret", "path":"src/main.py", "lineParts":["api_key = ", "'synthetic-secret-value'"], "expected":["secret-diff"]},
+  {"id":"pem", "path":"src/key.pem", "lineParts":["-----BEGIN ", "PRIVATE KEY-----"], "expected":["secret-diff"]},
+  {"id":"pii", "path":"tests/data.json", "line":"{\"phone\":\"13800138000\"}", "expected":["sensitive-data-diff"]},
+  {"id":"workflow", "path":".github/workflows/check.yml", "line":"name: check", "expected":["protected-path-edit"]},
+  {"id":"migration", "path":"db/migrations/001.sql", "line":"SELECT 1", "expected":["protected-path-edit"]},
+  {"id":"fix-test", "path":"tests/test_main.py", "line":"assert True", "taskMode":"fix", "expected":["fix-test-integrity"]},
+  {"id":"fix-go", "path":"main_test.go", "line":"package main", "taskMode":"fix-ci", "expected":["fix-test-integrity"]},
+  {"id":"env-secret", "path":"src/main.py", "line":"api_key = os.environ['API_KEY']", "expected":[]},
+  {"id":"high-risk", "path":"src/auth.py", "line":"check_permission()", "risks":["permission"], "expected":["high-risk-human-gate"]},
+  {"id":"deploy", "path":"src/main.py", "line":"answer = 42", "operation":"deploy", "expected":["high-risk-human-gate"]},
+  {"id":"guardrail-self", "path":"config/guardrail-policy.json", "line":"{}", "expected":["protected-path-edit"]}
+]

@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "layers": ["advisory", "deterministic", "human"],
+  "adapters": {
+    "local-cli": {"status": "supported", "fallback": "human review", "coverage": "declared event or tracked diff plus untracked text"},
+    "ci": {"status": "supported", "fallback": "block merge pending human review", "coverage": "invoke local-cli in CI; not installed automatically"},
+    "claude-pretooluse": {"status": "supported-with-runtime", "fallback": "degraded: block and run local/CI checker", "coverage": "Write/Edit only; Python 3, Git worktree and hook registration required; unresolved root blocks"},
+    "codex-repo-hook": {"status": "unavailable", "fallback": "sandbox/permission + local/CI + Human Gate", "coverage": "this repository ships no Codex pre-tool adapter"}
+  },
+  "controls": [
+    {
+      "id": "secret-diff", "layer": "deterministic", "action": "block",
+      "owner": "security-owner", "approvalRoute": "remove literal; use environment or secret store",
+      "allowWithApproval": false, "evidence": "control ID and path; never matched content",
+      "addedLinePatterns": [
+        "-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----",
+        "\\b(?:AKIA|ASIA)[A-Z0-9]{16}\\b",
+        "(?i)\\b(?:api[_-]?key|secret|password|token|access[_-]?key)\\b[\\\"']?\\s*[:=]\\s*[\\\"'][^\\\"'\\r\\n]{8,}[\\\"']"
+      ]
+    },
+    {
+      "id": "sensitive-data-diff", "layer": "deterministic", "action": "block",
+      "owner": "data-owner", "approvalRoute": "replace personal data with non-personal fixtures",
+      "allowWithApproval": false, "evidence": "control ID and path; never matched content",
+      "addedLinePatterns": ["(?i)(?:phone|mobile|id_card|身份证|手机号)[\\\"']?\\s*[:=]\\s*[\\\"']?(?:1[3-9][0-9]{9}|[1-9][0-9]{16}[0-9Xx])(?:[\\\"'\\s,}]|$)"]
+    },
+    {
+      "id": "protected-path-edit", "layer": "deterministic", "action": "ask",
+      "owner": "path-owner", "approvalRoute": "path owner confirms exact diff in change log",
+      "allowWithApproval": true, "evidence": "control ID, path, eventHash and approval presence",
+      "paths": [".github/workflows/**", "**/infra/**", "**/migrations/**", "**/generated/**", "**/vendor/**", "hooks/**", "scripts/check_guardrails.py", "config/guardrail-policy.json"]
+    },
+    {
+      "id": "fix-test-integrity", "layer": "deterministic", "action": "ask",
+      "owner": "test-owner", "approvalRoute": "confirm test change does not weaken acceptance; record evidence",
+      "allowWithApproval": true, "evidence": "control ID, path, taskMode and approval presence",
+      "taskModes": ["fix", "fix-ci", "unknown"],
+      "paths": ["**/tests/**", "**/test/**", "**/test_*.py", "**/*_test.go", "**/*.test.*", "**/*.spec.*", "**/*Test.java", "**/*Tests.java"]
+    },
+    {
+      "id": "high-risk-human-gate", "layer": "human", "action": "ask",
+      "owner": "risk-owner", "approvalRoute": "human confirms risk, scope and rollback before action",
+      "allowWithApproval": true, "evidence": "declared risks, operation and event-bound approval presence",
+      "risks": ["security", "permission", "authentication", "sensitive-data", "money", "state-machine", "deployment", "production"],
+      "operations": ["deploy"]
+    },
+    {
+      "id": "review-context", "layer": "advisory", "action": "warn",
+      "owner": "reviewer", "approvalRoute": "review semantic risks beyond pattern coverage",
+      "allowWithApproval": false, "evidence": "review reminder; not a semantic safety verdict",
+      "operations": ["review"]
+    }
+  ]
+}
