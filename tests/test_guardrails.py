@@ -95,18 +95,22 @@ class Guardrails(unittest.TestCase):
             self.assertIn("invalid", result.stderr)
 
     def test_hook_blocks_secrets_and_asks_for_protected_path(self):
-        for name, key in (("Write", "content"), ("Edit", "new_string")):
-            data = dict(hook_event_name="PreToolUse", cwd=str(ROOT), tool_name=name,
-                        tool_input=dict(file_path=str(ROOT / "src/main.py")))
-            data["tool_input"][key] = "api_key = " + "'synthetic-secret-value'"
-            result = self.run_cli(data, "--hook-input", "-")
-            self.assertEqual(result.returncode, 2)
-            self.assertIn("secret-diff", result.stderr)
-            self.assertNotIn("synthetic-secret-value", result.stderr)
-            data["tool_input"] = dict(file_path=str(ROOT / "infra/main.tf"), **{key:"safe"}, approvals=["protected-path-edit"])
-            result = self.run_cli(data, "--hook-input", "-")
-            self.assertEqual(result.returncode, 0)
-            self.assertEqual(json.loads(result.stdout)["hookSpecificOutput"]["permissionDecision"], "ask")
+        # The managed install tree carries no .git; evaluate hooks inside an isolated repository.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            for name, key in (("Write", "content"), ("Edit", "new_string")):
+                data = dict(hook_event_name="PreToolUse", cwd=str(root), tool_name=name,
+                            tool_input=dict(file_path=str(root / "src/main.py")))
+                data["tool_input"][key] = "api_key = " + "'synthetic-secret-value'"
+                result = self.run_cli(data, "--hook-input", "-")
+                self.assertEqual(result.returncode, 2)
+                self.assertIn("secret-diff", result.stderr)
+                self.assertNotIn("synthetic-secret-value", result.stderr)
+                data["tool_input"] = dict(file_path=str(root / "infra/main.tf"), **{key:"safe"}, approvals=["protected-path-edit"])
+                result = self.run_cli(data, "--hook-input", "-")
+                self.assertEqual(result.returncode, 0)
+                self.assertEqual(json.loads(result.stdout)["hookSpecificOutput"]["permissionDecision"], "ask")
 
     def test_hook_invalid_payload_fail_closed(self):
         result = self.run_cli({}, "--hook-input", "-")
@@ -116,16 +120,20 @@ class Guardrails(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
 
     def test_hook_safe_pii_and_outside_root(self):
-        data = dict(hook_event_name="PreToolUse", cwd=str(ROOT), tool_name="Write",
-                    tool_input=dict(file_path=str(ROOT / "src/main.py"), content="answer = 42"))
-        result = self.run_cli(data, "--hook-input", "-")
-        self.assertEqual((result.returncode, result.stdout), (0, ""))
-        data["tool_input"]["content"] = 'phone = ' + '"13800138000"'
-        result = self.run_cli(data, "--hook-input", "-")
-        self.assertEqual(result.returncode, 2)
-        self.assertNotIn("13800138000", result.stdout + result.stderr)
-        data["tool_input"] = dict(file_path="/outside-root.txt", content="safe")
-        self.assertEqual(self.run_cli(data, "--hook-input", "-").returncode, 2)
+        # The managed install tree carries no .git; evaluate hooks inside an isolated repository.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            data = dict(hook_event_name="PreToolUse", cwd=str(root), tool_name="Write",
+                        tool_input=dict(file_path=str(root / "src/main.py"), content="answer = 42"))
+            result = self.run_cli(data, "--hook-input", "-")
+            self.assertEqual((result.returncode, result.stdout), (0, ""))
+            data["tool_input"]["content"] = 'phone = ' + '"13800138000"'
+            result = self.run_cli(data, "--hook-input", "-")
+            self.assertEqual(result.returncode, 2)
+            self.assertNotIn("13800138000", result.stdout + result.stderr)
+            data["tool_input"] = dict(file_path="/outside-root.txt", content="safe")
+            self.assertEqual(self.run_cli(data, "--hook-input", "-").returncode, 2)
 
     def test_review_warns_without_granting_authority(self):
         data = event()
