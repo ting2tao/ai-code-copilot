@@ -92,6 +92,10 @@ branch: "fix/guardrail-selfcheck"
 | command | exit code | output summary | Loop Evidence |
 |---|---:|---|---|
 | bash scripts/check_framework.sh（修复前，安装目录） | 1 | 2 failures: test_hook_blocks_secrets…, test_hook_safe_pii_and_outside_root | log.md 基线 |
+| bash scripts/check_framework.sh（修复后，源码仓库） | 0 | ai-code-copilot framework check passed | log.md |
+| python3 -m unittest tests.test_guardrails（安装目录） | 0 | Ran 30 tests — OK | log.md |
+| bash install.sh --claude（重新部署 0.2.1） | 0 | 直接覆盖更新 0.2.0 → 0.2.1，自检正常 | log.md |
+| bash scripts/check_framework.sh（修复后，安装目录） | 0 | ai-code-copilot framework check passed | log.md |
 
 ## Promotion record
 
@@ -102,13 +106,16 @@ branch: "fix/guardrail-selfcheck"
 
 | hash | message |
 |---|---|
+| bf2bcad | fix(guardrails): run hook tests in isolated repos so installed self-check passes |
 
 ## Review record
 
 | Spec Compliance | Code Quality | GitHub Readiness | open risks |
 |---|---|---|---|
+| PASS（详见 log.md Quick Review） | PASS（详见 log.md Quick Review） | 待 PR 时评估 | 无 |
 
 ## Finish record
 
 | PR URL | base | remote | Closes workIssue | Refs parentIssue | final validation |
 |---|---|---|---|---|---|
+| pending（用户决定是否提 PR / 合回 main） | — | origin | — | — | 安装目录 check_framework.sh exit 0（v0.2.1） |
