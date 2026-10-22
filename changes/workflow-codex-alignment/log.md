@@ -2,12 +2,12 @@
 artifactVersion: 1
 artifactId: workflow-codex-alignment:log
 artifactType: log
-artifactStatus: active
+artifactStatus: finished
 sourceOfTruth: repository
 sourceRef: self
-sourceRevision: working-tree
+sourceRevision: git:36c926e82c5fa57c86c3d92125d3732679903d3c
 upstream: workflow-codex-alignment:spec
-upstreamHash: sha256:ee105371c7d521490630c040836f468cccab4b690a89343190a07e35a6dff72c
+upstreamHash: sha256:c8cff41c1b8c2b5b05b36e5bb62b06fbff4acd37474d2d926b1ec9357681e450
 -->
 
 # Execution / review / finish log
@@ -49,3 +49,13 @@ The approval covers those unchanged protected file contents and the requested co
 - 3dee67d109caa189a3c0993c8e3892712840313f fix(workflow): align production gates and Codex hook integration
 - commit/publish checker passed using fresh operation-bound event hashes and the explicitly received human approval; approval provenance is above.
 - Worktree contains only this change; original PR #38 and unrelated dirty record remain outside this branch.
+
+## Finish record
+
+- PR: https://github.com/ting2tao/ai-code-copilot/pull/40
+- base: main; remote: origin; head: fix/workflow-codex-alignment
+- workIssue: https://github.com/ting2tao/ai-code-copilot/issues/39; parentIssue: none; closing statement: Closes #39
+- Verified GitHub state: OPEN, mergeStateStatus CLEAN, closingIssuesReferences contains #39, headRefOid 36c926e82c5fa57c86c3d92125d3732679903d3c matches local HEAD. No merge performed.
+- Implementation commit: 3dee67d fix(workflow): align production gates and Codex hook integration. Verification record commit: 36c926e82c5fa57c86c3d92125d3732679903d3c docs(workflow): record approved guardrail verification and commit.
+- Final validation: check_framework.sh exit 0 (50 tests, 23 offline cases); artifact checker PASS 6; diff check PASS; operation-bound protected-path gate PASS after actual human approval. No CI/CodeQL configured; no hosted checks claimed.
+- This final handoff edit changes records only; approved protected file hashes remain unchanged. Final handoff commit is identified by Git history, avoiding a self-referential commit hash.

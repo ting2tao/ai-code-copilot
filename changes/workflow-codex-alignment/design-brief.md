@@ -2,10 +2,10 @@
 artifactVersion: 1
 artifactId: workflow-codex-alignment:design-brief
 artifactType: design-brief
-artifactStatus: active
+artifactStatus: finished
 sourceOfTruth: repository
 sourceRef: self
-sourceRevision: working-tree
+sourceRevision: git:36c926e82c5fa57c86c3d92125d3732679903d3c
 upstream: none
 upstreamHash: none
 -->

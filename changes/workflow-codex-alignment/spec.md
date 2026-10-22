@@ -2,12 +2,12 @@
 artifactVersion: 1
 artifactId: workflow-codex-alignment:spec
 artifactType: spec
-artifactStatus: active
+artifactStatus: finished
 sourceOfTruth: repository
 sourceRef: self
-sourceRevision: working-tree
+sourceRevision: git:36c926e82c5fa57c86c3d92125d3732679903d3c
 upstream: workflow-codex-alignment:design-brief
-upstreamHash: sha256:5ace88e00228951fa812e1b382d4da07edb0b193f7ebf2db431617604fd129f8
+upstreamHash: sha256:21d233cb38731c704b1dd9495e1ff5be78e0e58edab33e499be08a4e3350822b
 -->
 
 # Approved Spec: workflow-codex-alignment
