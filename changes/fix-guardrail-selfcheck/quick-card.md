@@ -2,36 +2,36 @@
 artifactVersion: 1
 artifactId: "fix-guardrail-selfcheck:quick-card"
 artifactType: quick-card
-artifactStatus: confirmed
+artifactStatus: reviewed
 sourceOfTruth: repository
 sourceRef: self
 sourceRevision: working-tree
 upstream: none
 upstreamHash: none
 change: "fix-guardrail-selfcheck"
-status: in-progress
-recordMode: compact
+status: reviewed
+recordMode: full
 promotedFrom: none
-specHash: "pending"
+specHash: "sha256:546e1f074934364af722333c8d94517a5b69cbfb18c0ecdfdf2a6ba5b02e74d3"
 parentIssue: none
 workIssue: none
 issueRelationship: none
 closeTarget: none
-branch: "fix/guardrail-selfcheck"
+branch: "feat/ai-native-sdlc"
 ---
 
 # Quick 变更卡：fix-guardrail-selfcheck
 
-> **状态**：[ ] 草稿 / [x] 已确认 / [x] 实施中 / [ ] 已完成
+> **状态**：[ ] 草稿 / [x] 已确认 / [x] 实施中 / [x] 已完成
 > **创建时间**：2026-10-21
 > **父 Issue（parentIssue）**：none
 > **工作 Issue（workIssue）**：none（manual）
 > **Issue 关系（issueRelationship）**：none
 > **关闭目标（closeTarget）**：none
-> **分支（branch）**：fix/guardrail-selfcheck（基于 feat/ai-native-sdlc）
+> **分支（branch）**：feat/ai-native-sdlc（PR #38）；隔离修复工作区为 fix/pr38-conflicts
 > **确认时间**：2026-10-21
 > **确认人**：用户（会话中确认"可以"）
-> **确认范围 Hash**：pending（完成时回填）
+> **确认范围 Hash**：sha256:546e1f074934364af722333c8d94517a5b69cbfb18c0ecdfdf2a6ba5b02e74d3
 
 ---
 
@@ -42,9 +42,9 @@ branch: "fix/guardrail-selfcheck"
 ## 2. 涉及文件
 
 - 修改：`tests/test_guardrails.py` — 两个失败测试改为在隔离的临时 git 仓库中执行（沿用文件内既有 temp-repo 写法）
-- 修改：`VERSION` — 0.2.0 → 0.2.1（bug fix，patch bump）
-- 修改：`README.md` / `README-CN.md` — 同步版本号引用
-- 新建：`changes/fix-guardrail-selfcheck/quick-card.md`、`log.md`
+- 修改：`VERSION` — 原始 0.2.0 → 0.2.1；合入最新 main 后为 0.2.2 → 0.2.3（patch bump，不降级）
+- 同步：`README.md` / `README-CN.md` — 保留最新 main 的 VERSION 单一来源说明，不重新写入版本常量
+- 新建：`changes/fix-guardrail-selfcheck/quick-card.md`、`log.md`、`summary.md`
 
 ## 3. 非目标（Out of Scope）
 
@@ -54,9 +54,9 @@ branch: "fix/guardrail-selfcheck"
 
 ## 4. 验收方式
 
-- [ ] `bash scripts/check_framework.sh`（源码仓库）通过
-- [ ] 模拟安装环境（无 `.git` 的目录树）中运行 `tests/test_guardrails.py` 全部通过
-- [ ] 重新执行 `install.sh` 后，在 `~/.claude/ai_code_copilot/` 中运行 `check_framework.sh` 通过
+- [x] `bash scripts/check_framework.sh`（源码仓库）通过
+- [x] 实际临时安装环境（无 `.git`）中 `tests/test_guardrails.py` 全部通过
+- [x] 临时 HOME 下执行 `install.sh --claude` 后，在实际无 `.git` 安装目录运行 `check_framework.sh` 通过（不改个人安装）
 
 ## 5. Agent Harness
 
@@ -112,10 +112,20 @@ branch: "fix/guardrail-selfcheck"
 
 | Spec Compliance | Code Quality | GitHub Readiness | open risks |
 |---|---|---|---|
-| PASS（详见 log.md Quick Review） | PASS（详见 log.md Quick Review） | 待 PR 时评估 | 无 |
+| PASS（详见 log.md Quick Review） | PASS（详见 log.md Quick Review） | PR #38 已存在；本轮重新验证 | 无 |
 
 ## Finish record
 
 | PR URL | base | remote | Closes workIssue | Refs parentIssue | final validation |
 |---|---|---|---|---|---|
-| pending（用户决定是否提 PR / 合回 main） | — | origin | — | — | 安装目录 check_framework.sh exit 0（v0.2.1） |
+| https://github.com/ting2tao/ai-code-copilot/pull/38 | main | origin | —（manual，无 Issue） | — | 原始 v0.2.1 验证；本轮 v0.2.3 验证见 log.md |
+
+## 2026-10-22 冲突修复合同
+
+用户请求：“PR #38，解决这些问题”。GitHub 审查评论/失败检查为空，实际问题是 mergeable=CONFLICTING；最新 main 已合入 PR #40（4bc4c72）。保留 main 的 README/能力声明/Codex 实现；保留本 PR 两处隔离 Git fixture 修复；VERSION 前进到 0.2.3。采用 merge 更新原 head，不改写已发布历史、不合并 PR 到 main。原工作区未提交的 Quick Card URL 改动保持原样，本工作区独立记录原 PR URL。
+
+原记录已有 log.md，因此本轮将 recordMode 从 compact 单向提升为 full，补齐 summary.md 与有效产物 metadata；不新增业务功能或风险授权。分支名称同步为现有 PR head，旧分支描述仅为历史记录。
+
+验收：无冲突标记/未解决 index entries；源码和真实临时安装目录（无 .git）完整自检通过；最终相对 main 的生产护栏/安装脚本无差异；原 PR 可合并。配置沿用原合同 manual/no-Issue，不新增工作票。
+
+本轮验证：main 无 Git 副本 RED（2 failures）；源码和实际临时安装目录 GREEN（各 50 tests + 23 offline eval cases）；产物链 PASS 3；相对 main 的 runtime/README 字节一致；提交/发布 Guardrail PASS，无待审批项。审核方式为本地 self-review，未声称独立 Agent 审查。

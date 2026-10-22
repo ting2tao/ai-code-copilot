@@ -60,7 +60,7 @@ ai-code-copilot 不把所有语言规则揉成一套。通用流程和安全红�
 | Templates | `changes/templates/*.md` | 长期文档结构和 review gate | 运行时事实 |
 | State | `.ai_code_copilot/.copilot-state.json` | `frameworkVersion`、`frameworkCommit`、命中 packs、同步时间、context 新鲜度 | 用户工作流偏好 |
 
-Quick Compact 的 SessionStart 状态来自经过校验的 `quick-card.md` metadata，其他模式使用 `summary.md`。当前模式对应的记录源缺失或字段不完整时，SessionStart 会给出 fallback 提示，具体命令阶段再读取完整变更文档。Log 压缩阈值放在 `.ai_code_copilot/config.json` 的 `logCompression` 下。建议安装 Python 3；没有 Python 时 hook 仍会注入 L0 安全规则，但会跳过 context freshness 和 active change 摘要。
+Quick Compact 的 SessionStart 状态来自经过校验的 `quick-card.md` metadata，其他模式使用 `summary.md`。当前模式对应的记录源缺失或字段不完整时，SessionStart 会给出 fallback 提示，具体命令阶段再读取完整变更文档。Log 压缩阈值放在 `.ai_code_copilot/config.json` 的 `logCompression` 下。自动注册 Hook 与 pre-tool 护栏需要 Python 3；缺失时安装报告 degraded，需安装 Python 后重新安装框架。已配置的 SessionStart 在没有 Python 时仍可注入 L0 安全规则，但会跳过 context freshness 和 active change 摘要。
 
 **Codex 输入提示：** 在 Codex 里请用不带斜杠的命令名，例如 `finish <变更名>`、`archive <变更名>`，也可以直接说中文自然语言。不要输入 /archive，因为 Codex 客户端会先把它当成“归档当前会话”，ai-code-copilot 收不到这条消息；如果 `/finish` 被拦截或无效，也请改用 `finish <变更名>`。
 
@@ -148,15 +148,17 @@ ai-code-copilot 是默认交付编排器。Superpowers 降级为显式使用的�
 
 | 档位 | 适用场景 | 流程 |
 |------|----------|------|
-| **Quick** | ≤1天，<5文件，不跨模块 | 说明范围 → quick-card → 确认 → 执行 → /review → /finish |
+| **Quick** | ≤1天，≤5文件，不跨模块 | 说明范围 → quick-card → 确认 → 执行 → /review → /finish |
 | **Standard** | 1-5天，或明确要求 | /brainstorm → /propose → /apply → /review → /finish |
 | **Complex** | >5天，或跨 3+ 模块 | /brainstorm → roadmap → 拆子项目 → 每个走 Standard |
 
 不确定时默认 Standard。
 
+任务规模（Quick / Standard / Complex）描述交付范围；记录模式（Compact / Full）描述证据持久化方式。Compact 边界以 `config/workflow-policy.json` 的 `tiers.compact.maxFiles` 为准（当前最多 5 个实现文件）；框架记录文件不计入实现文件预算。Full 风险始终优先于规模判断。
+
 ### Quick 记录模式与 Issue 合同
 
-- **Quick Compact** 只适用于不超过 2 个文件、单一目的、单 commit，且不改 API/DB/依赖/CI/部署/generated artifact，不涉及安全、权限、认证、敏感信息、状态机或跨模块规则，并具备可执行验证与直接回滚的变更；`quick-card.md` 是唯一记录源。执行中任一条件不再满足时，必须自动升级为 Quick Full 后再继续。
+- **Quick Compact** 只适用于不超过 5 个文件、单一目的、单 commit，且不改 API/DB/依赖/CI/部署/生产/generated artifact，不涉及安全、权限、认证、敏感信息、状态机或跨模块规则，并具备可执行验证与直接回滚的变更；`quick-card.md` 是唯一记录源。执行中任一条件不再满足时，必须自动升级为 Quick Full 后再继续。
 - **Quick Full** 用于不满足或无法确认 Compact 条件的 Quick；记录集固定为 `quick-card.md` + `log.md` + `summary.md`。
 - 需求开始时解析或只询问一次 `parentIssue`；存在时先读取整体需求，并在 GitHub 能力可用时把本次工作关联为 native sub-issue。
 - 到达 `issuePolicy` 指定的生命周期门禁时，必须自动创建唯一 `workIssue`，或校验并复用已记录的 open `workIssue`。新项目默认 `on-publish`；`manual` 从不自动创建。
@@ -315,7 +317,7 @@ curl -fsSL https://raw.githubusercontent.com/ting2tao/ai-code-copilot/main/insta
 # 或“初始化项目”
 ```
 
-> **更新：** 根目录 [`VERSION`](VERSION) 是唯一版本源，当前版本为 `0.2.1`，发布标签使用 `v${VERSION}`。再次执行上面的 `curl ... | bash` 即可更新。
+> **更新：** 根目录 [`VERSION`](VERSION) 是唯一版本源，安装时读取该文件，发布标签使用 `v${VERSION}`。再次执行上面的 `curl ... | bash` 即可更新。
 >
 > 更新采用整包覆盖：安装器先校验新来源，再完整替换框架托管安装目录。安装目录中的本地修改会被丢弃；不提供兼容迁移、旧版本保留或自动回滚。
 >
@@ -465,3 +467,9 @@ bash scripts/check_framework.sh
 ```bash
 bash ~/.codex/ai_code_copilot/install.sh --codex --uninstall
 ```
+
+### Codex Hooks 与信任
+
+安装脚本将 Codex SessionStart 和 `apply_patch` PreToolUse 护栏注册到 `~/.codex/hooks.json`（或 `$CODEX_HOME/hooks.json`）；Claude Code 的 SessionStart 继续使用 `settings.json`。注册保留无关 handler，不迁移旧配置。必须通过 `/hooks` 审核并信任当前 Codex Hook 定义；未信任的 Hook 会被跳过。安装成功仅表示已配置，不表示已验证执行。
+
+Codex 适配器复用现有护栏引擎检查 patch 的新增、更新、删除与移动路径。受保护/测试路径需要人工判断时阻断并明确转 local/CI 审核，不返回未支持的 `ask`，也不通过 `allow` 跳过宿主权限。Python/Git 缺失、不支持的输入、畸形补丁和无法解析的路径均阻断。Bash/MCP 写入不在此适配器覆盖内，仍需最终 diff 扫描、沙箱/权限和人工审核。平台支持、适配器测试与本地启用必须分别说明。见[安全规则](rules/security.md)。

@@ -5,7 +5,7 @@
     "local-cli": {"status": "supported", "fallback": "human review", "coverage": "declared event or tracked diff plus untracked text"},
     "ci": {"status": "supported", "fallback": "block merge pending human review", "coverage": "invoke local-cli in CI; not installed automatically"},
     "claude-pretooluse": {"status": "supported-with-runtime", "fallback": "degraded: block and run local/CI checker", "coverage": "Write/Edit only; Python 3, Git worktree and hook registration required; unresolved root blocks"},
-    "codex-repo-hook": {"status": "unavailable", "fallback": "sandbox/permission + local/CI + Human Gate", "coverage": "this repository ships no Codex pre-tool adapter"}
+    "codex-repo-hook": {"status": "supported-with-runtime", "fallback": "blocked; explicit local/CI checker plus event-bound human review", "coverage": "apply_patch add/update/delete/move only; Python 3.9+, Git worktree, host support and trusted hooks required; no Bash/MCP coverage; synthetic tests are not host verification"}
   },
   "controls": [
     {

@@ -55,14 +55,14 @@
 
 | 档位 | 判断标准 | 流程 | 文档产出 |
 |------|---------|------|---------|
-| **Quick** | ≤1天，改动<5文件，无跨模块 | 说明范围→quick-card→确认→执行→review | compact: quick-card；full: quick-card + log + summary |
+| **Quick** | ≤1天，改动≤5文件，无跨模块 | 说明范围→quick-card→确认→执行→review | compact: quick-card；full: quick-card + log + summary |
 | **Standard** | 1-5天，或用户明确要求 | /brainstorm(必须)→/propose→/apply→/review | design-brief + spec + tasks + test-spec + log |
 | **Complex** | >5天，或跨 3+ 模块 | /brainstorm(必须)→roadmap→拆子项目→每个走 Standard | roadmap + design-brief + 子项目各自 spec+tasks+test-spec+log |
 
 **Quick 档必须告知限制：** /review 的 Spec Compliance 阶段仅对照 quick-card 的目标/范围/验收方式，不做完整 spec 逐条审查；Code Quality 审查仍完整执行。
 
 **Quick 内部记录模式：**
-- **Quick Compact**：仅当预计不超过 2 个文件、单一目的、单 commit、不改 API/DB/依赖/CI/部署/generated artifact，不涉及资金/权限/认证/安全/敏感信息/状态机/跨模块业务规则，并且有可执行验证与直接回滚时使用。`quick-card.md` front matter 必须写 `recordMode: compact`。
+- **Quick Compact**：仅当预计不超过 5 个文件、单一目的、单 commit、不改 API/DB/依赖/CI/部署/生产/generated artifact，不涉及资金/权限/认证/安全/敏感信息/状态机/跨模块业务规则，并且有可执行验证与直接回滚时使用。`quick-card.md` front matter 必须写 `recordMode: compact`。
 - **Quick Full**：任一 Compact 条件不满足或无法确认时使用。`quick-card.md` front matter 必须写 `recordMode: full`，并补齐 `log.md` 与 `summary.md`。
 - Compact 是最小记录模式，不是低标准模式；确认范围、Agent Harness、Goal Contract、风险/回滚、验证证据和 commit 证据仍必须可审查。
 - Quick 合同初始化必须显式写入 `workIssue: pending` 与 `closeTarget: workIssue`；确认后解析并持久化 work Issue。`parentIssue 永不自动关闭`，只允许在 PR 中使用 `Refs` 引用。
@@ -300,7 +300,7 @@ Step 7 · 确认后自动创建 work Issue，并建立分支合同
 
 **Quick 轻量提案规则：**
 - 先确定 Quick 记录模式：
-  - **Quick Compact**：仅当满足“预计不超过 2 个文件、单一目的、单 commit、无 Compact 排除风险、有可执行验证与直接回滚”时使用；在 `.ai_code_copilot/changes/<变更名>/quick-card.md` 写入 `recordMode: compact`，并把关联 Issue、目标、涉及文件、非目标、验收方式、Agent Harness、Goal Contract、风险/人工确认项、执行记录、commit 记录、review 记录和 Loop Evidence 都放入 quick-card.md。
+  - **Quick Compact**：仅当满足“预计不超过 5 个文件、单一目的、单 commit、无 Compact 排除风险、有可执行验证与直接回滚”时使用；在 `.ai_code_copilot/changes/<变更名>/quick-card.md` 写入 `recordMode: compact`，并把关联 Issue、目标、涉及文件、非目标、验收方式、Agent Harness、Goal Contract、风险/人工确认项、执行记录、commit 记录、review 记录和 Loop Evidence 都放入 quick-card.md。
   - **Quick Full**：任一 Compact 条件不满足或无法确认时使用；在 quick-card.md 写入 `recordMode: full`，同步创建 `log.md` 和 `summary.md`，记录档位、目标、范围、风险、loaded-knowledge、执行证据与运行时摘要。
 - Compact 不创建 log.md 和 summary.md；Full 必须创建 `quick-card.md + log.md + summary.md`。
 - 显示："quick-card 已生成。请确认后回复「确认」才能执行。"
@@ -346,9 +346,9 @@ Preflight（任一不满足则停止）：
 
 **Runtime promotion（Compact Quick 运行时升级）：**
 - 若 Quick Compact 在 /apply 或 /fix 中触发任一条件，必须立即 promote to full Quick：
-  - 实际或预计改动文件数超过 2；
+  - 实际或预计改动文件数超过 5；
   - 出现第二个目的或第二个 commit；
-  - 发现 Compact 排除风险：API/DB/依赖/CI/部署/generated artifact、资金/权限/认证/安全/敏感信息/状态机/跨模块业务规则；
+  - 发现 Compact 排除风险：API/DB/依赖/CI/部署/生产/generated artifact、资金/权限/认证/安全/敏感信息/状态机/跨模块业务规则；
   - 已确认范围发生实质变化；
   - review 需要 Important/Critical correction；
   - 出现 durable knowledge 或 open risk。
@@ -816,3 +816,7 @@ Phase 4 · 实施修复
 - ⚠️ 涉及资金变更的逻辑 → 必须在 spec 中标注，人工审查后方可编码
 - ⚠️ 涉及状态流转 → 必须检查状态机合法性
 - ⚠️ 涉及权限变更 → 必须显式校验操作人权限
+
+## Codex adapter boundary
+
+Codex uses hooks.json or config.toml; installers register hooks.json and require /hooks trust. hooks/pre-tool-codex handles apply_patch separately from Claude Write/Edit. Owner-required operations block instead of unsupported ask; use explicit local/CI event-bound human review. Never infer local execution from configured or supported status. See rules/security.md.

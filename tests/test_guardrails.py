@@ -143,7 +143,7 @@ class Guardrails(unittest.TestCase):
         self.assertEqual(json.loads(result.stdout)["decisions"][0]["action"], "warn")
 
     def test_capabilities_and_hook_registration(self):
-        self.assertEqual(self.policy["adapters"]["codex-repo-hook"]["status"], "unavailable")
+        self.assertEqual(self.policy["adapters"]["codex-repo-hook"]["status"], "supported-with-runtime")
         self.assertTrue(self.policy["adapters"]["codex-repo-hook"]["fallback"])
         hooks = json.loads((ROOT / "hooks/hooks.json").read_text())["hooks"]
         self.assertEqual(hooks["PreToolUse"][0]["matcher"], "Write|Edit")

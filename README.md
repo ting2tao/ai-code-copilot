@@ -62,7 +62,7 @@ The context-budget policy is split across four layers:
 | Templates | `changes/templates/*.md` | Long-lived document structure and review gates | Runtime facts |
 | State | `.ai_code_copilot/.copilot-state.json` | `frameworkVersion`, `frameworkCommit`, matched packs, sync timestamps, context freshness | User workflow preferences |
 
-For Quick Compact, SessionStart reads validated metadata from `quick-card.md`; other modes use `summary.md`. If the applicable source is malformed, SessionStart falls back to a warning and the command flow reads the full change documents later. Log compression thresholds are configurable in `.ai_code_copilot/config.json` under `logCompression`. Python 3 is recommended for the hook's JSON/date helpers; without it, the hook still injects L0 safety rules but skips freshness and active-change summaries.
+For Quick Compact, SessionStart reads validated metadata from `quick-card.md`; other modes use `summary.md`. If the applicable source is malformed, SessionStart falls back to a warning and the command flow reads the full change documents later. Log compression thresholds are configurable in `.ai_code_copilot/config.json` under `logCompression`. Python 3 is required for automatic hook registration and the pre-tool guardrail. Without it, installation reports degraded capability and requires Python installation followed by reinstall. An already configured SessionStart can still emit L0 safety rules without freshness and active-change summaries.
 
 **Codex input note:** type command names without a leading slash, such as `finish <change>` or `archive <change>`. 不要输入 /archive in Codex: the client treats it as "archive this session" before ai-code-copilot can handle it. If `/finish` is intercepted or ignored, use `finish <change>` instead.
 
@@ -156,9 +156,11 @@ Every activated request is classified before framework-guided work begins:
 
 When uncertain, the framework defaults to Standard.
 
+Task size (Quick / Standard / Complex) describes delivery scope; record mode (Compact / Full) describes evidence persistence. The authoritative Compact boundary is `tiers.compact.maxFiles` in `config/workflow-policy.json` (currently 5 implementation files); framework records do not consume this implementation-file budget. Full risk always overrides size.
+
 ### Quick record modes and Issue contract
 
-- **Quick Compact** is limited to a single-purpose, single-commit change touching at most two files, with no API, database, dependency, CI, deployment, generated-artifact, security, permission, authentication, sensitive-data, state-machine, or cross-module rule impact, and it must have executable verification plus direct rollback. It uses `quick-card.md` as its single record source. If any condition stops being true at runtime, it automatically upgrades to Quick Full before work continues.
+- **Quick Compact** is limited to a single-purpose, single-commit change touching at most five files, with no API, database, dependency, CI, deployment, production, generated-artifact, security, permission, authentication, sensitive-data, state-machine, or cross-module rule impact, and it must have executable verification plus direct rollback. It uses `quick-card.md` as its single record source. If any condition stops being true at runtime, it automatically upgrades to Quick Full before work continues.
 - **Quick Full** is the default when Compact eligibility is uncertain or unmet. Its record set is `quick-card.md` + `log.md` + `summary.md`.
 - At the start, the workflow parses or asks once for `parentIssue`, reads its overall requirement when present, and links the work as a native sub-issue when GitHub supports the relationship.
 - At the lifecycle gate selected by `issuePolicy`, the workflow must automatically create one `workIssue`, or validate and reuse the recorded open `workIssue`. New projects use `on-publish`; `manual` never auto-creates.
@@ -313,7 +315,7 @@ After installation, open Codex or Claude Code in any business project and say:
 # or say "初始化项目"
 ```
 
-The current framework version is read from root [`VERSION`](VERSION) (`0.2.1`), and release tags use `v${VERSION}`. Update by running the same `curl ... | bash` command again.
+The current framework version is read from root [`VERSION`](VERSION) (read at install time), and release tags use `v${VERSION}`. Update by running the same `curl ... | bash` command again.
 
 Updates use full replacement: the installer validates the new source, then replaces the entire framework-managed installation tree. Installation-local edits are discarded. There is no compatibility migration, retained previous release, or automatic rollback.
 
@@ -456,3 +458,9 @@ It checks pack manifests, rule references, templates, installer syntax, and pack
 ```bash
 bash ~/.codex/ai_code_copilot/install.sh --codex --uninstall
 ```
+
+### Codex hooks and trust
+
+Installers register Codex SessionStart and an `apply_patch` PreToolUse guardrail in `~/.codex/hooks.json` (or `$CODEX_HOME/hooks.json`). Claude Code continues to use `settings.json` for SessionStart. Registration preserves unrelated handlers and does not migrate old configuration. Review and trust current Codex hook definitions with `/hooks`; untrusted hooks are skipped. Installation reports configuration, not verified execution.
+
+The Codex adapter scans patch add/update/delete/move paths using the existing guardrail engine. A protected/test path requiring human review blocks with an explicit local/CI review path; it never emits unsupported `ask` or an `allow` that skips host permissions. Missing Python/Git, unsupported input, malformed patches and unresolved paths block. Bash/MCP writes remain outside this adapter; final diff scanning, sandbox/permissions and human review remain necessary. Platform support, adapter tests and local activation are separate facts. See [security rules](rules/security.md).
