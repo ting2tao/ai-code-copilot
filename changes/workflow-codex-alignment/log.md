@@ -43,3 +43,9 @@ Publish gate: exact protected-path diff requires owner review under config/guard
 2026-10-22: user explicitly answered the exact-diff approval card: “批准这些护栏变更并提交 PR”. The card named config/guardrail-policy.json, hooks/pre-tool-codex and scripts/check_guardrails.py and linked /tmp/workflow-codex-guardrail-review.md. Protected-file SHA-256 values still match that reviewed artifact. This is human authorization, recorded by the agent; it does not bypass host trust. The same response explicitly authorizes commit, push and PR to main.
 
 The approval covers those unchanged protected file contents and the requested commit/publish operations. Metadata-only handoff records may be mechanically updated without changing the approved code; each operation still receives a fresh checker-generated eventHash.
+
+## Commit record
+
+- 3dee67d109caa189a3c0993c8e3892712840313f fix(workflow): align production gates and Codex hook integration
+- commit/publish checker passed using fresh operation-bound event hashes and the explicitly received human approval; approval provenance is above.
+- Worktree contains only this change; original PR #38 and unrelated dirty record remain outside this branch.
