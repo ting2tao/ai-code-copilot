@@ -74,7 +74,7 @@ def load_policy(path):
         require(isinstance(capability, dict) and bool(capability.get("fallback"))
                 and bool(capability.get("coverage")) and capability.get("status")
                 in {"supported", "supported-with-runtime", "unavailable"}, "adapter capability")
-    require(policy["adapters"]["codex-repo-hook"].get("status") == "unavailable", "Codex capability")
+    require(policy["adapters"]["codex-repo-hook"].get("status") in {"unavailable", "supported-with-runtime"}, "Codex capability")
     return policy
 
 
@@ -166,6 +166,70 @@ def hook_event(payload):
                 diffAddedLines=[dict(path=path, line=line) for path in paths for line in content.splitlines()], risks=[], approvals=[])
 
 
+def codex_host_path(value):
+    """A Windows-host WSL bridge must translate paths before repository checks."""
+    require(isinstance(value, str), "Codex host path")
+    if re.match(r"^[A-Za-z]:[\\/]", value) and sys.platform != "win32":
+        try:
+            result = subprocess.run(["wslpath", "-u", value], capture_output=True, timeout=5, check=False)
+        except (OSError, subprocess.TimeoutExpired):
+            raise GitUnavailable("WSL path translator unavailable") from None
+        require(result.returncode == 0, "WSL host path")
+        return result.stdout.decode().strip()
+    return value
+
+
+def codex_hook_event(payload):
+    """Translate the documented apply_patch subset; reject unparsed input."""
+    require(isinstance(payload, dict) and payload.get("hook_event_name") == "PreToolUse", "Codex event")
+    require(payload.get("tool_name") == "apply_patch", "Codex tool")
+    params = payload.get("tool_input")
+    require(isinstance(params, dict) and isinstance(params.get("command"), str), "Codex patch")
+    cwd = codex_host_path(payload.get("cwd"))
+    lines = params["command"].splitlines()
+    require(len(lines) >= 3 and lines[0] == "*** Begin Patch" and lines[-1] == "*** End Patch", "patch envelope")
+    paths, added = set(), []
+    index = 1
+    while index < len(lines) - 1:
+        header = lines[index]
+        kind = next((k for k in ("Add", "Update", "Delete") if header.startswith(f"*** {k} File: ")), None)
+        require(kind is not None, "patch file header")
+        targets = [header.split(": ", 1)[1]]
+        index += 1
+        if kind == "Update" and index < len(lines)-1 and lines[index].startswith("*** Move to: "):
+            targets.append(lines[index].split(": ", 1)[1])
+            index += 1
+        content, has_hunk = [], False
+        while index < len(lines)-1 and not lines[index].startswith("*** "):
+            line = lines[index]
+            if kind == "Add":
+                require(line.startswith("+"), "add line")
+                content.append(line[1:])
+            elif kind == "Update":
+                if line == "@@" or line.startswith("@@ "):
+                    has_hunk = True
+                else:
+                    require(has_hunk and (line == "" or line[:1] in {"+", "-", " "}), "update line")
+                    if line.startswith("+"):
+                        content.append(line[1:])
+            else:
+                require(False, "delete body")
+            index += 1
+        if kind == "Update":
+            require(has_hunk, "update hunk")
+            if index < len(lines)-1 and lines[index] == "*** End of File":
+                index += 1
+        for target in targets:
+            # Reuse Claude path resolution, worktree containment and symlink checks.
+            translated = hook_event(dict(hook_event_name="PreToolUse", cwd=cwd,
+                tool_name="Write", tool_input=dict(file_path=codex_host_path(target), content="\n".join(content))))
+            paths.update(translated["changedPaths"])
+            added.extend(translated["diffAddedLines"])
+    require(bool(paths), "empty patch")
+    return dict(eventVersion=1, operation="edit", taskMode="unknown", changedPaths=sorted(paths),
+                diffAddedLines=added, risks=[], approvals=[])
+
+
 def git_output(root: Path, *args: str, timeout: int | None = None) -> bytes:
     try:
         result = subprocess.run(["git", "-C", str(root), *args], capture_output=True, check=False, timeout=timeout)
@@ -238,6 +302,7 @@ def main():
     modes = parser.add_mutually_exclusive_group(required=True)
     modes.add_argument("--event", help="event JSON file or - for stdin")
     modes.add_argument("--hook-input", help="Claude PreToolUse JSON file or - for stdin")
+    modes.add_argument("--codex-hook-input", help="Codex apply_patch PreToolUse JSON file or - for stdin")
     modes.add_argument("--git-diff", metavar="BASE", help="single commit/ref to worktree, including untracked text")
     parser.add_argument("--operation", choices=sorted(OPERATIONS), help="Git mode only (default: edit)")
     parser.add_argument("--task-mode", choices=sorted(MODES), help="Git mode only (default: unknown)")
@@ -248,9 +313,9 @@ def main():
         require(args.git_diff is not None or all(value is None for value in
                 (args.operation, args.task_mode, args.risk)), "Git-only flags with non-Git input")
         policy = load_policy(args.policy)
-        if args.hook_input:
+        if args.hook_input or args.codex_hook_input:
             require(args.approvals is None, "hook approval override")
-            data = hook_event(read_json(args.hook_input))
+            data = codex_hook_event(read_json(args.codex_hook_input)) if args.codex_hook_input else hook_event(read_json(args.hook_input))
         elif args.git_diff:
             data = git_event(args.git_diff, args.operation or "edit", args.task_mode or "unknown", args.risk or [])
         else:
@@ -258,12 +323,15 @@ def main():
         if args.approvals:
             data["approvals"] = read_json(args.approvals)
         report = evaluate(policy, data)
-        if args.hook_input:
+        if args.hook_input or args.codex_hook_input:
             blocked = [d for d in report["decisions"] if d["action"] == "block"]
             if blocked:
                 print(json.dumps(blocked), file=sys.stderr)
                 return 2
             asked = [d for d in report["decisions"] if d["action"] == "ask"]
+            if asked and args.codex_hook_input:
+                print("guardrails: human review required; blocked. Review exact diff with local/CI checker and event-bound human evidence: " + json.dumps(asked), file=sys.stderr)
+                return 2
             if asked:
                 print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "ask", "permissionDecisionReason": json.dumps(asked)}}))
             return 0  # No allow: never skip the platform's permission checks.
@@ -271,10 +339,10 @@ def main():
         return 0 if report["passed"] else 1
     except GitUnavailable as error:
         print(f"guardrails: degraded ({error}); blocked. Restore Git/runtime or explicitly use trusted event input with human review (content redacted)", file=sys.stderr)
-        return 2 if args.hook_input else 1
+        return 2 if (args.hook_input or args.codex_hook_input) else 1
     except (ValueError, TypeError, KeyError, OSError, re.error):
         print("guardrails: invalid input/policy or unsupported diff; correct input or request human review (content redacted)", file=sys.stderr)
-        return 2 if args.hook_input else 1
+        return 2 if (args.hook_input or args.codex_hook_input) else 1
 
 
 if __name__ == "__main__":

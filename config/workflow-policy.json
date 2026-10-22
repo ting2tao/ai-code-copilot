@@ -67,7 +67,8 @@
         "money",
         "state-machine",
         "cross-module-business-rule",
-        "accepted-residual-risk"
+        "accepted-residual-risk",
+        "production"
       ]
     }
   },
@@ -224,7 +225,8 @@
       "sensitive-data",
       "money",
       "state-machine",
-      "deployment"
+      "deployment",
+      "production"
     ],
     "writesBeforeContract": false,
     "liveMode": "external-results-non-blocking"

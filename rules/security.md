@@ -49,17 +49,19 @@ python3 <COPILOT_HOME>/scripts/check_guardrails.py --git-diff <base-commit> --op
 
 ### 平台覆盖与降级
 
-- Claude 插件 `hooks/hooks.json` 提供 `Write|Edit` PreToolUse adapter；需要 Python 3.9+、Git 工作树与插件启用。此变更不改写个人 settings，传统 install 脚本仍只注册 SessionStart，不能假定新 hook 已安装。
+- Claude 插件 `hooks/hooks.json` 提供 `Write|Edit` PreToolUse adapter；需要 Python 3.9+、Git 工作树与插件启用。此变更不改写个人 settings，Claude 传统 install 脚本仍只注册 SessionStart；Codex install 额外配置独立适配器，不能假定已信任/执行。
 - hook 的 cwd 仅用于解析相对输入，规则路径由 `git rev-parse --show-toplevel` 的工作树根确定，保留 lexical/resolved 双路径保护；子目录启动不会丢失 infra/tests 前缀。Git 根查询超时为 5 秒；非 Git、缺 Git、超时或无法确定根/路径别名边界时 exit 2，禁止回退到 cwd 冒充仓库根。非 Git 项目本适配不覆盖，需明确切换可信结构化 event + 人工门禁。
 - Write 扫写入内容，Edit 扫 new_string；缺少可信 taskMode 时对测试编辑保守 ask。不信任 tool_input 内的 approvals。secret/PII 或无效输入 exit 2；需要 owner 判断时返回原生 `permissionDecision: ask`，从不返回 allow 跳过平台检查。协议依据：[Claude Code hooks](https://code.claude.com/docs/en/hooks)。
 - 缺运行时/执行错误时明确 degraded 并阻断；人工恢复 adapter，或明确切换到 local/CI + Human Gate 后再继续，不能假装 fallback 已执行。Bash/MCP 写入不在该 hook 覆盖内，最终 diff 扫描仍必需。
 - Git 不可用、查询超时或失败使用固定安全原因报告 degraded，并给出恢复 Git/runtime 或显式使用可信 event + 人工审查的指引；不回显底层异常/命令/stderr。JSON/policy/路径格式错误仍为 invalid，不能把失败误报为已执行的 fallback。
-- `codex-repo-hook: unavailable` 只表示本仓库没有提供同构 adapter，不是对 Codex 全部版本能力的断言；用 sandbox/permission + local/CI + Human Gate。CI 入口可调用但未自动创建 job/branch protection，不能声称已部署。
+- `codex-repo-hook: supported-with-runtime` 表示已实现独立 apply_patch adapter，需要 Python 3.9+、Git 工作树、宿主支持、Hook 配置与用户信任；它不表示本地已启用或已完成真实宿主验证。Bash/MCP 写入不覆盖，最终 diff 扫描仍必需。
 
-### 最新平台支持与本仓库事实（查阅 2026-09-03）
+### 最新平台支持与本仓库事实（查阅 2026-10-22）
 
-必须分开描述 **平台支持 / 仓库实现 / 测试验证 / 本地启用**，不能用一个 supported 代替四项事实。
+必须分开描述 **平台支持 / 仓库实现 / 测试验证 / 本地启用**。
 
-- [当前 Codex Hooks 文档](https://learn.chatgpt.com/docs/hooks) 已列出 PreToolUse，包含 Bash、apply_patch 和部分本地工具。apply_patch 即使被 Edit/Write matcher 匹配，输入仍报告 `tool_name: apply_patch`，patch 来自 `tool_input.command`；本仓库 Claude adapter 期待 file_path/content/new_string，因此不能直接注册给 Codex。
-- 同一份 Codex 文档说明 PreToolUse 的 `permissionDecision: ask` 尚不受支持，hook 会报错而工具调用继续；不能把 Claude 原生 ask 当作跨平台审批协议。Codex adapter 需单独设计 fail-closed 转人工路径并做宿主集成测试，本次不实现、不启用。
-- 当前仓库事实：Claude adapter 有本地合成测试，没有真实宿主集成证据；Codex adapter 未实现；个人安装/CI 启用状态未核验。Hook 不是完整安全隔离边界，继续依赖宿主 sandbox/permission、可信 CI 与人工判断。
+- [Codex Hooks 文档](https://learn.chatgpt.com/docs/hooks) 列出 PreToolUse；apply_patch 输入仍报告 `tool_name: apply_patch`，补丁来自 `tool_input.command`。使用 `hooks/pre-tool-codex`，不把 Claude adapter 直接注册给 Codex。
+- Codex 配置入口为 hooks.json 或 config.toml。三平台安装器使用 hooks.json 配置 SessionStart 与 `^apply_patch$` PreToolUse，保留无关 handler。旧 settings.json 不自动迁移；管理员需按平台清理旧注册，避免未来重复执行。
+- Codex owner-required 决策使用 exit 2 阻断并转明确 local/CI + event-bound 人工审核，不发送未支持的 ask，也不发送 allow。Agent 不得自行填写 approval 解锁；需要人工确认后走可信 diff 检查和明确的操作路径。
+- 安装/更新后必须通过 `/hooks` 审核并信任当前定义；定义变化后可能需重新信任。安装器不修改 trust store、不绕过信任。未信任时宿主跳过 Hook，不能声称 guardrail 已执行；缺失运行时/错误由适配器阻断。
+- 适配器本地测试使用真实 subprocess + 临时 Git 仓库，覆盖正常/违规/失败分支；具体宿主、模型执行和 Windows/WSL 测试证据见变更 log。合成测试不冒充真实宿主证据。

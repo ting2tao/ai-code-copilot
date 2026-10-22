@@ -207,52 +207,19 @@ if (Test-Path $SkillLink) { Remove-Item $SkillLink -Force -Recurse }
 New-Item -ItemType Junction -Path $SkillLink -Target $SkillTarget | Out-Null
 Ok "skill junction: $SkillLink → $SkillTarget"
 
-# ============ 注册 SessionStart Hook ============
-Write-Host ""
-Info "注册 session-start hook..."
-
-$HookScript   = Join-Path $InstallDir "hooks\session-start"
-$SettingsFile = Join-Path $AppHome "settings.json"
-
+# ============ 注册平台 Hooks ============
+Info "注册平台 hooks..."
+$SettingsFile = Join-Path $AppHome $(if ($Platform -eq "codex") { "hooks.json" } else { "settings.json" })
 $pythonCommand = Get-Command python3 -ErrorAction SilentlyContinue
-if (-not $pythonCommand) {
-    $pythonCommand = Get-Command python -ErrorAction SilentlyContinue
-}
-if (-not $pythonCommand) {
-    Write-Host "!  未找到 Python；hook 仍会注入 L0 安全规则，但 context freshness 与 active change 摘要会被跳过。" -ForegroundColor Yellow
-    Write-Host "!  建议安装 Python 3，并确保 python3 或 python 在 PATH 中。" -ForegroundColor Yellow
-}
-
-if (-not (Test-Path $SettingsFile)) {
-    $settingsParent = Split-Path $SettingsFile -Parent
-    if (-not (Test-Path $settingsParent)) { New-Item -ItemType Directory -Path $settingsParent -Force | Out-Null }
-    '{}' | Set-Content $SettingsFile -Encoding UTF8
-}
-
-$settingsRaw = Get-Content $SettingsFile -Raw -Encoding UTF8
-# 找到 bash.exe（Git for Windows 提供）
+if (-not $pythonCommand) { $pythonCommand = Get-Command python -ErrorAction SilentlyContinue }
 $bashCommand = Get-Command bash -ErrorAction SilentlyContinue
 $bashExe = if ($bashCommand) { $bashCommand.Source } else { "bash" }
-$hookCmd = "$bashExe `"$HookScript`""
-
-$settings = $settingsRaw | ConvertFrom-Json
-if (-not (Get-Member -InputObject $settings -Name hooks -MemberType NoteProperty)) {
-    $settings | Add-Member -NotePropertyName hooks -NotePropertyValue ([PSCustomObject]@{})
+if ($pythonCommand) {
+    & $pythonCommand.Source (Join-Path $InstallDir "scripts/register_hooks.py") --platform $Platform --config $SettingsFile --root $InstallDir --bash-command "`"$bashExe`"" --windows-command
+    if ($LASTEXITCODE -ne 0) { Err "hook registration failed" }
+} else {
+    Warn "hooks: degraded (Python unavailable); hooks 未配置/未验证。安装 Python 3 后重新执行安装。"
 }
-if (-not (Get-Member -InputObject $settings.hooks -Name SessionStart -MemberType NoteProperty)) {
-    $settings.hooks | Add-Member -NotePropertyName SessionStart -NotePropertyValue @()
-}
-$hookEntry = [PSCustomObject]@{
-    matcher = ""
-    hooks   = @([PSCustomObject]@{ type = "command"; command = $hookCmd; async = $false })
-}
-$existingHooks = @($settings.hooks.SessionStart) | Where-Object {
-    $entry = $_
-    -not (@($entry.hooks) | Where-Object { $_.command -like "*$HookScript*" })
-}
-$settings.hooks.SessionStart = @($existingHooks) + $hookEntry
-$settings | ConvertTo-Json -Depth 10 | Set-Content $SettingsFile -Encoding UTF8
-Ok "hook 已注册到 $SettingsFile"
 
 # ============ 自检 ============
 Write-Host ""

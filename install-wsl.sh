@@ -157,6 +157,7 @@ SKILL_LINK="$SKILLS_DIR/ai-code-copilot"
 SKILL_TARGET="$INSTALL_DIR/skill"
 HOOK_SCRIPT="$INSTALL_DIR/hooks/session-start"
 SETTINGS_FILE="$WIN_APP_HOME/settings.json"
+if [ "$PLATFORM" = "codex" ]; then SETTINGS_FILE="$WIN_APP_HOME/hooks.json"; fi
 
 # ============ 卸载 ============
 uninstall() {
@@ -261,57 +262,13 @@ else
   ok "skill symlink (WSL): $SKILL_LINK → $SKILL_TARGET"
 fi
 
-# ============ 注册 SessionStart Hook ============
-echo ""
-info "注册 session-start hook..."
-chmod +x "$HOOK_SCRIPT" 2>/dev/null || true
-
-[ ! -f "$SETTINGS_FILE" ] && echo '{}' > "$SETTINGS_FILE"
-
-# hook 命令: Windows 上的 Codex/Claude Code 通过 wsl 调用 bash 执行脚本
-HOOK_CMD="wsl bash $HOOK_SCRIPT"
-
+# ============ 注册平台 Hooks ============
+info "注册平台 hooks..."
 if command -v python3 >/dev/null 2>&1; then
-  python3 - "$SETTINGS_FILE" "$HOOK_SCRIPT" "$HOOK_CMD" <<'PY'
-import json
-import sys
-
-settings_path = sys.argv[1]
-hook_script = sys.argv[2]
-hook_cmd = sys.argv[3]
-with open(settings_path, 'r', encoding='utf-8') as f:
-    s = json.load(f)
-session_hooks = s.setdefault('hooks', {}).setdefault('SessionStart', [])
-session_hooks[:] = [
-    entry for entry in session_hooks
-    if not any(hook_script in hook.get('command', '') for hook in entry.get('hooks', []))
-]
-session_hooks.append({
-    'matcher': '',
-    'hooks': [{'type': 'command', 'command': hook_cmd, 'async': False}]
-})
-with open(settings_path, 'w', encoding='utf-8') as f:
-    json.dump(s, f, indent=2, ensure_ascii=False)
-PY
-  ok "hook 已注册: $HOOK_CMD"
+  python3 "$INSTALL_DIR/scripts/register_hooks.py" --platform "$PLATFORM" \
+    --config "$SETTINGS_FILE" --root "$INSTALL_DIR" --bash-command "wsl bash" --windows-command
 else
-  if grep -q "$HOOK_SCRIPT" "$SETTINGS_FILE" 2>/dev/null; then
-    ok "hook 已注册，跳过"
-  else
-    warn "请手动将以下内容合并到 $SETTINGS_FILE:"
-    echo ""
-    echo '  "hooks": {'
-    echo '    "SessionStart": [{'
-    echo '      "matcher": "",'
-    echo '      "hooks": [{'
-    echo '        "type": "command",'
-    echo "        \"command\": \"$HOOK_CMD\","
-    echo '        "async": false'
-    echo '      }]'
-    echo '    }]'
-    echo '  }'
-    echo ""
-  fi
+  warn "hooks: degraded (python3 unavailable); hooks 未配置/未验证。安装 Python 3 后重新执行安装。"
 fi
 
 # ============ 自检 ============

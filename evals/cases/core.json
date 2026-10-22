@@ -438,5 +438,43 @@
       "writesBeforeContract": false,
       "promotion": "native-to-compact"
     }
+  },
+  {
+    "id": "full-production-only-signals",
+    "description": "Production alone must require Full and human confirmation",
+    "prompt": "Change production behavior without a deployment change",
+    "facts": {
+      "files": 1,
+      "signals": [
+        "production"
+      ]
+    },
+    "expected": {
+      "tier": "full",
+      "modules": [
+        "agents/workflows/full.md"
+      ],
+      "humanGate": true,
+      "writesBeforeContract": false
+    }
+  },
+  {
+    "id": "full-production-only-risks",
+    "description": "Production alone must require Full and human confirmation",
+    "prompt": "Change production behavior without a deployment change",
+    "facts": {
+      "files": 1,
+      "risks": [
+        "production"
+      ]
+    },
+    "expected": {
+      "tier": "full",
+      "modules": [
+        "agents/workflows/full.md"
+      ],
+      "humanGate": true,
+      "writesBeforeContract": false
+    }
   }
 ]

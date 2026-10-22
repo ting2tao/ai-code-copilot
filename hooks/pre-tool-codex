@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+GUARDRAIL_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if ! command -v python3 >/dev/null 2>&1; then
+  echo 'guardrails: degraded (python3 unavailable); blocked. Restore runtime or explicitly use local/CI checker and human review.' >&2
+  exit 2
+fi
+python3 "$GUARDRAIL_ROOT/scripts/check_guardrails.py" \
+  --policy "$GUARDRAIL_ROOT/config/guardrail-policy.json" --codex-hook-input - || exit 2
