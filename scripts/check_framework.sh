@@ -63,11 +63,13 @@ bash -n install.sh
 bash -n install-wsl.sh
 bash -n hooks/session-start
 bash -n hooks/pre-tool-guardrail
+bash -n hooks/pre-tool-codex
 bash -n scripts/init_project.sh
 
 python3 scripts/check_progressive_sdd.py "$ROOT"
 python3 -m unittest discover -s tests -p 'test_guardrails.py'
 python3 -m unittest discover -s tests -p 'test_agent_evals.py'
+python3 -m unittest discover -s tests -p 'test_workflow_alignment.py'
 python3 -m unittest discover -s tests -p 'test_model_first_versioning.py'
 python3 -m py_compile scripts/check_artifact_chain.py scripts/run_agent_evals.py
 python3 scripts/check_artifact_chain.py \
@@ -560,7 +562,7 @@ for rel, markers in git_contract_files.items():
 
 adaptive_quick_markers = {
     "agents/copilot-prompt.md": [
-        "Quick Compact", "recordMode: compact", "不超过 2 个文件",
+        "Quick Compact", "recordMode: compact", "不超过 5 个文件",
         "Runtime promotion", "promote to full Quick",
     ],
     "agents/spec-reviewer.md": ["recordMode", "compact Quick", "quick-card.md"],
@@ -942,9 +944,9 @@ if compact_apply_completion and "Finish record" in compact_apply_completion.grou
 
 spec_reviewer_text = (root / "agents" / "spec-reviewer.md").read_text(encoding="utf-8")
 promotion_trigger_rules = {
-    "more than two files": r"(?:实际|预计)[^\n]*(?:超过|>)[^\n]*2[^\n]*文件",
+    "more than five files": r"(?:实际|预计)[^\n]*(?:超过|>)[^\n]*5[^\n]*文件",
     "second purpose or commit": r"第二个目的[^\n]*第二个 commit",
-    "compact exclusion risk": r"Compact 排除风险[^\n]*API/DB/依赖/CI/部署/generated artifact[^\n]*资金/权限/认证/安全/敏感信息/状态机/跨模块业务规则",
+    "compact exclusion risk": r"Compact 排除风险[^\n]*API/DB/依赖/CI/部署/生产/generated artifact[^\n]*资金/权限/认证/安全/敏感信息/状态机/跨模块业务规则",
     "Reverse Sync scope expansion": r"Reverse Sync[^\n]*(?:扩大|变化)[^\n]*范围",
     "Important or Critical correction": r"Important/Critical correction",
     "durable knowledge or open risk": r"durable knowledge[^\n]*open risk",

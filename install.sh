@@ -136,6 +136,7 @@ resolve_platform() {
   SKILLS_DIR="$APP_HOME/skills"
   SKILL_LINK="$SKILLS_DIR/ai-code-copilot"
   SETTINGS_FILE="$APP_HOME/settings.json"
+  if [ "$PLATFORM" = "codex" ]; then SETTINGS_FILE="$APP_HOME/hooks.json"; fi
 }
 
 resolve_platform
@@ -233,69 +234,13 @@ fi
 ln -s "$SKILL_TARGET" "$SKILL_LINK"
 ok "skill symlink: $SKILL_LINK → $SKILL_TARGET"
 
-# ============ 注册 SessionStart Hook ============
-echo ""
-info "注册 session-start hook..."
-
-HOOK_SCRIPT="$INSTALL_DIR/hooks/session-start"
-chmod +x "$HOOK_SCRIPT" 2>/dev/null || true
-
-if ! command -v python3 >/dev/null 2>&1; then
-  warn "未找到 python3；hook 仍会注入 L0 安全规则，但 context freshness 与 active change 摘要会被跳过。"
-  warn "建议安装 python3，以启用完整上下文管理能力。"
-fi
-
-if [ ! -f "$SETTINGS_FILE" ]; then
-  mkdir -p "$(dirname "$SETTINGS_FILE")"
-  echo '{}' > "$SETTINGS_FILE"
-fi
-
+# ============ 注册平台 Hooks ============
+info "注册平台 hooks..."
 if command -v python3 >/dev/null 2>&1; then
-    python3 - "$SETTINGS_FILE" "$HOOK_SCRIPT" <<'PY'
-import json
-import sys
-
-settings_path = sys.argv[1]
-hook_script = sys.argv[2]
-hook_cmd = f'bash {hook_script}'
-with open(settings_path, 'r') as f:
-    settings = json.load(f)
-hooks = settings.setdefault('hooks', {})
-session_hooks = hooks.setdefault('SessionStart', [])
-session_hooks[:] = [
-    entry for entry in session_hooks
-    if not any(hook_script in hook.get('command', '') for hook in entry.get('hooks', []))
-]
-session_hooks.append({
-    'matcher': '',
-    'hooks': [{
-        'type': 'command',
-        'command': hook_cmd,
-        'async': False
-    }]
-})
-with open(settings_path, 'w') as f:
-    json.dump(settings, f, indent=2, ensure_ascii=False)
-PY
-    ok "hook 已注册到 $SETTINGS_FILE"
+  python3 "$INSTALL_DIR/scripts/register_hooks.py" --platform "$PLATFORM" \
+    --config "$SETTINGS_FILE" --root "$INSTALL_DIR" --bash-command "bash"
 else
-  if grep -q "$HOOK_SCRIPT" "$SETTINGS_FILE" 2>/dev/null; then
-    ok "hook 已注册，跳过"
-  else
-    warn "未找到 python3，安装脚本无法自动编辑 settings.json；请手动将以下 hook 配置添加到 $SETTINGS_FILE："
-    echo ""
-    echo "  \"hooks\": {"
-    echo "    \"SessionStart\": [{"
-    echo "      \"matcher\": \"\","
-    echo "      \"hooks\": [{"
-    echo "        \"type\": \"command\","
-    echo "        \"command\": \"bash $HOOK_SCRIPT\","
-    echo "        \"async\": false"
-    echo "      }]"
-    echo "    }]"
-    echo "  }"
-    echo ""
-  fi
+  warn "hooks: degraded (python3 unavailable); hooks 未配置/未验证。安装 Python 3 后重新执行安装。"
 fi
 
 # ============ 自检 ============

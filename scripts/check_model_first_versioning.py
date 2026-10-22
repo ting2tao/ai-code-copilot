@@ -170,14 +170,13 @@ def check_project_sync_contract(root: Path) -> None:
 
 
 def check_documentation_contract(root: Path) -> None:
-    version = read_version(root)
     docs = {
         "README.md": [
             "Model-first",
             "native",
             "automatic activation",
             "VERSION",
-            version,
+            "](VERSION)",
             "full replacement",
             "frameworkVersion",
             "frameworkCommit",
@@ -187,7 +186,7 @@ def check_documentation_contract(root: Path) -> None:
             "原生处理",
             "自动激活",
             "VERSION",
-            version,
+            "](VERSION)",
             "整包覆盖",
             "frameworkVersion",
             "frameworkCommit",

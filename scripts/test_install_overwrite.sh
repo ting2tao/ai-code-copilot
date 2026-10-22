@@ -31,7 +31,7 @@ cmp -s "$ROOT/VERSION" "$INSTALL_DIR/VERSION"
 test -L "$APP_HOME/skills/ai-code-copilot"
 test -f "$APP_HOME/skills/ai-code-copilot/SKILL.md"
 
-python3 - "$APP_HOME/settings.json" "$INSTALL_DIR/hooks/session-start" <<'PY'
+python3 - "$APP_HOME/hooks.json" "$INSTALL_DIR/hooks/session-start" <<'PY'
 import json
 import sys
 
