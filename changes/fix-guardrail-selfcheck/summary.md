@@ -2,16 +2,16 @@
 artifactVersion: 1
 artifactId: fix-guardrail-selfcheck:summary
 artifactType: summary
-artifactStatus: reviewed
+artifactStatus: finished
 sourceOfTruth: repository
 sourceRef: self
-sourceRevision: working-tree
+sourceRevision: git:6728f5cb1a1277c039b2c9a90a5d341086e1b87f
 upstream: fix-guardrail-selfcheck:quick-card
-upstreamHash: sha256:973530661cdbc38272f73c5b1583b53ec339e896b49eade8957709c00bb889f4
+upstreamHash: sha256:aa321c09b1c74eea0de766aaf65cb54a4aa9f6249b5fe1c72054c74e4d1fdac6
 -->
 
 change: fix-guardrail-selfcheck
-status: reviewed-ready-to-push
+status: finished
 recordMode: full
 parentIssue: none
 workIssue: none

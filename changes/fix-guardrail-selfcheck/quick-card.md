@@ -2,14 +2,14 @@
 artifactVersion: 1
 artifactId: "fix-guardrail-selfcheck:quick-card"
 artifactType: quick-card
-artifactStatus: reviewed
+artifactStatus: finished
 sourceOfTruth: repository
 sourceRef: self
-sourceRevision: working-tree
+sourceRevision: git:6728f5cb1a1277c039b2c9a90a5d341086e1b87f
 upstream: none
 upstreamHash: none
 change: "fix-guardrail-selfcheck"
-status: reviewed
+status: finished
 recordMode: full
 promotedFrom: none
 specHash: "sha256:546e1f074934364af722333c8d94517a5b69cbfb18c0ecdfdf2a6ba5b02e74d3"
@@ -129,3 +129,5 @@ branch: "feat/ai-native-sdlc"
 验收：无冲突标记/未解决 index entries；源码和真实临时安装目录（无 .git）完整自检通过；最终相对 main 的生产护栏/安装脚本无差异；原 PR 可合并。配置沿用原合同 manual/no-Issue，不新增工作票。
 
 本轮验证：main 无 Git 副本 RED（2 failures）；源码和实际临时安装目录 GREEN（各 50 tests + 23 offline eval cases）；产物链 PASS 3；相对 main 的 runtime/README 字节一致；提交/发布 Guardrail PASS，无待审批项。审核方式为本地 self-review，未声称独立 Agent 审查。
+
+Finish verified: PR #38 is OPEN / MERGEABLE / CLEAN, base main, ordinary fast-forward push; no main merge. Implementation merge commit: 6728f5c fix(guardrails): resolve PR conflicts and preserve installed self-check.
